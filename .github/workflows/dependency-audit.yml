@@ -1,0 +1,112 @@
+name: Dependency Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "requirements*.txt"
+      - "pyproject.toml"
+      - ".github/workflows/dependency-audit.yml"
+  pull_request:
+    branches: [main]
+  schedule:
+    # Setiap Senin 01:00 UTC (08:00 WIB) - advisory baru muncul terus,
+    # jadi audit tetap jalan walau tidak ada commit.
+    - cron: "0 21 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependency-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.14"
+
+jobs:
+  pip-audit:
+    name: pip-audit (PyPI Advisory DB + OSV)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pip-audit
+
+      - name: Run pip-audit
+        id: audit
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          # Audit environment yang benar-benar terpasang (termasuk transitive deps),
+          # bukan sekadar baris di requirements.txt.
+          # Untuk mengabaikan advisory yang sudah ditinjau, tambahkan:
+          #   --ignore-vuln GHSA-xxxx-xxxx-xxxx
+          pip-audit \
+            --progress-spinner off \
+            --desc on \
+            --format markdown | tee audit-report.md
+
+      - name: Generate SBOM (CycloneDX)
+        if: always()
+        run: pip-audit --progress-spinner off --format cyclonedx-json -o sbom.cdx.json || true
+
+      - name: Publish report to job summary
+        if: always()
+        run: |
+          {
+            echo "## pip-audit"
+            echo
+            if [ "${{ steps.audit.outcome }}" = "success" ]; then
+              echo "Tidak ada kerentanan yang diketahui pada dependency tree."
+            else
+              cat audit-report.md
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload audit artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-audit-${{ github.run_id }}
+          path: |
+            audit-report.md
+            sbom.cdx.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Fail on known vulnerabilities
+        if: steps.audit.outcome == 'failure'
+        run: |
+          echo "::error::pip-audit menemukan dependency dengan kerentanan yang diketahui."
+          exit 1
+
+  dependency-review:
+    name: Dependency Review (gate PR)
+    # Hanya relevan pada PR: membandingkan dependency base vs head.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/dependency-review-action@v4
+        with:
+          # Blokir PR yang menambah dependency dengan severity high/critical.
+          fail-on-severity: high
+          comment-summary-in-pr: on-failure
+          # Lisensi copyleft kuat - longgarkan kalau memang dibutuhkan.
+          deny-licenses: GPL-3.0, AGPL-3.0, GPL-2.0

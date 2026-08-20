@@ -1,0 +1,116 @@
+name: Snyk Open Source
+
+# Opsional. Job otomatis dilewati (bukan gagal) selama secret SNYK_TOKEN
+# belum diisi, jadi aman untuk di-merge lebih dulu.
+# Cara mengaktifkan:
+#   1. Daftar di https://app.snyk.io lalu ambil API token di Account Settings.
+#   2. Repo GitHub > Settings > Secrets and variables > Actions > New repository secret
+#      Name: SNYK_TOKEN
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "requirements*.txt"
+      - "pyproject.toml"
+      - ".github/workflows/snyk.yml"
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "30 1 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.14"
+
+jobs:
+  gate:
+    name: Cek ketersediaan token
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - id: check
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          if [ -n "$SNYK_TOKEN" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::SNYK_TOKEN belum diset - scan Snyk dilewati."
+          fi
+
+  snyk:
+    name: Snyk test
+    needs: gate
+    if: needs.gate.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    env:
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install Snyk CLI
+        run: npm install -g snyk
+
+      - name: Snyk test
+        id: snyk
+        continue-on-error: true
+        run: |
+          snyk test \
+            --package-manager=pip \
+            --file=requirements.txt \
+            --command=python \
+            --severity-threshold=high \
+            --sarif-file-output=snyk.sarif
+
+      - name: Upload SARIF ke tab Security
+        if: hashFiles('snyk.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: snyk.sarif
+          category: snyk-open-source
+
+      - name: Fail on high/critical
+        if: steps.snyk.outcome == 'failure'
+        run: |
+          echo "::error::Snyk menemukan kerentanan high/critical."
+          exit 1
+
+  monitor:
+    # Kirim snapshot dependency ke dashboard Snyk supaya dapat alert
+    # saat advisory baru muncul, tanpa harus menunggu commit berikutnya.
+    name: Snyk monitor
+    needs: gate
+    if: needs.gate.outputs.enabled == 'true' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          npm install -g snyk
+          snyk monitor --package-manager=pip --file=requirements.txt --command=python

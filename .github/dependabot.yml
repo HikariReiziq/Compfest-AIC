@@ -1,0 +1,52 @@
+version: 2
+
+updates:
+  # --- Python ---
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "21:00"
+      timezone: Asia/Jakarta
+    open-pull-requests-limit: 5
+    labels: ["dependencies", "python"]
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: scope
+    groups:
+      # Minor/patch digabung jadi satu PR supaya tidak membanjiri repo.
+      python-minor-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+      # Major tetap dipisah per package agar mudah ditinjau.
+
+  # --- GitHub Actions sendiri ---
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "21:00"
+      timezone: Asia/Jakarta
+    open-pull-requests-limit: 3
+    labels: ["dependencies", "ci"]
+    commit-message:
+      prefix: "ci"
+      include: scope
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # --- Frontend (aktifkan setelah folder frontend/ ada beserta package.json) ---
+  # - package-ecosystem: npm
+  #   directory: "/frontend"
+  #   schedule:
+  #     interval: weekly
+  #   open-pull-requests-limit: 5
+  #   labels: ["dependencies", "frontend"]
+  #   groups:
+  #     npm-minor-patch:
+  #       patterns: ["*"]
+  #       update-types: ["minor", "patch"]
