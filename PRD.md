@@ -88,13 +88,13 @@ Untuk aksesoris wajah, tetap gunakan:
 
 ### f. Aset 3D untuk AR Try-On
 
-**Strategi MVP yang paling realistis untuk penyisihan:**
+**Strategi MVP penyisihan (DISETUJUI 2026-08-20):**
 
-| Prioritas | Pendekatan | Deskripsi | Kesiapan MVP |
+| Prioritas | Pendekatan | Deskripsi | Status MVP |
 | :--- | :--- | :--- | :--- |
-| **1 (Utama)** | Aksesoris wajah (kacamata, topi) | Paling presisi karena face landmark stabil. Aset GLB dari Sketchfab CC0/CC BY. | Tinggi — bisa jadi demo paling meyakinkan |
-| **2 (Showcase)** | Pakaian atas (jaket, hoodie, kaos) | Overlay 3D di atas body pose. Gunakan aset dari Sketchfab CC BY dan/atau generate via TripoSR (MIT). | Sedang — butuh calibration pose-to-mesh |
-| **3 (Stretch)** | Full outfit | Butuh rigged garment lengkap. Gunakan GarmentCodeData (riset) atau Quaternius (CC0 fantasy). | Rendah — jika waktu cukup |
+| **1 (MVP)** | Aksesoris wajah (kacamata, topi) | AR realtime via 468 titik face landmark. Paling presisi, paling meyakinkan saat demo. Aset GLB dari Sketchfab CC0/CC BY. | PRIORITAS UTAMA |
+| **2 (Default)** | Pakaian: kartu rekomendasi 2D | Pakaian ditampilkan sebagai foto katalog 2D yang sudah di-match ke karakter personal user. Tidak perlu model 3D. | SUDAH TERSEDIA (foto dari Fashion Product Images) |
+| **3 (Stretch)** | Pakaian atas: 3D overlay | Jacket/hoodie overlay via pose tracking. Masih ada masalah occlusion dan tepi kasar. | STRETCH GOAL untuk hackathon final |
 
 Sumber aset yang sudah divalidasi (dari riset sebelumnya):
 
@@ -265,8 +265,41 @@ Backend FastAPI menerima tiga payload: (1) rasio tubuh untuk body shape classifi
 **Step 3 — Kuesioner + Rekomendasi (client lalu server lalu client):**
 User menjawab kuesioner per batch di frontend. Jawaban dikirim ke backend bersama profil personal. Recommendation engine melakukan hard filter (usage, gender, articleType), lalu color compatibility scoring (undertone vs baseColour), lalu body shape compatibility scoring, lalu FashionCLIP similarity ranking. Hasil berupa ranked list outfit items.
 
-**Step 4 — AR Try-On (client-side):**
-User memilih item rekomendasi. Frontend memuat model GLB dari static asset. Three.js me-render model di atas video kamera, diposisikan berdasarkan pose/face landmark yang sudah berjalan realtime. User bisa tekan next untuk ganti item, atau kembali ke kuesioner untuk batch berikutnya.
+**Step 4 — Validasi Visual (client-side):**
+User melihat hasil rekomendasi sebagai kartu outfit (foto katalog 2D). Untuk item aksesoris wajah (kacamata, topi), user bisa aktifkan mode AR dan melihat item ditampilkan di wajahnya secara realtime via Three.js + face landmark. Untuk pakaian, user melihat foto katalog yang sudah dicocokkan ke karakter personalnya. User bisa tekan next untuk ganti item, atau kembali ke kuesioner untuk batch berikutnya.
 
 **Mock Data Mode:**
 Jika `MOCK_MODE=true`, semua endpoint mengembalikan response dummy yang sudah di-hardcode. Frontend tetap menampilkan UI lengkap dengan data palsu. Ini memastikan juri bisa menguji alur tanpa kamera atau GPU.
+
+---
+
+## BAGIAN 4 — Urutan Prioritas Pengerjaan (DISETUJUI 2026-08-20)
+
+```
+HARI 1-2: Classification Pipeline (RISIKO TERTINGGI, CORE DIFFERENTIATOR)
+├── Skin tone detection (OpenCV LAB + MST-E mapping)
+├── Face shape classification (MediaPipe Face Mesh + Random Forest)
+├── Body shape classification (MediaPipe Pose + rule-based ratio)
+└── Unit test semua classifier
+
+HARI 2-3: Recommendation Engine (BERGANTUNG PADA CLASSIFICATION)
+├── Pre-compute FashionCLIP embedding untuk 44K item katalog
+├── Filter layer (usage, gender, articleType)
+├── Scoring layer (color compatibility + body shape compatibility)
+└── Integration test: classification output → recommendation output
+
+HARI 3-4: Kuesioner + Frontend + AR Aksesoris Wajah
+├── Kuesioner batch UI (form sederhana)
+├── Sambungkan scan → classification → recommendation → display
+├── AR kacamata via Face Mesh + Three.js (5-10 item GLB)
+└── End-to-end flow test
+
+HARI 4-5: Docker + Mock Mode + Video + Polish
+├── docker-compose.yml lengkap dan teruji
+├── Mock data mode (MOCK_MODE=true) untuk juri tanpa kamera
+├── Video Proof of Work (7 menit, tanpa cut)
+├── Video Promosi (5 menit)
+└── Final proposal polish
+```
+
+**Prinsip utama:** Selesaikan komponen berisiko tertinggi lebih dulu. Classification pipeline adalah core AI COBA. Tanpa ini, proyek hanya kuis gaya biasa. Kuesioner adalah form HTML yang bisa dibuat dalam setengah hari.
