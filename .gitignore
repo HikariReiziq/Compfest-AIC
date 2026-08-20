@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.Python
+build/
+dist/
+
+# Virtualenv
+.compfest/
+.venv/
+venv/
+env/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Test & coverage
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.ruff_cache/
+.mypy_cache/
+
+# Data & artefak berat (jangan masuk git, pakai DVC / object storage)
+data/raw/
+data/interim/
+data/processed/
+*.csv
+!docs/**/*.csv
+*.parquet
+*.glb
+*.fbx
+*.onnx
+*.pt
+*.pth
+models/weights/
+
+# Audit output
+audit-report.md
+sbom.cdx.json
+snyk.sarif
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
