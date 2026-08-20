@@ -21,16 +21,16 @@
 
 ### B. Profil Solusi Inovasi
 - **Nama Tim**: Tim Inovasi AIC (Anonim / Sesuai Registrasi)
-- **Nama Proyek**: **FitWise AI** (*Smart AI & AR Fashion Sizing & Recommendation Engine*)
+- **Nama Proyek**: **COBA** (*Cocokkan Outfit Sesuai Badan Anda — Smart AI & AR Fashion Style Recommendation Engine*)
 - **Pilar Tema**: Smart Commerce
 - **Problem Statement**:
   - Sektor fesyen adalah kategori belanja terbesar di Indonesia (73+ juta pembeli daring, 590 ribu IKM pakaian jadi menyerap 1,2 juta pekerja).
-  - Pembeli dihadapkan pada ketidakpastian ukuran (*sizing mismatch*) dan model pakaian, berujung pada tingginya angka pengaduan konsumen (ribuan kasus/tahun) serta kerugian retur miliaran rupiah, beban ongkos kirim balik, dan risiko gagal bayar transaksi COD bagi merchant UMKM.
-  - Di toko fisik (*offline*), antrean panjang ruang ganti dan keraguan pembeli menyebabkan *abandoned sales*.
+  - Pembeli tidak punya cara untuk mengetahui gaya mana yang benar-benar cocok dengan karakter dirinya (*style-fit mismatch*) sebelum membayar, berujung pada barang yang tidak dipakai, rating rendah, dan hilangnya loyalitas.
+  - Di toko fisik (*offline*), pembeli menghabiskan waktu di ruang ganti tanpa kepastian, sementara penjual harus merekomendasikan outfit satu per satu secara manual.
 - **Unique Value Proposition (UVP)**:
-  - **Estimasi Antropometri Terkalibrasi SNI**: Estimasi proporsi tubuh dari Computer Vision yang disesuaikan dengan Data Antropometri Indonesia (SNI 08-4985-1999 & SNI 2161:2010), bukan sekadar model barat.
-  - **Batch Recommendation Engine**: Rekomendasi busana bertahap berbasis konteks (formal/casual, fit preference) memetakan atribut dataset CC0 Fashion Product Images.
-  - **Lightweight AR Try-on**: Visualisasi busana dan aksesoris wajah/tubuh instan langsung di peramban (Three.js & MediaPipe Vision) tanpa dependensi proprietary cloud berbayar.
+  - **AI Personal Character Analysis**: Scan kamera untuk mendeteksi warna kulit/undertone, bentuk wajah, dan proporsi tubuh, lalu merekomendasikan outfit yang cocok dengan karakter personal user.
+  - **Batch Recommendation Engine**: Rekomendasi busana bertahap berbasis konteks (formal/casual, fit preference) menggunakan FashionCLIP embedding dan filter berbasis kuesioner.
+  - **Lightweight AR Try-on**: Visualisasi busana dan aksesoris langsung di tubuh user lewat AR di peramban (Three.js & MediaPipe Vision) tanpa dependensi proprietary cloud berbayar.
   - **Zero Persistent Biometrics**: Privasi data terjaga 100% (*session-scoped memory*).
 
 ---
@@ -185,7 +185,7 @@
 
 ---
 
-## 7. TECH STACK & ARSITEKTUR TEKNIS PROYEK (`FitWise AI`)
+## 7. TECH STACK & ARSITEKTUR TEKNIS PROYEK (`COBA`)
 
 ```
                         ┌───────────────────────────────────────────┐
@@ -200,32 +200,36 @@
                         │             SERVER (Backend)              │
                         │            FastAPI (Python 3.11)          │
                         │     - Synchronous Request Orchestrator    │
-                        │     - Size Matching Algorithm (SNI)       │
-                        │     - Recommendation Filter & Ranking     │
+                        │     - Skin Tone & Undertone Analyzer      │
+                        │     - Body/Face Shape Classifier          │
+                        │     - Style Recommendation Filter/Ranking │
                         └─────────────────────┬─────────────────────┘
                                               │ Local IPC / Python Module
                                               ▼
                         ┌───────────────────────────────────────────┐
                         │            AI_ENGINE (Core ML)            │
                         │     - MediaPipe Pose & Face Landmark      │
-                        │     - Anthropometric Ratio Extractor      │
-                        │     - Pre-trained / Fine-tuned Embedder   │
-                        │     - Dataset: CC0 Fashion Images + SNI   │
+                        │     - OpenCV LAB Skin Tone Detection      │
+                        │     - FashionCLIP Embedding + Scoring     │
+                        │     - Dataset: CC0 Fashion Images + MST-E │
                         └───────────────────────────────────────────┘
 ```
 
-- **Frontend (`client/`)**: Next.js (App Router), Tailwind CSS, Three.js / `@mediapipe/camera_utils`. Single-page flow yang elegan, modern, responsif.
-- **Backend (`server/`)**: FastAPI, Pydantic v2, Uvicorn. Menerima payload, memvalidasi input, memanggil engine inferensi secara sinkron, mengembalikan response JSON & metadata 3D.
-- **AI Engine (`ai_engine/`)**: Python, OpenCV, MediaPipe, NumPy, Scikit-learn. Ekstraksi koordinat antropometri tubuh/wajah $\rightarrow$ mapping ke tabel ukuran standar SNI (SNI 08-4985-1999 & SNI 2161:2010).
+- **Frontend (`client/`)**: Next.js (App Router), Tailwind CSS, Three.js / `@mediapipe/tasks-vision`. Single-page flow yang elegan, modern, responsif. MediaPipe Pose dan Face Mesh berjalan client-side.
+- **Backend (`server/`)**: FastAPI, Pydantic v2, Uvicorn. Menerima rasio landmark dan crop wajah, menjalankan skin tone analysis (OpenCV LAB), face/body shape classification, dan style recommendation scoring.
+- **AI Engine (`ai_engine/`)**: Python, OpenCV, NumPy, Scikit-learn, FashionCLIP. Analisis warna kulit via CIELAB, klasifikasi bentuk wajah/tubuh, dan outfit compatibility scoring via FashionCLIP embedding similarity.
 - **Orchestration**: `docker-compose.yml` mengorkestrasi seluruh modul ke dalam satu jaringan lokal bridge dengan satu perintah: `docker compose up --build`.
 
 ---
 
 ## 8. ARCHITECTURAL DECISION RECORDS (ADR)
 - **[2026-08-19] ADR-001**: Inisialisasi arsitektur 3-tier modular (`client/`, `server/`, `ai_engine/`) dengan komunikasi synchronous REST murni via FastAPI untuk menjamin kepatuhan batasan MVP penyisihan tanpa background worker eksternal.
-- **[2026-08-19] ADR-002**: Menggunakan dataset *Fashion Product Images* (CC0 Public Domain) dan *Data Antropometri Indonesia / SNI* sebagai basis acuan sizing, menjamin legalitas lisensi 100% bersih dan relevansi demografi lokal Indonesia.
+- **[2026-08-19] ADR-002**: Menggunakan dataset *Fashion Product Images* (CC0 Public Domain) sebagai katalog utama, dengan *Monk Skin Tone Examples* (CC BY 4.0) untuk skin tone analysis dan *Polyvore Outfits* untuk outfit compatibility.
 - **[2026-08-19] ADR-003**: Penegakan kebijakan *Zero Persistent Biometric Retention* (arsitektur stateless session) demi memenuhi standar regulasi AI Governance dan UU PDP No. 27/2022.
 - **[2026-08-19] ADR-004**: Penerapan isolasi identitas mutlak (*Zero Institution Identity*) pada semua artefak kode, metadata git, video, dan proposal.
+- **[2026-08-20] ADR-005**: Penghapusan fitur rekomendasi ukuran (*sizing recommendation*) dari scope MVP. Alasan: (1) Fokus proyek dipersempit ke *style-fit mismatch* yang merupakan masalah utama yang belum terjawab oleh solusi existing. (2) Fitur sizing memerlukan kalibrasi SNI yang kompleks dan berisiko setengah jadi di timeline penyisihan. (3) Menghapus sizing memungkinkan tim fokus pada pipeline AI rekomendasi gaya yang lebih matang dan demonstrasi AR yang lebih meyakinkan.
+- **[2026-08-20] ADR-006**: Pemilihan tech stack per fitur dengan alasan data-backed: (a) MediaPipe Pose+Face (Apache 2.0, client-side, zero latency) untuk body/face landmark extraction. (b) OpenCV CIELAB + Monk Skin Tone scale untuk undertone detection (robust terhadap lighting, explainable). (c) FashionCLIP + faiss-cpu untuk outfit recommendation (domain-optimized embeddings, sub-second search di 44K items). (d) Three.js + GLB/DRACO untuk AR try-on (standar industri, no plugin). (e) Random Forest untuk face shape classification (ringan, cepat, akurasi tinggi pada fitur geometris).
+- **[2026-08-20] ADR-007**: Rename proyek dari *FitWise AI* menjadi **COBA** (*Cocokkan Outfit Sesuai Badan Anda*) untuk mencerminkan fokus baru pada style-fit recommendation tanpa sizing.
 
 ---
 
