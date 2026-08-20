@@ -1,0 +1,77 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: coba-api
+    # Menunggu healthcheck, bukan sekadar container hidup. Postgres butuh
+    # beberapa detik setelah proses start sebelum benar-benar menerima koneksi.
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      ENV: local
+      DEBUG: "true"
+      # Nama service dipakai sebagai host: Docker menyediakan DNS internal.
+      DATABASE_URL: postgresql+asyncpg://coba:coba@postgres:5432/coba
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: ${JWT_SECRET:-dev-only-secret-ganti-di-produksi-32chars}
+      CORS_ORIGINS: '["http://localhost:3000","http://localhost:5173"]'
+      RUN_MIGRATIONS: "true"
+      RUN_SEED: "${RUN_SEED:-true}"
+      WEB_CONCURRENCY: "2"
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: coba-postgres
+    environment:
+      POSTGRES_USER: coba
+      POSTGRES_PASSWORD: coba
+      POSTGRES_DB: coba
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U coba -d coba"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    command:
+      - postgres
+      # Tuning ringan untuk dev; di production pakai nilai dari sizing sebenarnya.
+      - -c
+      - max_connections=200
+      - -c
+      - shared_buffers=256MB
+
+  redis:
+    image: redis:7-alpine
+    container_name: coba-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    command:
+      - redis-server
+      # Cache boleh dibuang saat penuh; sesi try-on memang ephemeral.
+      - --maxmemory
+      - 512mb
+      - --maxmemory-policy
+      - allkeys-lru
+      - --appendonly
+      - "no"
+
+volumes:
+  postgres_data:
+  redis_data:
