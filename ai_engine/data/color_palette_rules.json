@@ -1,0 +1,70 @@
+{
+  "palettes": {
+    "Warm": {
+      "season": "Autumn / Warm Spring",
+      "description": "Kulit dengan undertone hangat bersinar paling anggun dengan palet warna tanah (earth tone), keemasan, terracotta, dan hijau olive.",
+      "best_colors": [
+        {"name": "Terracotta", "hex": "#E2725B", "category": "Warm Red"},
+        {"name": "Mustard Yellow", "hex": "#E1AD01", "category": "Warm Gold"},
+        {"name": "Olive Green", "hex": "#556B2F", "category": "Earth Green"},
+        {"name": "Warm Beige", "hex": "#D4B996", "category": "Neutral"},
+        {"name": "Burnt Orange", "hex": "#CC5500", "category": "Warm Accent"},
+        {"name": "Camel Brown", "hex": "#C19A6B", "category": "Classic Neutral"}
+      ],
+      "clash_colors": [
+        {"name": "Icy Blue", "hex": "#AFEEEE", "reason": "Membuat kulit terlihat pucat dan wash-out"},
+        {"name": "Stark Pure White", "hex": "#FFFFFF", "reason": "Terlalu kontras dingin, lebih baik Broken White / Cream"},
+        {"name": "Neon Magenta", "hex": "#FF00FF", "reason": "Warna dingin buatan yang menenggelamkan kilau alami kulit"}
+      ]
+    },
+    "Cool": {
+      "season": "Winter / Cool Summer",
+      "description": "Kulit dengan undertone sejuk sangat cocok dengan warna permata (jewel tones), biru laut, abu-abu arang, emerald, dan pastel dingin.",
+      "best_colors": [
+        {"name": "Navy Blue", "hex": "#000080", "category": "Deep Jewel"},
+        {"name": "Emerald Green", "hex": "#50C878", "category": "Rich Green"},
+        {"name": "Burgundy / Berry", "hex": "#800020", "category": "Cool Red"},
+        {"name": "Charcoal Grey", "hex": "#36454F", "category": "Neutral"},
+        {"name": "Lavender / Soft Lilac", "hex": "#E6E6FA", "category": "Cool Pastel"},
+        {"name": "Stark White", "hex": "#F8F9FA", "category": "Crisp Neutral"}
+      ],
+      "clash_colors": [
+        {"name": "Mustard Gold", "hex": "#FFDB58", "reason": "Memberikan kesan kulit kusam / kekuningan"},
+        {"name": "Orange Terracotta", "hex": "#E2725B", "reason": "Menghilangkan kesan kontras segar pada kulit dingin"},
+        {"name": "Muddy Khaki", "hex": "#C3B091", "reason": "Tampak mematikan rona alami kulit"}
+      ]
+    },
+    "Neutral": {
+      "season": "Soft Neutral / All Seasons",
+      "description": "Kulit netral memiliki fleksibilitas tinggi dan cocok dengan warna-warna seimbang seperti soft rose, sage green, taupe, navy, dan dusty blue.",
+      "best_colors": [
+        {"name": "Sage Green", "hex": "#9DC183", "category": "Soft Muted"},
+        {"name": "Dusty Rose", "hex": "#DCAE96", "category": "Balanced Pink"},
+        {"name": "Classic Navy", "hex": "#1A2B4C", "category": "Universal Dark"},
+        {"name": "Warm Taupe", "hex": "#B38B6D", "category": "Neutral Base"},
+        {"name": "Muted Teal", "hex": "#367588", "category": "Rich Accent"},
+        {"name": "Off-White", "hex": "#FAF9F6", "category": "Universal Light"}
+      ],
+      "clash_colors": [
+        {"name": "Overly Neon Lime", "hex": "#39FF14", "reason": "Terlalu menyilaukan dan mengalihkan fokus dari wajah"},
+        {"name": "Dull Mud Brown", "hex": "#594235", "reason": "Bisa membuat tampilan tampak datar tanpa kontras"}
+      ]
+    },
+    "Olive": {
+      "season": "Deep Autumn / Olive Harmony",
+      "description": "Kulit dengan undertone zaitun (khas Nusantara) tampil memukau dengan warna plum, deep teal, rose gold, forest green, dan warm burgundy.",
+      "best_colors": [
+        {"name": "Deep Forest Green", "hex": "#228B22", "category": "Deep Earth"},
+        {"name": "Rich Plum", "hex": "#673147", "category": "Jewel Accent"},
+        {"name": "Warm Bronze", "hex": "#CD7F32", "category": "Metallic Neutral"},
+        {"name": "Deep Teal", "hex": "#005F73", "category": "Ocean Depth"},
+        {"name": "Cream / Broken White", "hex": "#FFFDD0", "category": "Soft Light"},
+        {"name": "Burgundy Wine", "hex": "#722F37", "category": "Warm Dark"}
+      ],
+      "clash_colors": [
+        {"name": "Pale Pastel Yellow", "hex": "#FFFFE0", "reason": "Mempertegas pigmen kehijauan kulit secara tidak harmonis"},
+        {"name": "Ash Grey", "hex": "#B2BEB5", "reason": "Memberikan efek pucat/lelah pada kulit zaitun"}
+      ]
+    }
+  }
+}

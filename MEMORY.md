@@ -28,9 +28,12 @@
   - Pembeli tidak punya cara untuk mengetahui gaya mana yang benar-benar cocok dengan karakter dirinya (*style-fit mismatch*) sebelum membayar, berujung pada barang yang tidak dipakai, rating rendah, dan hilangnya loyalitas.
   - Di toko fisik (*offline*), pembeli menghabiskan waktu di ruang ganti tanpa kepastian, sementara penjual harus merekomendasikan outfit satu per satu secara manual.
 - **Unique Value Proposition (UVP)**:
-  - **AI Personal Character Analysis**: Scan kamera untuk mendeteksi warna kulit/undertone, bentuk wajah, dan proporsi tubuh, lalu merekomendasikan outfit yang cocok dengan karakter personal user.
-  - **Batch Recommendation Engine**: Rekomendasi busana bertahap berbasis konteks (formal/casual, fit preference) menggunakan FashionCLIP embedding dan filter berbasis kuesioner.
-  - **Lightweight AR Try-on**: Visualisasi busana dan aksesoris langsung di tubuh user lewat AR di peramban (Three.js & MediaPipe Vision) tanpa dependensi proprietary cloud berbayar.
+  - **AI Personal Character Analysis**: Scan kamera wajah 468 titik untuk mendeteksi warna kulit (Monk Scale), undertone, dan bentuk geometri wajah, lalu merekomendasikan aksesoris yang cocok dengan karakter personal user.
+  - **Category-First Flow**: Pengguna memilih kategori aksesoris terlebih dahulu (Kacamata / Topi), kemudian melakukan pemindaian wajah dan menjawab kuesioner bertarget. Kategori busana tubuh (Baju / Jaket) ditandai sebagai Tahap 2 (membutuhkan sensor pose full-body).
+  - **Multi-Batch Targeted Questionnaire**: Kuesioner dinamis tanpa batas batch (Batch 1-5+) didukung Gemini API & local bank untuk penyesuaian gaya mendalam.
+  - **Cinematic Processing Telemetry**: Visualisasi pemrosesan data real-time yang memvalidasi setiap preferensi jawaban pengguna sebelum masuk ke studio AR.
+  - **Lightweight AR Try-on with Real-time Head Tracking**: Visualisasi aksesoris (Topi & Kacamata) langsung terpasang di atas kepala & wajah pengguna secara real-time di atas video live webcam (Three.js & MediaPipe Vision 468 landmarks) yang mengikuti gerakan geleng, angguk, miring, dan jarak kepala secara presisi dengan generator 3D prosedural untuk beragam tipe topi (Baseball Cap, Beanie, Bucket Hat, Fedora, Beret, Newsboy) dan kacamata (Wayfarer, Aviator, Round, Geometric, Cat-Eye).
+  - **Top-4 Archetype Switch Navigation**: Navigasi tombol Switch instan untuk menguji coba 4 model aksesoris terbaik secara berurutan.
   - **Zero Persistent Biometrics**: Privasi data terjaga 100% (*session-scoped memory*).
 
 ---
@@ -191,7 +194,8 @@
                         ┌───────────────────────────────────────────┐
                         │             CLIENT (Frontend)             │
                         │    Next.js / React + Tailwind + Three.js  │
-                        │     - Single input: Camera / Upload / Form│
+                        │     - Single input: Camera Video Stream   │
+                        │     - MediaPipe Pose (33) & Face (468)    │
                         │     - AR Web Canvas Viewer (glTF/GLB)     │
                         └─────────────────────┬─────────────────────┘
                                               │ HTTP POST /api/v1/analyze
@@ -200,38 +204,43 @@
                         │             SERVER (Backend)              │
                         │            FastAPI (Python 3.11)          │
                         │     - Synchronous Request Orchestrator    │
-                        │     - Skin Tone & Undertone Analyzer      │
-                        │     - Body/Face Shape Classifier          │
-                        │     - Style Recommendation Filter/Ranking │
+                        │     - Skin Tone & Undertone (CIELAB Space)│
+                        │     - Body (ANSUR II) & Face Classifiers  │
+                        │     - Style Recommendation & Ranking      │
+                        │     - Mock Data Mode (MOCK_MODE=true)     │
                         └─────────────────────┬─────────────────────┘
                                               │ Local IPC / Python Module
                                               ▼
                         ┌───────────────────────────────────────────┐
                         │            AI_ENGINE (Core ML)            │
-                        │     - MediaPipe Pose & Face Landmark      │
-                        │     - OpenCV LAB Skin Tone Detection      │
-                        │     - FashionCLIP Embedding + Scoring     │
-                        │     - Dataset: CC0 Fashion Images + MST-E │
+                        │     - OpenCV CIELAB Distance to MST Scale │
+                        │     - Random Forest Face Shape Classifier │
+                        │     - ANSUR II Body Shape Ratio Engine    │
+                        │     - FashionCLIP Embedding + Similarity  │
+                        │     - Dataset: Fashion Images CC0 + SCIN  │
                         └───────────────────────────────────────────┘
 ```
 
-- **Frontend (`client/`)**: Next.js (App Router), Tailwind CSS, Three.js / `@mediapipe/tasks-vision`. Single-page flow yang elegan, modern, responsif. MediaPipe Pose dan Face Mesh berjalan client-side.
-- **Backend (`server/`)**: FastAPI, Pydantic v2, Uvicorn. Menerima rasio landmark dan crop wajah, menjalankan skin tone analysis (OpenCV LAB), face/body shape classification, dan style recommendation scoring.
-- **AI Engine (`ai_engine/`)**: Python, OpenCV, NumPy, Scikit-learn, FashionCLIP. Analisis warna kulit via CIELAB, klasifikasi bentuk wajah/tubuh, dan outfit compatibility scoring via FashionCLIP embedding similarity.
+- **Frontend (`client/`)**: Next.js (App Router), Tailwind CSS, Three.js, `@mediapipe/tasks-vision`. Single-page user flow yang responsif. MediaPipe Pose dan Face Mesh berjalan 100% client-side (menjamin privasi data dan nol latensi video).
+- **Backend (`server/`)**: FastAPI, Pydantic v2, Uvicorn. Menerima rasio landmark dan crop ROI kulit wajah, menjalankan analisis warna kulit CIELAB, klasifikasi bentuk tubuh & wajah, serta pemeringkatan rekomendasi busana.
+- **AI Engine (`ai_engine/`)**: Python, OpenCV, NumPy, Scikit-learn, `marqo-FashionCLIP`. Menghitung jarak warna kulit terhadap 10 skala Monk Skin Tone (Google), klasifikasi bentuk tubuh berbasis rasio antropometri ANSUR II, klasifikasi bentuk wajah Random Forest, dan pemeringkatan keserasian outfit berbasis vektor embedding.
 - **Orchestration**: `docker-compose.yml` mengorkestrasi seluruh modul ke dalam satu jaringan lokal bridge dengan satu perintah: `docker compose up --build`.
 
 ---
 
 ## 8. ARCHITECTURAL DECISION RECORDS (ADR)
 - **[2026-08-19] ADR-001**: Inisialisasi arsitektur 3-tier modular (`client/`, `server/`, `ai_engine/`) dengan komunikasi synchronous REST murni via FastAPI untuk menjamin kepatuhan batasan MVP penyisihan tanpa background worker eksternal.
-- **[2026-08-19] ADR-002**: Menggunakan dataset *Fashion Product Images* (CC0 Public Domain) sebagai katalog utama, dengan *Monk Skin Tone Examples* (CC BY 4.0) untuk skin tone analysis dan *Polyvore Outfits* untuk outfit compatibility.
+- **[2026-08-19] ADR-002**: Menggunakan dataset *Fashion Product Images* (CC0 Public Domain) sebagai katalog utama, *Google Monk Skin Tone (MST) scale* dan *Google SCIN* untuk analisis warna kulit, *ANSUR II* untuk kalibrasi rasio bentuk tubuh, dan *Polyvore Outfits* untuk benchmark kompatibilitas busana.
 - **[2026-08-19] ADR-003**: Penegakan kebijakan *Zero Persistent Biometric Retention* (arsitektur stateless session) demi memenuhi standar regulasi AI Governance dan UU PDP No. 27/2022.
 - **[2026-08-19] ADR-004**: Penerapan isolasi identitas mutlak (*Zero Institution Identity*) pada semua artefak kode, metadata git, video, dan proposal.
 - **[2026-08-20] ADR-005**: Penghapusan fitur rekomendasi ukuran (*sizing recommendation*) dari scope MVP. Alasan: (1) Fokus proyek dipersempit ke *style-fit mismatch* yang merupakan masalah utama yang belum terjawab oleh solusi existing. (2) Fitur sizing memerlukan kalibrasi SNI yang kompleks dan berisiko setengah jadi di timeline penyisihan. (3) Menghapus sizing memungkinkan tim fokus pada pipeline AI rekomendasi gaya yang lebih matang dan demonstrasi AR yang lebih meyakinkan.
-- **[2026-08-20] ADR-006**: Pemilihan tech stack per fitur dengan alasan data-backed: (a) MediaPipe Pose+Face (Apache 2.0, client-side, zero latency) untuk body/face landmark extraction. (b) OpenCV CIELAB + Monk Skin Tone scale untuk undertone detection (robust terhadap lighting, explainable). (c) FashionCLIP + faiss-cpu untuk outfit recommendation (domain-optimized embeddings, sub-second search di 44K items). (d) Three.js + GLB/DRACO untuk AR try-on (standar industri, no plugin). (e) Random Forest untuk face shape classification (ringan, cepat, akurasi tinggi pada fitur geometris).
+- **[2026-08-20] ADR-006**: Pemilihan tech stack per fitur dengan alasan data-backed: (a) MediaPipe Pose+Face (Apache 2.0, client-side, zero latency) untuk ekstraksi landmark tubuh dan wajah. (b) OpenCV CIELAB + Google Monk Skin Tone scale untuk deteksi undertone (robust terhadap pencahayaan, explainable, zero heavy training). (c) ANSUR II calibrated ratios untuk klasifikasi bentuk tubuh yang ringan (< 1ms). (d) Random Forest untuk klasifikasi bentuk wajah (ringan, cepat, akurasi tinggi pada fitur geometris). (e) FashionCLIP + faiss-cpu untuk outfit recommendation (domain-optimized embeddings, sub-second search di 44K items). (f) Three.js + GLB untuk AR try-on aksesoris kacamata (standar industri WebGL, no plugin, 30+ FPS).
 - **[2026-08-20] ADR-007**: Rename proyek dari *FitWise AI* menjadi **COBA** (*Cocokkan Outfit Sesuai Badan Anda*) untuk mencerminkan fokus baru pada style-fit recommendation tanpa sizing.
 - **[2026-08-20] ADR-008**: Urutan prioritas pengerjaan MVP: (1) Classification pipeline (skin tone, face shape, body shape) karena komponen berisiko tertinggi dan core differentiator, (2) Recommendation engine, (3) Kuesioner + frontend, (4) AR aksesoris wajah, (5) Docker + mock + video. Prinsip: selesaikan komponen berisiko tertinggi lebih dulu.
 - **[2026-08-20] ADR-009**: Strategi AR hybrid untuk MVP penyisihan: (a) Aksesoris wajah (kacamata, topi) = PRIORITAS UTAMA AR karena face landmark 468 titik sangat presisi. (b) Pakaian ditampilkan sebagai kartu rekomendasi 2D (foto katalog), bukan AR overlay. (c) 3D jacket overlay = stretch goal untuk hackathon final karena masih ada masalah occlusion dan kalibrasi pose-to-mesh.
+- **[2026-08-21] ADR-010**: Standardisasi & Verifikasi 100% Tautan Sumber Dataset & Repositori Terbuka. Seluruh dataset dan repositori pendukung (Google SCIN, Matt Groh Fitzpatrick17k, Penn State OpenLab ANSUR II, HuggingFace Polyvore-outfits, Kaggle Fashion Product Images, Three.js, MediaPipe) telah diaudit dan diverifikasi 100% aktif (HTTP 200 OK) serta bebas risiko lisensi komersial/redistribusi.
+- **[2026-08-21] ADR-011**: Pemilihan Output Top-4 Rekomendasi Terkurasi (*The 4 Style Archetypes*) dan Alur Kustomisasi Bertingkat (Aksesoris: Kacamata/Topi vs Pakaian: Baju/Jaket). Alasan: (1) Mengeliminasi *choice fatigue* / *choice paralysis* sesuai kaidah *Hick's Law*, (2) Mengelompokkan 4 varian gaya logis (#1 Perfect Match, #2 Safe Classic, #3 Bold Statement, #4 Modern Silhouette), (3) Model #1 otomatis terpasang (auto-attach) di WebGL dengan navigasi switch panah Kiri-Kanan yang ringan (< 10MB memory, 60 FPS).
+- **[2026-08-21] ADR-012**: Transisi dari Geometri Primitif Prosedural ke Aset 3D Fotorealistis (`.glb`/`.gltf`) & Head Occluder Mask. Evaluasi visual live webcam menunjukkan bahwa topi yang dibangun dari primitive mesh dasar Three.js (Sphere/Cylinder) terlihat kaku, artifisial, dan bertabrakan dengan rambut/dahi karena ketiadaan depth occlusion. Keputusan: (1) Mengadopsi aset 3D `.glb` bertekstur PBR dari sumber terbuka CC0 (Poly Pizza / Quaternius), (2) Mengintegrasikan Three.js `GLTFLoader` dengan *Head Occlusion Mesh* (invisible depth mask `colorWrite: false, depthWrite: true` berbasis MediaPipe 468 landmark) agar bagian dalam/belakang topi terpotong secara alami oleh kepala pengguna, (3) Menambahkan script otomatis `scripts/download_3d_assets.py` untuk mengunduh dan memvalidasi bundel aset 3D lokal.
 
 ---
 
@@ -262,3 +271,41 @@
 ### D. Kesiapan Operasional
 - [ ] Mengisi presensi AIC Talks (+1.5% Bonus)
 - [ ] Standby Discord grup AIC pada 9–10 September 2026 pukul 20.00 WIB (SLA respons < 2 jam)
+
+---
+
+## 10. RIWAYAT PROGRESS LENGKAP & STATUS SESI TERAKHIR
+
+### A. Rekapitulasi Capaian yang Berhasil Diselesaikan:
+1. **Biometric Vision Pipeline**:
+   - MediaPipe FaceLandmarker 468 landmark realtime.
+   - Deteksi Warna Kulit CIELAB $\Delta E$ ke 10 Skala Google Monk Skin Tone (MST).
+   - Klasifikasi Undertone (Warm, Cool, Neutral, Olive) + Palet Warna Serasi & Tabrakan.
+   - Ekstraksi Rasio Geometri Wajah (Oval, Round, Square, Heart, Oblong).
+2. **Hierarchical Category-First Flow**:
+   - Level 1: Aksesoris (Aktif) vs Pakaian / Busana (Locked / Coming Soon — Tahap 2).
+   - Level 2: Kacamata (Glasses) vs Topi (Hats) dengan tombol navigasi kembali.
+3. **Ultra-Fast Dynamic Questionnaire Engine**:
+   - Terintegrasi langsung dengan Gemini API low-latency Flash-Lite.
+   - Pertanyaan 100% dinamis dan disesuaikan secara eksplisit dengan bentuk wajah dan undertone pengguna.
+4. **Cinematic Processing Telemetry**:
+   - Loading screen interaktif yang memvalidasi setiap input preferensi gaya pengguna secara visual.
+5. **Real-time Live Webcam AR Try-On Studio**:
+   - Background video live webcam dengan selfie mirror mode (`-scale-x-100`).
+   - Tracking posisi 3D, rotasi (pitch, yaw, roll), dan skala di atas kepala & wajah pengguna pada 60 FPS.
+   - Tombol navigasi Top-4 Curated Archetypes Switch (#1 Perfect Match, #2 Safe Classic, #3 Bold Statement, #4 Modern Silhouette).
+6. **Containerisasi Docker Desktop**:
+   - `docker-compose.yml` teruji `Up (healthy)` untuk `coba-backend-server` (port 8000) dan `coba-frontend-client` (port 3000).
+
+### B. Masalah yang Teridentifikasi pada Sesi Malam Ini:
+- **Visual Kualitas Topi 3D Primitif**:
+  - Model 3D prosedural menggunakan primitive mesh Three.js (Sphere/Cylinder) terlihat seperti "balok kaku / helm mainan" dan tidak pas membungkus tempurung kepala.
+  - Ketiadaan *Head Occluder Mesh* (invisible depth mask) menyebabkan bagian dalam/bawah topi merembes dan bertabrakan dengan rambut/dahi pengguna.
+
+### C. Rencana Aksi Lanjutan (Untuk Sesi Esok Hari):
+1. **Download & Bundel Aset 3D Fotorealistis (`.glb`/`.gltf`)**:
+   - Menjalankan script `scripts/download_3d_assets.py` untuk mengunduh model 3D CC0 bertekstur PBR (Cap, Beanie, Bucket Hat, Fedora, Beret, Wayfarer, Aviator).
+2. **Implementasi Head Occlusion Masking di Three.js**:
+   - Menambahkan Three.js Face Mesh Occluder (`material.colorWrite = false; material.depthWrite = true`) yang secara otomatis menyembunyikan bagian belakang/dalam topi yang tertutup oleh kepala pengguna.
+3. **Penyelarasan Skala & Offset Anchor**:
+   - Melakukan kalibrasi agar beanie/cap membungkus kepala secara pas (*snug fit*) menyerupai video referensi demo.

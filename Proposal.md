@@ -35,114 +35,74 @@ Solusi parsial sudah ada. Virtual try-on untuk kacamata, kuis gaya dari beberapa
 
 ## Solusi
 
-COBA (Cocokkan Outfit Sesuai Badan Anda) adalah platform web yang intinya adalah **AI rekomendasi pakaian berdasarkan karakter personal**, didukung oleh **AR try-on** sebagai alat validasi visual. Alurnya terdiri dari tiga langkah.
+COBA (Cocokkan Outfit Sesuai Badan Anda) adalah platform web yang memadukan **AI rekomendasi gaya busana berbasis karakter personal** dengan **AR try-on 3D interaktif** sebagai sarana validasi visual langsung di peramban. Alur sistem terstruktur dalam lima tahapan yang mulus:
 
-1. **Scan tubuh lewat kamera.** Sistem membaca bentuk wajah, warna kulit, rambut, gender, dan proporsi tubuh. Ada penanda virtual di layar sebagai pemandu posisi berdiri, dan tinggi badan dihitung dari kamera. Berat badan diisi manual.
-2. **Kuesioner bertahap.** Pertanyaan diberikan per batch, misalnya formal atau non-formal, bahan menyerap keringat atau tidak, nyaman pakai aksesoris atau tidak, suka oversize atau tidak. Setiap batch selesai, rekomendasi langsung keluar. Makin banyak batch dijawab dan makin banyak feedback cocok atau tidak cocok yang diberikan, makin tajam hasilnya.
-3. **Mode AR (pendukung).** Setelah AI memberikan rekomendasi, pembeli bisa langsung melihat pakaian itu ditampilkan di tubuhnya sendiri lewat kamera. Ada tombol next untuk ganti item rekomendasi. Berbeda dengan pendekatan yang menampilkan foto orang lain, di sini pembeli melihat dirinya sendiri memakai pakaian tersebut.
+1. **Pemindaian Karakter Personal (Camera Scan)**: Sistem membaca fitur visual pengguna secara realtime di peramban (warna kulit dan undertone, bentuk wajah untuk aksesoris, dan rasio proporsi tubuh). Tinggi badan dapat diisi atau dikalibrasi, dan berat badan dimasukkan sebagai preferensi tambahan.
+2. **Pemilihan Domain & Sub-Kategori**: Pengguna memilih fokus eksplorasi gaya awal:
+   - **Kategori Aksesoris**: Pilihan sub-kategori kacamata atau topi.
+   - **Kategori Pakaian**: Pilihan sub-kategori baju/kaos atau jaket/outerwear.
+3. **Kuesioner Cerdas Bertarget (Targeted Questionnaire)**: Pengguna menjawab pertanyaan ringkas berbasis batch yang spesifik untuk sub-kategori terpilih (kesempatan acara/occasion seperti formal atau kasual, preferensi siluet fit seperti oversized atau slim, serta mood palet warna).
+4. **Kurasi Cerdas Top-4 Rekomendasi (Curated Archetypes)**: Mesin AI menghasilkan 4 opsi rekomendasi terbaik yang telah diselaraskan dengan undertone kulit dan bentuk tubuh/wajah (Pilihan #1: *The Perfect Match*, Pilihan #2: *Safe Classic/Versatile*, Pilihan #3: *Bold Statement*, Pilihan #4: *Modern Silhouette*). Pendekatan 4 pilihan ini dirancang khusus untuk memotong kelelahan memilih (*choice fatigue*) tanpa membatasi variasi.
+5. **Validasi Visual AR Otomatis & Navigasi Switch (Auto-Attach & Switch)**: Model 3D rekomendasi nomor 1 otomatis langsung terpasang pada wajah atau tubuh pengguna secara realtime 3D. Jika pengguna ingin mencoba variasi lain, tersedia tombol navigasi panah Kiri dan Kanan (*Switch*) untuk berganti ke model rekomendasi berikutnya secara instan.
 
-Output menyesuaikan batch yang diselesaikan, bisa outfit lengkap, atasan saja, bawahan saja, atau aksesoris saja. Semua jawaban dan riwayat feedback hanya hidup selama sesi berjalan dan dihapus otomatis begitu sesi berakhir.
-
-Untuk pembeli, ini menghilangkan tebak-tebakan gaya. Untuk penjual, ini menggantikan pekerjaan manual merekomendasikan outfit ke pembeli satu per satu.
+Semua data biometrik dan respons kuesioner hanya disimpan selama sesi peramban berlangsung (*session-scoped*) dan otomatis terhapus saat sesi berakhir, menjamin privasi pengguna 100 persen.
 
 ---
 
-# Hasil riset dataset dan aset 3D
+# Metodologi & Hasil Riset Dataset / Model AI
 
-## A. Dataset katalog produk (katalog utama)
+## A. Dataset Katalog Produk Utama
 
-| Dataset | Isi | Lisensi | Link |
-| --- | --- | --- | --- |
-| **Fashion Product Images** | 44.000 produk, `styles.csv` berisi masterCategory, subCategory, articleType, **baseColour**, season, dan kolom **usage** (Formal, Casual, Sports) | CC0 Public Domain | [versi besar](https://www.kaggle.com/datasets/paramaggarwal/fashion-product-images-dataset), [versi kecil 60x80](https://www.kaggle.com/datasets/paramaggarwal/fashion-product-images-small) |
-| **Fashionpedia** | 48.825 gambar, 27 kategori pakaian, 294 atribut halus (material, pattern, style), mask segmentasi | Anotasi CC BY 4.0 | [download](https://fashionpedia.github.io/home/Fashionpedia_download.html), [lisensi](https://fashionpedia.github.io/home/data_license.html) |
-| **Polyvore Outfits** | 21.889 outfit untuk belajar kompatibilitas antar item (compatibility prediction, fill-in-the-blank) | CC BY 4.0 (versi HuggingFace) | [github](https://github.com/xthan/polyvore-dataset), [HuggingFace](https://huggingface.co/datasets/OpenDataLab/Polyvore_Outfits) |
-| **Marqo deepfashion-multimodal** | Data gambar plus teks siap pakai untuk model retrieval multimodal | Terbuka di HF | [huggingface](https://huggingface.co/datasets/Marqo/deepfashion-multimodal) |
+| Dataset | Isi & Metadata Kunci | Lisensi | Link Akses Terverifikasi |
+| :--- | :--- | :--- | :--- |
+| **Fashion Product Images (Full)** | 44.000 produk, `styles.csv` berisi masterCategory, subCategory, articleType, **baseColour**, season, dan kolom **usage** (Formal, Casual, Sports, Ethnic) | **CC0 Public Domain** | [Kaggle Dataset](https://www.kaggle.com/datasets/paramaggarwal/fashion-product-images-dataset) |
+| **Fashion Product Images (Small)** | 44.000 produk versi thumbnail terkompresi untuk pengujian lokal cepat | **CC0 Public Domain** | [Kaggle Dataset Small](https://www.kaggle.com/datasets/paramaggarwal/fashion-product-images-small) |
+| **Fashionpedia** | 48.825 gambar, 27 kategori pakaian, 294 atribut halus (pola, material, siluet), anotasi segmentasi | CC BY 4.0 | [Fashionpedia Download](https://fashionpedia.github.io/home/Fashionpedia_download.html) |
+| **Polyvore Outfits** | 21.889 set outfit lengkap untuk melatih dan mengevaluasi kompatibilitas antar item busana | CC BY 4.0 | [HuggingFace Dataset](https://huggingface.co/datasets/owj0421/polyvore-outfits), [GitHub Repo](https://github.com/xthan/polyvore-dataset) |
+| **Marqo DeepFashion Multimodal** | Data multimodal teks-gambar untuk pencarian dan pemeringkatan busana berbasis embedding | Terbuka di HF | [HuggingFace Dataset](https://huggingface.co/datasets/Marqo/deepfashion-multimodal) |
 
-Fashion Product Images tetap menjadi katalog utama. Kolom `usage` sudah membedakan formal dan casual, kolom `baseColour` bisa langsung dicocokkan ke palet warna undertone user, dan `masterCategory` sudah memisahkan Apparel dari Accessories. Kuesioner batch bisa langsung dipetakan ke kolom yang ada tanpa bikin label baru dari nol.
+Katalog **Fashion Product Images** dipilih sebagai katalog utama karena lisensi CC0 Public Domain yang bebas risiko hukum untuk repositori publik, serta kelengkapan kolom `usage` (formal/casual) dan `baseColour` yang langsung dapat dipetakan ke filter kuesioner dan palet warna undertone pengguna.
 
-**Untuk aksesoris wajah:**
+---
 
-- [Glasses and Coverings](https://www.kaggle.com/datasets/mantasu/glasses-and-coverings) — 4 kelas (polos, kacamata, kacamata hitam, penutup wajah), sudah aligned dan center-cropped
-- [Face Attributes Grouped](https://www.kaggle.com/datasets/mantasu/face-attributes-grouped) — 5 grup atribut wajah termasuk headwear, 1.200 gambar per sub-kategori
+## B. Dataset Analisis Karakter Personal
 
-## B. Dataset untuk analisis karakter personal
+### 1. Deteksi Warna Kulit & Undertone
+- **Google Monk Skin Tone (MST) Scale**: Skala 10 tingkat representasi warna kulit manusia yang inklusif ([skintone.google](https://skintone.google/)). Nilai warna acuan standar (LAB/RGB/HEX) digunakan untuk menghitung jarak Euclidean di ruang warna CIELAB, kemudian dipetakan ke 4 kategori undertone (Warm, Cool, Neutral, Olive).
+- **Google SCIN Dataset**: 10.000+ citra dermatologis berlabel MST dan Fitzpatrick ([GitHub Repo](https://github.com/google-research-datasets/scin)).
+- **Fitzpatrick17k**: 16.577 citra medis berlabel Fitzpatrick Skin Type I–VI untuk validasi fairness ([GitHub Repo](https://github.com/mattgroh/fitzpatrick17k)).
 
-### Skin tone dan undertone
+### 2. Klasifikasi Bentuk Tubuh (Body Shape)
+- **ANSUR II (US Army Anthropometry)**: Data antropometri presisi dari 6.000+ subjek dengan 93 dimensi ukuran ([Penn State OpenLab](https://www.openlab.psu.edu/ansur2/), [GitHub Repo](https://github.com/senihberkay/US-Army-ANSUR-II)). Digunakan untuk mengkalibrasi rasio landmark (Shoulder, Waist, Hip) yang diekstrak dari MediaPipe Pose ke 5 bentuk tubuh (Hourglass, Pear, Apple, Rectangle, Inverted Triangle).
+- **BodyM (AWS Open Data)**: 8.978 siluet tubuh berukuran cm ([AWS Open Data Registry](https://registry.opendata.aws/bodym/)).
 
-| Dataset | Jumlah Data | Isi | Lisensi | Link |
-| --- | --- | --- | --- | --- |
-| **Monk Skin Tone Examples (MST-E)** | 1.515 gambar | Foto berlabel 10-point Monk Skin Tone scale, dikurasi Google dan TONL | CC BY 4.0 | [skintone.google](https://skintone.google), [GitHub](https://github.com/google-research-datasets/monk-skin-tone-examples) |
-| **Fitzpatrick17k** | 16.577 gambar | Gambar berlabel Fitzpatrick Skin Type (I sampai VI), untuk augmentasi dan validasi keragaman warna kulit | CC BY-NC-SA 4.0 | [Kaggle](https://www.kaggle.com/datasets/thomasdubail/fitzpatrick17k-photos-only), [HuggingFace](https://huggingface.co/datasets/mattmdjaga/fitzpatrick17k) |
+### 3. Klasifikasi Bentuk Wajah (Face Shape)
+- **Face Shape Dataset**: 5.000 citra wajah terbagi ke 5 bentuk (Heart, Oblong, Oval, Round, Square) ([Kaggle Dataset](https://www.kaggle.com/datasets/niten19/face-shape-dataset)).
+- **Face Shape Geometric Features**: Ekstraksi 468 titik landmark via MediaPipe Face Mesh yang diklasifikasikan menggunakan model Random Forest ringan ([GitHub dsmlr/faceshape](https://github.com/dsmlr/faceshape), [GitHub akashchoudhary436/Face-Shape-Detection](https://github.com/akashchoudhary436/Face-Shape-Detection)).
 
-MST-E menjadi ground truth referensi utama. Dari 10-point scale, kami petakan ke empat kategori undertone (warm, cool, neutral, olive) menggunakan rule-based mapping di LAB color space. Setiap undertone dipasangkan ke palet warna pakaian yang cocok dan yang sebaiknya dihindari berdasarkan teori seasonal color analysis.
+---
 
-### Body shape classification
+## C. Aset 3D & Repositori Implementasi AR
 
-| Dataset | Jumlah Data | Isi | Lisensi | Link |
-| --- | --- | --- | --- | --- |
-| **Body Measurements Dataset** | 6.068 baris | Pengukuran tubuh (chest, waist, hips, height, weight) plus label body shape (Hourglass, Pear, Apple, Rectangle, Inverted Triangle) | CC0 | [Kaggle](https://www.kaggle.com/datasets/yasserh/body-measurements-dataset) |
-| **BodyM** | 8.978 siluet (2.505 subjek) | Siluet depan dan samping, 14 ukuran tubuh dalam cm, tinggi, berat | AWS Open Data | [AWS Registry](https://registry.opendata.aws/bodym/) |
+### Prioritas MVP Penyisihan (Aksesoris Wajah Realtime):
+Aksesoris wajah (kacamata dan topi) memiliki presisi visual tertinggi karena kestabilan 468 titik landmark wajah, berjalan 100% di browser pengguna tanpa kebutuhan GPU server:
+- [Virtual-Glasses-Try-on](https://github.com/bensonruan/Virtual-Glasses-Try-on) — Implementasi Three.js dan Face Mesh realtime
+- [mediapipe-face-effects](https://github.com/breathingcyborg/mediapipe-face-effects) — Overlay 3D shader di browser
+- [Google MediaPipe Vision](https://github.com/google-ai-edge/mediapipe) — Framework vision Apache 2.0
+- [Three.js Engine](https://threejs.org/docs/) — Engine rendering 3D WebGL
 
-Klasifikasi body shape menggunakan rasio landmark tubuh (shoulder width, hip width, waist approximation) yang diekstrak dari MediaPipe Pose di browser. Body Measurements Dataset (CC0) digunakan untuk melatih dan memvalidasi threshold rasio.
+### Sumber Model 3D Terverifikasi:
+- **Quaternius Outfits** (CC0) — [quaternius.com](https://quaternius.com/)
+- **Poly Pizza** (CC0 low-poly kacamata & aksesoris) — [poly.pizza](https://poly.pizza/)
+- **Sketchfab Clothing Collection** (CC BY) — [sketchfab.com/tags/clothing](https://sketchfab.com/tags/clothing)
+- **TripoSR & TRELLIS** (MIT) — Generator aset 3D otomatis dari foto katalog 2D ([GitHub TripoSR](https://github.com/VAST-AI-Research/TripoSR), [GitHub TRELLIS](https://github.com/microsoft/TRELLIS))
 
-### Face shape classification
+---
 
-| Dataset | Jumlah Data | Isi | Lisensi | Link |
-| --- | --- | --- | --- | --- |
-| **Face Shape Dataset** | 5.000 gambar | Foto dikategorikan ke 5 kelas (Heart, Oblong, Oval, Round, Square), 1.000 per kelas | Terbuka (Kaggle) | [Kaggle](https://www.kaggle.com/datasets/niten19/face-shape-dataset) |
-| **Face Shape + Dlib Features** | 5.000 gambar + CSV fitur | Dataset yang sama tapi sudah di-precompute fitur geometris via Dlib | Terbuka (Kaggle) | [Kaggle](https://www.kaggle.com/datasets/niten19/face-shape-classification-w-cv2-and-dlib-features) |
+## D. Repositori Model AI Rekomendasi Busana
 
-MediaPipe Face Mesh (468 titik landmark) di browser mengekstrak rasio wajah secara realtime. Rasio ini diklasifikasikan oleh Random Forest yang dilatih pada Face Shape Dataset.
-
-## C. Aset 3D untuk AR
-
-### Tier 1 — CC0, paling aman
-
-| Sumber | Isi | Format | Link |
-| --- | --- | --- | --- |
-| **Quaternius** | Modular Character Outfits, 12 outfit dari 62 part, sudah rigged humanoid | FBX, glTF | [quaternius.com](https://quaternius.com/), [outfit pack](https://quaternius.com/packs/modularcharacteroutfitsfantasy.html) |
-| **Poly Pizza** | 10.600+ model low poly, banyak topi dan kacamata, punya API | OBJ, FBX, GLTF | [poly.pizza](https://poly.pizza/), [API docs](https://poly.pizza/docs/api/v1.1) |
-| **Sketchfab koleksi CC0** | Ribuan model public domain | GLB, GLTF | [koleksi plaggy](https://sketchfab.com/plaggy/collections/cc0-public-domain-free-models-c1af6539a9ee49f4b3d51fabd6c25a85), [Clothing And Character Kit](https://sketchfab.com/3d-models/clothing-and-character-kit-10-cc0-7c733dceb2e04c4fb7e7dbd85316c1e7) |
-
-### Tier 2 — CC BY, wajib cantumkan kredit
-
-- [Sketchfab tag clothing](https://sketchfab.com/tags/clothing) (filter Downloadable + CC Attribution)
-- Kacamata: [3D Glasses Optimized for Virtual Try-on](https://sketchfab.com/3d-models/3d-glasses-optimized-for-virtual-try-on-47c0b55f61244737a998efdd0f0aa9a0)
-
-### Tier 3 — Generate sendiri dari foto katalog (strategi utama)
-
-| Model | Lisensi | Catatan |
-| --- | --- | --- |
-| **TripoSR** | **MIT**, bebas komersial | Input foto CC0 diubah jadi GLB, butuh sekitar 6 GB VRAM. [github](https://github.com/VAST-AI-Research/TripoSR) |
-| **TRELLIS** | MIT | Kualitas lebih tinggi tapi lebih berat. [github](https://github.com/microsoft/TRELLIS) |
-
-Lisensi bersih karena input CC0 dan model MIT. Pipeline ini jadi bukti kerja preprocessing yang bisa dinilai juri.
-
-### Yang jangan dipakai
-
-- **DeepFashion dan DeepFashion2.** Lisensinya non-commercial research only dan [melarang redistribusi](https://mmlab.ie.cuhk.edu.hk/projects/DeepFashion.html). Repo public, risikonya nyata.
-- **Ready Player Me.** Layanannya [berhenti 31 Januari 2026](https://genies.com/blog/ready-player-me-discontinued-alternatives).
-- **Free3D, CGTrader free, Meshy gallery.** Lisensi per-model, sering tidak jelas.
-- **8th Wall dan Snap Lens Studio.** Tertutup dan tidak bisa docker compose.
-
-## D. Referensi implementasi AR dan model ML
-
-**AR aksesoris wajah (prioritas tertinggi untuk demo):**
-- [bensonruan/Virtual-Glasses-Try-on](https://github.com/bensonruan/Virtual-Glasses-Try-on) — Three.js plus Facemesh, ada demo live
-- [breathingcyborg/mediapipe-face-effects](https://github.com/breathingcyborg/mediapipe-face-effects) — MediaPipe plus Three.js, jalan realtime di CPU lawas
-- [Softwear](https://github.com/TechAngelX/softwear) — React + Three.js + MediaPipe untuk body tracking full
-
-**Model rekomendasi outfit:**
-- [patrickjohncyh/fashion-clip](https://github.com/patrickjohncyh/fashion-clip) — FashionCLIP, CLIP fine-tuned untuk domain fesyen
-- [marqo-ai/marqo-FashionCLIP](https://github.com/marqo-ai/marqo-FashionCLIP) — Versi optimasi untuk e-commerce
-- [Dressify models](https://huggingface.co/Stylique/dressify-models) — Pre-trained outfit compatibility scorer
-
-**Face shape classification:**
-- [Face-Shape-Detection](https://github.com/akashchoudhary436/Face-Shape-Detection) — MediaPipe + Random Forest
-
-**Skin tone analysis:**
-- [Monk Skin Tone scale](https://skintone.google) — 10-point scale dari Google
-- [MediaPipe Face Landmarker](https://developers.google.com/mediapipe/solutions/vision/face_landmarker) — 468 titik 3D wajah, Apache 2.0
+- [FashionCLIP](https://github.com/patrickjohncyh/fashion-clip) & [Marqo-FashionCLIP](https://github.com/marqo-ai/marqo-FashionCLIP) — Model embedding multimodal khusus domain ritel fesyen untuk pencarian keserasian gaya berbasis vektor.
+- [Dressify Models](https://huggingface.co/Stylique/dressify-models) — Pre-trained outfit compatibility scorer.
 
 ---
 
