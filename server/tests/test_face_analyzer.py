@@ -214,3 +214,54 @@ class TestNoseClassifier:
         assert out["label"] == "Greek (Mancung)"
         assert out["confidence"] <= 0.5
         assert out["rule"] == "fallback"
+
+
+def _eye(**over):
+    f = {
+        "ear_right": 0.33,
+        "ear_left": 0.32,
+        "canthal_tilt_right": 3.0,
+        "canthal_tilt_left": 3.0,
+        "eye_spacing_ratio": 0.35,
+    }
+    f.update(over)
+    return f
+
+
+class TestEyeShapeClassifier:
+    """Task 2.4 — Almond/Round/Cat-eye/Downturned via EAR + canthal tilt."""
+
+    def test_round_high_ear(self):
+        from ai_engine.models.face_analyzer import EyeShapeClassifier
+
+        out = EyeShapeClassifier.classify(_eye(ear_right=0.41, ear_left=0.41, canthal_tilt_right=2.0, canthal_tilt_left=2.0))
+        assert out["label"] == "Round (Bulat)"
+
+    def test_cat_eye_positive_tilt(self):
+        from ai_engine.models.face_analyzer import EyeShapeClassifier
+
+        out = EyeShapeClassifier.classify(_eye(canthal_tilt_right=12.0, canthal_tilt_left=12.0))
+        assert out["label"] == "Cat-eye (Mata Kucing)"
+
+    def test_downturned_negative_tilt(self):
+        from ai_engine.models.face_analyzer import EyeShapeClassifier
+
+        out = EyeShapeClassifier.classify(_eye(canthal_tilt_right=-10.0, canthal_tilt_left=-10.0))
+        assert out["label"] == "Downturned (Menurun)"
+
+    def test_almond_baseline(self):
+        from ai_engine.models.face_analyzer import EyeShapeClassifier
+
+        out = EyeShapeClassifier.classify(_eye())
+        assert out["label"] == "Almond (Almond)"
+        assert out["confidence"] >= 0.6
+
+    def test_invalid_features_fallback_almond(self):
+        from ai_engine.models.face_analyzer import EyeShapeClassifier
+
+        out = EyeShapeClassifier.classify(
+            _eye(ear_right=0.0, ear_left=0.0, canthal_tilt_right=0.0, canthal_tilt_left=0.0)
+        )
+        assert out["label"] == "Almond (Almond)"
+        assert out["confidence"] <= 0.5
+        assert out["rule"] == "fallback"

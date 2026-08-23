@@ -176,3 +176,63 @@ class NoseClassifier:
 def _conf(margin: float, base: float = 0.62, span: float = 0.30) -> float:
     """Confidence 0.62..0.92 berdasarkan margin relatif terhadap threshold."""
     return round(min(0.95, base + span * min(1.0, margin)), 2)
+
+
+# ------------------------------------------------------------------ #
+#  Eye Shape Classifier — 4 taksonomi (ADR-014)                      #
+#  Sinyal: EAR (eye aspect ratio, rata kanan-kiri) + canthal tilt    #
+#  (derajat; positif = sudut luar lebih tinggi).                     #
+# ------------------------------------------------------------------ #
+EYE_EAR_ROUND = 0.38
+EYE_TILT_UP = 8.0
+EYE_TILT_DOWN = -8.0
+
+
+class EyeShapeClassifier:
+    @staticmethod
+    def classify(f: Dict[str, float]) -> Dict[str, Any]:
+        ear_r = f.get("ear_right", 0.0) or 0.0
+        ear_l = f.get("ear_left", 0.0) or 0.0
+        tilt_r = f.get("canthal_tilt_right", 0.0) or 0.0
+        tilt_l = f.get("canthal_tilt_left", 0.0) or 0.0
+        ear = (ear_r + ear_l) / 2
+        tilt = (tilt_r + tilt_l) / 2
+
+        if ear_r == 0 and ear_l == 0 and tilt_r == 0 and tilt_l == 0:
+            return {"label": "Almond (Almond)", "label_id": "almond", "confidence": 0.45, "rule": "fallback"}
+
+        if tilt >= EYE_TILT_UP:
+            margin = (tilt - EYE_TILT_UP) / EYE_TILT_UP
+            return {
+                "label": "Cat-eye (Mata Kucing)",
+                "label_id": "cat_eye",
+                "confidence": _conf(margin),
+                "rule": f"canthal tilt +{tilt:.1f}° ≥ +{EYE_TILT_UP:.0f}° (ekstrim terangkat)",
+            }
+
+        if tilt <= EYE_TILT_DOWN:
+            margin = (EYE_TILT_DOWN - tilt) / abs(EYE_TILT_DOWN)
+            return {
+                "label": "Downturned (Menurun)",
+                "label_id": "downturned",
+                "confidence": _conf(margin),
+                "rule": f"canthal tilt {tilt:.1f}° ≤ {EYE_TILT_DOWN:.0f}° (ekstrim menurun)",
+            }
+
+        if ear > EYE_EAR_ROUND:
+            margin = (ear - EYE_EAR_ROUND) / EYE_EAR_ROUND
+            return {
+                "label": "Round (Bulat)",
+                "label_id": "round",
+                "confidence": _conf(margin),
+                "rule": f"EAR {ear:.2f} > {EYE_EAR_ROUND} (bukaan kelopak tinggi) dengan tilt netral",
+            }
+
+        straightness = 1.0 - min(1.0, abs(tilt) / EYE_TILT_UP)
+        almond_fit = 1.0 - min(1.0, abs(ear - 0.32) / 0.32)
+        return {
+            "label": "Almond (Almond)",
+            "label_id": "almond",
+            "confidence": round(0.62 + 0.25 * (0.6 * straightness + 0.4 * almond_fit), 2),
+            "rule": f"EAR {ear:.2f} moderat + tilt {tilt:.1f}° netral (rasio klasik almond)",
+        }
