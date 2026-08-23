@@ -189,6 +189,23 @@ class MockDataGenerator:
                 "jacket_recommendations": ["Belted Trench Coat", "Cropped Denim Jacket", "Tailored Blazer"],
                 "styling_advice": "Proporsi bahu dan pinggul seimbang dengan lekuk pinggang yang tegas."
             },
+            "skin_tone": {
+                "tone": "Tan",
+                "label_indonesian": "Tan (Sawo Matang)",
+                "monk_index": 6,
+                "monk_code": "MST-06",
+                "ita_deg": 69.3,
+                "undertone": "Warm",
+                "confidence": 0.9,
+                "rule": "nearest-dE MST-06 (dE=0.0)"
+            },
+            "gender": {
+                "label": "Pria (Male)",
+                "label_id": "male",
+                "confidence": 0.68,
+                "method": "landmark_ratio",
+                "rule": "skor maskulin +0.21"
+            },
             "nose": {"label": "Greek (Mancung)", "label_id": "greek", "confidence": 0.86, "rule": "bridge lurus + lebar moderat"},
             "eye": {"label": "Almond (Almond)", "label_id": "almond", "confidence": 0.88, "rule": "EAR moderat + tilt netral"},
             "brow": {"label": "Soft Curve (Lengkung Lembut)", "label_id": "soft_curve", "confidence": 0.85, "rule": "arch ratio moderat"},

@@ -130,6 +130,22 @@ class QualityIn(BaseModel):
     face_width_ratio: float
 
 
+class SkinLabIn(BaseModel):
+    """LAB kulit rata-rata temporal dari klien (angka — tanpa gambar, UU PDP)."""
+    l: float
+    a: float
+    b: float
+    std_l: Optional[float] = None
+
+
+class GenderFeaturesIn(BaseModel):
+    """Fitur dimorfisme seksual turunan landmark untuk GenderEstimator."""
+    jaw_to_cheek: float
+    brow_to_eye: float
+    lip_to_face_width: float
+    face_aspect: float
+
+
 class LandmarkAnalysisRequest(BaseModel):
     """Payload fitur turunan dari 478 landmark — angka saja, tanpa gambar (UU PDP)."""
 
@@ -139,6 +155,8 @@ class LandmarkAnalysisRequest(BaseModel):
     eye_features: EyeFeaturesIn
     brow_features: BrowFeaturesIn
     quality: QualityIn
+    skin_lab: Optional[SkinLabIn] = None
+    gender_features: Optional[GenderFeaturesIn] = None
 
 
 class ClassificationOut(BaseModel):
@@ -172,14 +190,35 @@ class NarrativeOut(BaseModel):
     tips: List[str] = []
 
 
+class SkinToneOut(BaseModel):
+    """Output terstandarisasi 1 dari 3: warna kulit (bucket 5 kategori)."""
+    tone: str  # Fair | Light | Medium | Tan | Dark
+    label_indonesian: str
+    monk_index: Optional[int] = None
+    monk_code: Optional[str] = None
+    ita_deg: Optional[float] = None
+    undertone: Optional[str] = None  # sinyal internal recommender, bukan kartu UI utama
+    confidence: float
+
+
+class GenderOut(BaseModel):
+    """Output terstandarisasi 3 dari 3: gender dari rasio landmark."""
+    label: str  # "Pria (Male)" | "Wanita (Female)"
+    label_id: str  # male | female
+    confidence: float
+    method: str = "landmark_ratio"
+    rule: Optional[str] = None
+
+
 class LandmarkAnalysisMeta(BaseModel):
-    engine_version: str = "2.0.0"
+    engine_version: str = "2.1.0"
     source: str = "engine"  # "engine" | "mock"
 
 
 class LandmarkAnalysisResponse(BaseModel):
     face_shape: FaceShapeMultiOut
-    body_shape: Optional[BodyShapeResponse] = None
+    skin_tone: Optional[SkinToneOut] = None
+    gender: Optional[GenderOut] = None
     nose: ClassificationOut
     eye: ClassificationOut
     brow: ClassificationOut

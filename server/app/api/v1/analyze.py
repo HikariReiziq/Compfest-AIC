@@ -36,6 +36,8 @@ from ...schemas import (
     MeasurementsIn,
     PillarOut,
     NarrativeOut,
+    SkinToneOut,
+    GenderOut,
     BodyLandmarkAnalysisRequest,
     BodyAnalysisResponse,
     BodyShapeClassificationOut,
@@ -220,14 +222,15 @@ def _landmarks_mock_response() -> LandmarkAnalysisResponse:
     preset = MockDataGenerator.get_preset("indonesian_multi_dim")
     return LandmarkAnalysisResponse(
         face_shape=FaceShapeMultiOut(**preset["face_shape"]),
-        body_shape=BodyShapeResponse(**preset["body_shape"]),
+        skin_tone=SkinToneOut(**preset["skin_tone"]),
+        gender=GenderOut(**preset["gender"]),
         nose=ClassificationOut(**preset["nose"]),
         eye=ClassificationOut(**preset["eye"]),
         brow=ClassificationOut(**preset["brow"]),
         measurements=MeasurementsIn(**preset["measurements"]),
         pillars=[PillarOut(**p) for p in preset["pillars"]],
         narrative=NarrativeOut(**preset["narrative"]),
-        meta=LandmarkAnalysisMeta(engine_version="2.0.0", source="mock"),
+        meta=LandmarkAnalysisMeta(engine_version="2.1.0", source="mock"),
         is_mock=True,
     )
 
@@ -237,10 +240,12 @@ def analyze_landmarks(
     request: LandmarkAnalysisRequest,
     x_mock_data: Optional[str] = Header(None, alias="X-Mock-Data"),
 ):
-    """Multi-dimensional landmark analysis (ADR-014).
+    """Multi-dimensional landmark analysis (ADR-014) — biometrik 3-param.
 
-    Payload hanya berisi fitur turunan (angka) dari 478 landmark MediaPipe —
-    tidak pernah gambar wajah (kepatuhan UU PDP No. 27/2022 by design).
+    Output utama: skin_tone (bucket 5 kategori dari LAB temporal), face_shape
+    (6 kelas), gender (rasio dimorfisme). Payload hanya berisi fitur turunan
+    (angka) dari 478 landmark MediaPipe — tidak pernah gambar wajah
+    (kepatuhan UU PDP No. 27/2022 by design).
     """
     settings = get_settings()
     is_mock = bool(settings.MOCK_MODE or (x_mock_data and x_mock_data.lower() in ("true", "1")))
@@ -252,6 +257,8 @@ def analyze_landmarks(
         out = FaceAnalyzer.analyze(request)
         return LandmarkAnalysisResponse(
             face_shape=FaceShapeMultiOut(**out["face_shape"]),
+            skin_tone=SkinToneOut(**out["skin_tone"]),
+            gender=GenderOut(**out["gender"]),
             nose=ClassificationOut(**out["nose"]),
             eye=ClassificationOut(**out["eye"]),
             brow=ClassificationOut(**out["brow"]),

@@ -8,6 +8,7 @@ Payload tidak pernah berisi gambar wajah (UU PDP No. 27/2022 by design).
 """
 
 from typing import Any, Dict, List, Optional
+import math
 
 from ai_engine.models.face_classifier import FaceShapeClassifier
 
@@ -409,11 +410,89 @@ class FaceAnalyzer:
 
     Menggabungkan classify_face_shape + Nose/Eye/BrowClassifier +
     PillarJustifier + narasi Indonesia deterministik (tanpa LLM — latency
-    rendah untuk UX scan). Undertone tidak ada di payload landmark (datang
-    dari analisis kulit terpisah); Pillar 2 memakai default "Neutral".
+    rendah untuk UX scan). Standarisasi 2026-08-23: output biometrik utama
+    tepat 3 param — skin_tone (bucket MST), face_shape, gender (rasio
+    dimorfisme). Undertone tetap dihitung sebagai sinyal internal recommender.
     """
 
-    ENGINE_VERSION = "2.0.0"
+    ENGINE_VERSION = "2.1.0"
+
+    @staticmethod
+    def _classify_skin(request: Any) -> Dict[str, Any]:
+        """LAB rata-rata temporal klien → ΔE nearest MST → bucket 5 kategori.
+
+        Deterministik: LAB sama → bucket sama (akar masalah inkonsistensi scan
+        berulang). Tanpa skin_lab → fallback jujur confidence rendah.
+        """
+        from ai_engine.models.skin_analyzer import (
+            MST_REFERENCE_TABLE,
+            SKIN_TONE_LABELS,
+            lab_to_ita,
+            monk_to_skin_tone,
+        )
+
+        lab = getattr(request, "skin_lab", None)
+        if lab is None:
+            return {
+                "tone": "Medium",
+                "label_indonesian": SKIN_TONE_LABELS["Medium"],
+                "monk_index": None,
+                "monk_code": None,
+                "ita_deg": None,
+                "undertone": "Neutral",
+                "confidence": 0.5,
+                "rule": "fallback_no_lab",
+            }
+
+        best = min(
+            MST_REFERENCE_TABLE,
+            key=lambda m: (m["lab"][0] - lab.l) ** 2
+            + (m["lab"][1] - lab.a) ** 2
+            + (m["lab"][2] - lab.b) ** 2,
+        )
+        tone = monk_to_skin_tone(best["index"])
+        # Undertone internal: sudut hue LAB (b* dominan → kuning hangat).
+        hue = math.degrees(math.atan2(lab.b, lab.a)) if lab.a != 0 else 90.0
+        if hue >= 62.0:
+            undertone = "Warm"
+        elif hue <= 45.0:
+            undertone = "Cool"
+        else:
+            undertone = "Neutral"
+        # Confidence naik saat ΔE kecil dan variasi L antar frame rendah.
+        delta_e = math.sqrt(
+            (best["lab"][0] - lab.l) ** 2
+            + (best["lab"][1] - lab.a) ** 2
+            + (best["lab"][2] - lab.b) ** 2
+        )
+        spread_penalty = min(6.0, (lab.std_l or 0.0))
+        confidence = round(max(0.55, min(0.95, 0.95 - delta_e / 30.0 - spread_penalty / 20.0)), 2)
+        return {
+            "tone": tone,
+            "label_indonesian": SKIN_TONE_LABELS[tone],
+            "monk_index": best["index"],
+            "monk_code": best["code"],
+            "ita_deg": round(lab_to_ita(lab.l, lab.a, lab.b), 1),
+            "undertone": undertone,
+            "confidence": confidence,
+            "rule": f"nearest-dE MST {best['code']} (dE={delta_e:.1f})",
+        }
+
+    @staticmethod
+    def _classify_gender(request: Any) -> Dict[str, Any]:
+        """Fitur dimorfisme → GenderEstimator; tanpa fitur → fallback jujur."""
+        from ai_engine.models.gender_estimator import GenderEstimator
+
+        feats = getattr(request, "gender_features", None)
+        if feats is None:
+            return {
+                "label": "Pria (Male)",
+                "label_id": "male",
+                "confidence": 0.5,
+                "method": "landmark_ratio",
+                "rule": "fallback_no_features",
+            }
+        return GenderEstimator.classify(feats.model_dump())
 
     @staticmethod
     def analyze(request: Any) -> Dict[str, Any]:
@@ -421,11 +500,13 @@ class FaceAnalyzer:
         nose = NoseClassifier.classify(request.nose_features.model_dump())
         eye = EyeShapeClassifier.classify(request.eye_features.model_dump())
         brow = BrowClassifier.classify(request.brow_features.model_dump())
+        skin_tone = FaceAnalyzer._classify_skin(request)
+        gender = FaceAnalyzer._classify_gender(request)
 
         pillars = PillarJustifier.justify_all(
             {
                 "face_shape": face["shape"],
-                "undertone": "Neutral",
+                "undertone": skin_tone.get("undertone") or "Neutral",
                 "nose": nose["label"],
                 "nose_id": nose["label_id"],
             }
@@ -446,6 +527,8 @@ class FaceAnalyzer:
 
         return {
             "face_shape": face,
+            "skin_tone": skin_tone,
+            "gender": gender,
             "nose": nose,
             "eye": eye,
             "brow": brow,

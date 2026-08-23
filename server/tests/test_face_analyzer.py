@@ -358,9 +358,9 @@ class TestFaceAnalyzerOrchestrator:
         req = LandmarkAnalysisRequest(**_payload())
         out = FaceAnalyzer.analyze(req)
 
-        for key in ("face_shape", "nose", "eye", "brow", "measurements", "pillars", "narrative", "meta"):
+        for key in ("face_shape", "skin_tone", "gender", "nose", "eye", "brow", "measurements", "pillars", "narrative", "meta"):
             assert key in out, f"missing key: {key}"
-        assert out["meta"]["engine_version"] == "2.0.0"
+        assert out["meta"]["engine_version"] == "2.1.0"
         assert len(out["pillars"]) == 3
         assert out["nose"]["label"].startswith(("Greek", "Roman", "Bulbous", "Broad-Snub", "Celestial"))
         assert out["eye"]["label"].startswith(("Almond", "Round", "Cat-eye", "Downturned"))
@@ -404,7 +404,7 @@ class TestLandmarksEndpoint:
         assert body["face_shape"]["shape"] in {"Oval", "Round", "Square", "Heart", "Diamond", "Oblong"}
         assert len(body["pillars"]) == 3
         assert body["meta"]["source"] == "engine"
-        assert body["meta"]["engine_version"] == "2.0.0"
+        assert body["meta"]["engine_version"] == "2.1.0"
         assert body["is_mock"] is False
         for key in ("nose", "eye", "brow"):
             assert body[key]["label"] and body[key]["label_id"]
@@ -433,3 +433,106 @@ class TestLandmarksEndpoint:
     def test_health_regression_ok(self):
         res = client.get("/health")
         assert res.status_code == 200
+
+
+class TestThreeParamBiometrics:
+    """B3 — standardisasi output biometrik: skin_tone + face_shape + gender.
+
+    skin_lab & gender_features opsional (jalur lama tetap valid); klasifikasi
+    kulit memakai LAB rata-rata temporal klien → ΔE nearest MST → bucket.
+    """
+
+    def test_skin_tone_bucket_from_lab_sawo_matang(self):
+        from ai_engine.models.face_analyzer import FaceAnalyzer
+        from app.schemas import LandmarkAnalysisRequest
+
+        p = _payload(skin_lab={"l": 54.4, "a": 10.3, "b": 27.2, "std_l": 3.1})
+        out = FaceAnalyzer.analyze(LandmarkAnalysisRequest(**p))
+        assert out["skin_tone"]["tone"] == "Tan"  # MST-06 sawo matang
+        assert out["skin_tone"]["monk_code"] == "MST-06"
+        assert out["skin_tone"]["label_indonesian"].startswith("Tan")
+        assert out["skin_tone"]["confidence"] >= 0.7
+
+    def test_skin_tone_bucket_from_lab_fair(self):
+        from ai_engine.models.face_analyzer import FaceAnalyzer
+        from app.schemas import LandmarkAnalysisRequest
+
+        p = _payload(skin_lab={"l": 93.0, "a": 2.0, "b": 7.0})
+        out = FaceAnalyzer.analyze(LandmarkAnalysisRequest(**p))
+        assert out["skin_tone"]["tone"] in {"Fair", "Light"}
+
+    def test_skin_tone_fallback_without_lab(self):
+        from ai_engine.models.face_analyzer import FaceAnalyzer
+        from app.schemas import LandmarkAnalysisRequest
+
+        out = FaceAnalyzer.analyze(LandmarkAnalysisRequest(**_payload()))
+        assert out["skin_tone"]["tone"] in {"Fair", "Light", "Medium", "Tan", "Dark"}
+        assert out["skin_tone"]["confidence"] <= 0.6  # jujur: tanpa sinyal LAB
+
+    def test_gender_from_features(self):
+        from ai_engine.models.face_analyzer import FaceAnalyzer
+        from app.schemas import LandmarkAnalysisRequest
+
+        p = _payload(
+            gender_features={
+                "jaw_to_cheek": 0.97,
+                "brow_to_eye": 0.11,
+                "lip_to_face_width": 0.36,
+                "face_aspect": 0.80,
+            }
+        )
+        out = FaceAnalyzer.analyze(LandmarkAnalysisRequest(**p))
+        assert out["gender"]["label_id"] == "male"
+        assert out["gender"]["label"] == "Pria (Male)"
+
+    def test_gender_feminine_vector(self):
+        from ai_engine.models.face_analyzer import FaceAnalyzer
+        from app.schemas import LandmarkAnalysisRequest
+
+        p = _payload(
+            gender_features={
+                "jaw_to_cheek": 0.74,
+                "brow_to_eye": 0.22,
+                "lip_to_face_width": 0.49,
+                "face_aspect": 0.71,
+            }
+        )
+        out = FaceAnalyzer.analyze(LandmarkAnalysisRequest(**p))
+        assert out["gender"]["label_id"] == "female"
+
+    def test_gender_fallback_without_features(self):
+        from ai_engine.models.face_analyzer import FaceAnalyzer
+        from app.schemas import LandmarkAnalysisRequest
+
+        out = FaceAnalyzer.analyze(LandmarkAnalysisRequest(**_payload()))
+        assert out["gender"]["label_id"] in {"male", "female"}
+        assert out["gender"]["confidence"] <= 0.55
+
+    def test_analyze_deterministic_repeat(self):
+        """Syarat direktif: payload sama → hasil identik (konsistensi 3x scan)."""
+        from ai_engine.models.face_analyzer import FaceAnalyzer
+        from app.schemas import LandmarkAnalysisRequest
+
+        p = _payload(
+            skin_lab={"l": 54.4, "a": 10.3, "b": 27.2},
+            gender_features={"jaw_to_cheek": 0.92, "brow_to_eye": 0.13, "lip_to_face_width": 0.38, "face_aspect": 0.78},
+        )
+        a = FaceAnalyzer.analyze(LandmarkAnalysisRequest(**p))
+        b = FaceAnalyzer.analyze(LandmarkAnalysisRequest(**p))
+        assert a["skin_tone"]["tone"] == b["skin_tone"]["tone"]
+        assert a["face_shape"]["shape"] == b["face_shape"]["shape"]
+        assert a["gender"]["label_id"] == b["gender"]["label_id"]
+
+    def test_endpoint_returns_three_core_params(self):
+        res = client.post(
+            "/api/v1/analyze/landmarks",
+            json=_payload(
+                skin_lab={"l": 54.4, "a": 10.3, "b": 27.2},
+                gender_features={"jaw_to_cheek": 0.74, "brow_to_eye": 0.22, "lip_to_face_width": 0.49, "face_aspect": 0.71},
+            ),
+        )
+        assert res.status_code == 200, res.text
+        body = res.json()
+        assert body["skin_tone"]["tone"] in {"Fair", "Light", "Medium", "Tan", "Dark"}
+        assert body["gender"]["label_id"] == "female"
+        assert body["face_shape"]["shape"] in {"Oval", "Round", "Square", "Heart", "Diamond", "Oblong"}
