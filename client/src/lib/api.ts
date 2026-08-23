@@ -3,12 +3,13 @@ import { UserPersonalProfile, RecommendationItem, MOCK_PRESETS, FaceMeasurements
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
 /* ------------------------------------------------------------------ */
-/*  Multi-Dimensional Landmark Analysis (ADR-014)                     */
+/*  Multi-Dimensional Landmark Analysis (ADR-014 + standardisasi 3-param) */
 /*  Payload hanya fitur turunan (angka) — tanpa gambar wajah.         */
 /* ------------------------------------------------------------------ */
 export interface LandmarkAnalysisResult {
   face_shape?: UserPersonalProfile["face_shape"];
-  body_shape?: UserPersonalProfile["body_shape"];
+  skin_tone?: UserPersonalProfile["skin_tone"];
+  gender?: UserPersonalProfile["gender"];
   nose?: { label?: string; confidence?: number; rule?: string };
   eye?: { label?: string; confidence?: number; rule?: string };
   brow?: { label?: string; confidence?: number; rule?: string };
@@ -26,10 +27,9 @@ export interface LandmarkAnalysisResult {
 }
 
 /**
- * POST /api/v1/analyze/landmarks — klasifikasi server-side atas fitur turunan.
- * Fallback rantai lama: bila endpoint baru tidak tersedia/gagal, gunakan
- * /analyze/ratios (wajah tetap terklasifikasi; hidung/mata/alis menjadi
- * undefined dan UI wajib aman terhadapnya via optional chaining).
+ * POST /api/v1/analyze/landmarks — klasifikasi server-side atas fitur turunan
+ * (skin_tone dari LAB temporal, face_shape dari rasio median, gender dari
+ * fitur dimorfisme). Fallback: /analyze/ratios → preset deterministik.
  */
 export async function analyzeLandmarks(payload: Record<string, unknown>): Promise<LandmarkAnalysisResult> {
   try {
@@ -44,10 +44,9 @@ export async function analyzeLandmarks(payload: Record<string, unknown>): Promis
     console.warn("Landmark analysis API unavailable, falling back to ratios endpoint:", error);
     try {
       const ratios = (payload as { face_ratios?: Record<string, number> }).face_ratios;
-      const legacy = await analyzeRatios(ratios, undefined, false);
+      const legacy = await analyzeRatios(ratios, false);
       return {
         face_shape: legacy?.face_shape || undefined,
-        body_shape: legacy?.body_shape || undefined,
         measurements: (payload as { measurements_cm?: FaceMeasurements }).measurements_cm,
         narrative: {
           summary: `Analisis bentuk wajah via jalur rasio geometri (${legacy?.face_shape?.shape || "Oval"}).`,
@@ -59,7 +58,8 @@ export async function analyzeLandmarks(payload: Record<string, unknown>): Promis
       const preset = MOCK_PRESETS.indonesian_warm_sawo_matang.profile;
       return {
         face_shape: preset.face_shape,
-        body_shape: preset.body_shape,
+        skin_tone: preset.skin_tone,
+        gender: preset.gender,
         measurements: (payload as { measurements_cm?: FaceMeasurements }).measurements_cm,
         meta: { source: "mock" },
         is_mock: true,
@@ -67,131 +67,6 @@ export async function analyzeLandmarks(payload: Record<string, unknown>): Promis
     }
   }
 }
-
-export interface BodyLandmarkAnalysisResult {
-  body_shape?: {
-    shape: string;
-    label_indonesian: string;
-    confidence: number;
-    method: string;
-    ratios: Record<string, number>;
-    topwear_recommendations: string[];
-    bottomwear_recommendations: string[];
-    footwear_recommendations: string[];
-    styling_advice: string;
-  };
-  torso_leg_balance?: {
-    balance_type: string;
-    label_indonesian: string;
-    torso_to_leg_ratio: number;
-    advice: string;
-  };
-  measurements_cm?: {
-    shoulder_width_cm?: number | null;
-    waist_width_cm?: number | null;
-    hip_width_cm?: number | null;
-    torso_length_cm?: number | null;
-    leg_length_cm?: number | null;
-    total_height_cm?: number | null;
-    body_proportion?: string;
-    calibration?: string;
-  };
-  pillars?: Array<{
-    pillar: string;
-    title: string;
-    title_id: string;
-    recommendation: string;
-    reason: string;
-    scientific_basis: string;
-  }>;
-  narrative?: {
-    summary: string;
-    topwear_tip?: string;
-    bottomwear_tip?: string;
-    footwear_tip?: string;
-  };
-  timestamp?: string;
-  is_mock?: boolean;
-}
-
-/**
- * POST /api/v1/analyze/body-landmarks — analisis antropometri tubuh penuh.
- */
-export async function analyzeBodyLandmarks(payload: Record<string, unknown>): Promise<BodyLandmarkAnalysisResult> {
-  try {
-    const res = await fetch(`${API_BASE_URL}/analyze/body-landmarks`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) throw new Error(`body-landmarks API ${res.status}`);
-    return await res.json();
-  } catch (error) {
-    console.warn("Body landmark analysis API unavailable, using deterministic fallback:", error);
-    const preset = MOCK_PRESETS.indonesian_warm_sawo_matang.profile;
-    return {
-      body_shape: {
-        shape: preset.body_shape.shape,
-        label_indonesian: "Hourglass (Jam Pasir)",
-        confidence: 0.94,
-        method: "ansur_ii_rule_engine",
-        ratios: preset.body_shape.ratios,
-        topwear_recommendations: ["Fitted Wrap Top", "V-Neck Shirt", "Tailored Belted Blazer"],
-        bottomwear_recommendations: ["High-Waist Wide-Leg Trousers", "Bootcut Jeans", "Straight-Leg Chinos"],
-        footwear_recommendations: ["Pointed Loafers", "Minimalist Clean Sneakers", "Classic Chelsea Boots"],
-        styling_advice: preset.body_shape.styling_advice,
-      },
-      torso_leg_balance: {
-        balance_type: "Balanced",
-        label_indonesian: "Proporsi Seimbang (Balanced)",
-        torso_to_leg_ratio: 0.85,
-        advice: "Proporsi tubuh atas dan bawah Anda sangat seimbang.",
-      },
-      measurements_cm: {
-        shoulder_width_cm: 42.0,
-        waist_width_cm: 32.5,
-        hip_width_cm: 38.0,
-        torso_length_cm: 46.0,
-        leg_length_cm: 80.0,
-        total_height_cm: 165.0,
-        body_proportion: "1.1 : 0.85 : 1.0",
-        calibration: "height_input",
-      },
-      pillars: [
-        {
-          pillar: "upper_silhouette",
-          title: "Pilar 1: Siluet Atasan (Upper Body Balance)",
-          title_id: "Siluet Atasan & Baju",
-          recommendation: "Fitted / Wrap Top",
-          reason: "Menonjolkan lekuk pinggang alami tanpa merusak simetri bahu dan pinggul.",
-          scientific_basis: "Prinsip Garis Anatomis (Anatomical Contour Alignment) — ISO 7250.",
-        },
-        {
-          pillar: "lower_inseam",
-          title: "Pilar 2: Proporsi Garis Jatuh Celana (Lower Inseam Line)",
-          title_id: "Potongan & Garis Jatuh Celana",
-          recommendation: "High-Waist Wide-Leg / Straight Pants",
-          reason: "Menaikkan titik pusat pinggang visual dan memanjangkan garis jatuh celana.",
-          scientific_basis: "Prinsip Golden Ratio Proporsi Kaki (1 : 1.618 Inseam Elongation).",
-        },
-        {
-          pillar: "footwear_balance",
-          title: "Pilar 3: Keseimbangan Alas Kaki (Footwear Grounding)",
-          title_id: "Keseimbangan Siluet Sepatu",
-          recommendation: "Pointed Loafers / Clean Retro Runner Sneakers",
-          reason: "Menjaga siluet tubuh tetap ramping dan dinamis.",
-          scientific_basis: "Prinsip Aliran Garis Siluet (Continuous Silhouette Streamlining).",
-        },
-      ],
-      narrative: {
-        summary: "Analisis antropometri menunjukkan bentuk tubuh Hourglass dengan proporsi seimbang.",
-      },
-      is_mock: true,
-    };
-  }
-}
-
-
 
 /* ------------------------------------------------------------------ */
 /*  Dynamic Questionnaire Engine                                      */
@@ -211,7 +86,7 @@ const LOCAL_FALLBACK_QUESTIONS_BATCH1 = (sub: string, profile: Record<string, an
   {
     id: "fit_preference",
     question: "Siluet dan karakter potongan apa yang Anda sukai?",
-    reason: `Potongan yang tepat untuk bentuk tubuh ${profile.body_shape || "Anda"}.`,
+    reason: `Potongan yang tepat untuk gaya dan aktivitas ${profile.gender?.label || "Anda"}.`,
     options: [
       { id: "Regular Fit", label: "Classic Timeless", desc: "Dimensi standar seimbang" },
       { id: "Oversized", label: "Bold Oversized", desc: "Dramatis & percaya diri" },
@@ -250,7 +125,8 @@ export async function fetchDynamicQuestions(
           monk_tone: userProfile.monk_tone?.code || userProfile.monk_tone || "MST-06",
           undertone: userProfile.undertone?.undertone || userProfile.undertone || "Warm",
           face_shape: userProfile.face_shape?.shape || userProfile.face_shape || "Oval",
-          body_shape: userProfile.body_shape?.shape || userProfile.body_shape || "Hourglass",
+          skin_tone: userProfile.skin_tone?.tone || userProfile.skin_tone || "Tan",
+          gender: userProfile.gender?.label_id || userProfile.gender || "male",
         },
         previous_answers: previousAnswers,
         batch,
@@ -305,14 +181,12 @@ export async function analyzeSkin(imageBase64: string, useMock: boolean = false)
 
 export async function analyzeRatios(
   faceRatios?: Record<string, number>,
-  bodyRatios?: Record<string, number>,
   useMock: boolean = false
 ): Promise<any> {
   const defaultPreset = MOCK_PRESETS.indonesian_warm_sawo_matang.profile;
-  if (useMock || (!faceRatios && !bodyRatios)) {
+  if (useMock || !faceRatios) {
     return {
       face_shape: defaultPreset.face_shape,
-      body_shape: defaultPreset.body_shape,
       is_mock: true,
     };
   }
@@ -321,20 +195,18 @@ export async function analyzeRatios(
     const res = await fetch(`${API_BASE_URL}/analyze/ratios`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ face_ratios: faceRatios, body_ratios: bodyRatios }),
+      body: JSON.stringify({ face_ratios: faceRatios }),
     });
     if (!res.ok) throw new Error("API error");
     const data = await res.json();
     return {
       face_shape: data.face_shape || defaultPreset.face_shape,
-      body_shape: data.body_shape || defaultPreset.body_shape,
       is_mock: data.is_mock || false,
     };
   } catch (error) {
     console.warn("Backend API unavailable, falling back to client mock ratio analysis:", error);
     return {
       face_shape: defaultPreset.face_shape,
-      body_shape: defaultPreset.body_shape,
       is_mock: true,
     };
   }
@@ -360,7 +232,8 @@ export async function fetchTop4Recommendations(
           monk_tone: userProfile.monk_tone?.code || "MST-06",
           undertone: userProfile.undertone?.undertone || "Warm",
           face_shape: userProfile.face_shape?.shape || "Oval",
-          body_shape: userProfile.body_shape?.shape || "Hourglass",
+          skin_tone: userProfile.skin_tone?.tone || "Tan",
+          gender: userProfile.gender?.label_id || "male",
         },
         quiz_answers: quizAnswers,
       }),

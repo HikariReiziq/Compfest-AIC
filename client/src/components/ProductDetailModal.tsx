@@ -99,7 +99,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               <strong className="text-indigo-300">1. Analisis Warna Musiman:</strong> Warna <strong>{item.base_colour}</strong> sangat serasi dengan undertone kulit <strong>{userProfile?.undertone?.undertone || "Warm"}</strong> Anda, menghindari kesan *wash-out* dan memancarkan kilau segar alami.
             </p>
             <p>
-              <strong className="text-rose-300">2. Proporsi Geometris:</strong> Potongan siluet produk ini dirancang untuk melengkapi bentuk {item.category === "Accessories" ? `wajah (${userProfile?.face_shape?.shape || "Oval"})` : `tubuh (${userProfile?.body_shape?.shape || "Hourglass"})`} sehingga menciptakan keseimbangan postur yang flattering.
+              <strong className="text-rose-300">2. Proporsi Geometris:</strong> Potongan siluet produk ini dirancang untuk melengkapi bentuk wajah ({userProfile?.face_shape?.shape || "Oval"}) dan gaya {userProfile?.gender?.label_id === "female" ? "feminin" : "maskulin"} Anda sehingga menciptakan keseimbangan visual yang flattering.
             </p>
             <p>
               <strong className="text-emerald-300">3. Konteks Acara:</strong> Disesuaikan untuk kebutuhan penggunaan <strong>{item.usage}</strong> dengan karakter bahan yang nyaman.

@@ -3,8 +3,6 @@
 import React, { useState } from "react";
 import { HeaderNavbar } from "../components/HeaderNavbar";
 import { CameraScan } from "../components/CameraScan";
-import { BodyScan } from "../components/BodyScan";
-import { BodyReportCard } from "../components/BodyReportCard";
 import { BodyOutfitViewer } from "../components/BodyOutfitViewer";
 import { CategorySelector } from "../components/CategorySelector";
 import { TargetedQuiz } from "../components/TargetedQuiz";
@@ -13,16 +11,15 @@ import { ARCanvasViewer } from "../components/ARCanvasViewer";
 import { SwitchControls } from "../components/SwitchControls";
 import { ProductDetailModal } from "../components/ProductDetailModal";
 import { UserPersonalProfile, RecommendationItem, MOCK_PRESETS } from "../lib/mockData";
-import { fetchTop4Recommendations, BodyLandmarkAnalysisResult, analyzeBodyLandmarks } from "../lib/api";
+import { fetchTop4Recommendations } from "../lib/api";
 import { RotateCcw, Sparkles, Camera, Undo2, ArrowLeft } from "lucide-react";
 
 export default function Home() {
-  // Step Sequence: CATEGORY -> SCAN -> REPORT -> QUIZ -> PROCESSING -> TRYON
-  const [currentStep, setCurrentStep] = useState<"CATEGORY" | "SCAN" | "REPORT" | "QUIZ" | "PROCESSING" | "TRYON">("CATEGORY");
+  // Step Sequence: CATEGORY -> SCAN -> QUIZ -> PROCESSING -> TRYON
+  const [currentStep, setCurrentStep] = useState<"CATEGORY" | "SCAN" | "QUIZ" | "PROCESSING" | "TRYON">("CATEGORY");
   
   // User Profiling Data
   const [userProfile, setUserProfile] = useState<UserPersonalProfile | null>(null);
-  const [bodyAnalysisReport, setBodyAnalysisReport] = useState<BodyLandmarkAnalysisResult | null>(null);
 
   // Media stream from camera scan (reused seamlessly for AR try-on)
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
@@ -53,78 +50,27 @@ export default function Home() {
     setCurrentStep("SCAN");
   };
 
-  // STEP 2: Scan Complete -> Move to Report Card or Quiz
-  const handleScanComplete = (profile: UserPersonalProfile, streamOrPayload?: any) => {
-    setUserProfile(profile);
+  // STEP 2: Scan Complete -> Move to Quiz
+  const handleScanComplete = (
+    profile: UserPersonalProfile,
+    stream?: MediaStream,
+    meta?: { inputMode: "camera" | "upload" }
+  ) => {
+    const enrichedProfile: UserPersonalProfile = {
+      ...profile,
+      face_analysis_meta: {
+        ...(profile.face_analysis_meta || { confidence: 0.92, source: "engine" }),
+        input_mode: meta?.inputMode || (stream ? "camera" : "upload"),
+      },
+    };
+    setUserProfile(enrichedProfile);
 
-    if (streamOrPayload instanceof MediaStream) {
-      setMediaStream(streamOrPayload);
-      setCurrentStep("QUIZ");
-    } else if (streamOrPayload && streamOrPayload.body_ratios) {
-      // Body payload from BodyScan
-      void analyzeBodyLandmarks(streamOrPayload).then((res) => {
-        setBodyAnalysisReport(res);
-        setCurrentStep("REPORT");
-      });
-    } else if (selectedDomain === "apparel") {
-      // Fallback for apparel mock scan
-      const fallbackReport: BodyLandmarkAnalysisResult = {
-        body_shape: {
-          shape: profile.body_shape.shape,
-          label_indonesian: `${profile.body_shape.shape} (Proporsional)`,
-          confidence: profile.body_shape.confidence,
-          method: "ansur_ii_rule_engine",
-          ratios: profile.body_shape.ratios,
-          topwear_recommendations: profile.body_shape.silhouette_recommendations,
-          bottomwear_recommendations: ["Straight-Leg Trousers", "High-Waist Chinos"],
-          footwear_recommendations: ["Clean Minimalist Loafers", "Retro Sneakers"],
-          styling_advice: profile.body_shape.styling_advice,
-        },
-        measurements_cm: {
-          shoulder_width_cm: 42.5,
-          waist_width_cm: 32.0,
-          hip_width_cm: 38.5,
-          torso_length_cm: 48.0,
-          leg_length_cm: 82.0,
-          total_height_cm: 165.0,
-          body_proportion: "1.1 : 0.85 : 1.0",
-          calibration: "height_input",
-        },
-        pillars: [
-          {
-            pillar: "upper_silhouette",
-            title: "Pilar 1: Siluet Atasan (Upper Body Balance)",
-            title_id: "Siluet Atasan & Baju",
-            recommendation: "Fitted / Tailored Top",
-            reason: "Menyeimbangkan garis bahu dan dada secara proporsional.",
-            scientific_basis: "Prinsip Garis Anatomis (ISO 7250).",
-          },
-          {
-            pillar: "lower_inseam",
-            title: "Pilar 2: Proporsi Garis Jatuh Celana (Lower Inseam Line)",
-            title_id: "Potongan & Garis Jatuh Celana",
-            recommendation: "Straight-Leg / Wide-Leg Pants",
-            reason: "Memberikan garis jatuh kaki yang jenjang dan rapi.",
-            scientific_basis: "Prinsip Proporsi Golden Ratio (Inseam Elongation).",
-          },
-          {
-            pillar: "footwear_balance",
-            title: "Pilar 3: Keseimbangan Alas Kaki (Footwear Grounding)",
-            title_id: "Keseimbangan Siluet Sepatu",
-            recommendation: "Chunky Loafers / Derby Shoes",
-            reason: "Memberikan tumpuan visual yang kokoh dan seimbang.",
-            scientific_basis: "Prinsip Visual Grounding Equilibrium.",
-          },
-        ],
-        narrative: {
-          summary: `Bentuk tubuh teranalisis sebagai ${profile.body_shape.shape} dengan proporsi seimbang.`,
-        },
-      };
-      setBodyAnalysisReport(fallbackReport);
-      setCurrentStep("REPORT");
+    if (stream instanceof MediaStream) {
+      setMediaStream(stream);
     } else {
-      setCurrentStep("QUIZ");
+      setMediaStream(null);
     }
+    setCurrentStep("QUIZ");
   };
 
   // STEP 3: Quiz Submitted -> Move to Processing Telemetry Screen
@@ -176,7 +122,6 @@ export default function Home() {
       setMediaStream(null);
     }
     setUserProfile(null);
-    setBodyAnalysisReport(null);
     setCollectedAnswers({});
     setCollectedQuestionsMap({});
     setCurrentStep("CATEGORY");
@@ -188,16 +133,18 @@ export default function Home() {
   // Build userProfile dict for quiz & loading components
   const userProfileDict: Record<string, any> = userProfile
     ? {
-        monk_tone: userProfile.monk_tone?.code || "MST-06",
-        undertone: userProfile.undertone?.undertone || "Warm",
+        monk_tone: userProfile.monk_tone?.code || userProfile.skin_tone?.monk_code || "MST-06",
+        skin_tone: userProfile.skin_tone?.tone || "Tan",
+        undertone: userProfile.undertone?.undertone || userProfile.skin_tone?.undertone || "Warm",
         face_shape: userProfile.face_shape?.shape || "Oval",
-        body_shape: userProfile.body_shape?.shape || "Hourglass",
+        gender: userProfile.gender?.label_id || "male",
       }
     : {
         monk_tone: "MST-06",
+        skin_tone: "Tan",
         undertone: "Warm",
         face_shape: "Oval",
-        body_shape: "Hourglass",
+        gender: "male",
       };
 
   return (
@@ -226,31 +173,13 @@ export default function Home() {
           />
         )}
 
-        {/* STEP 2: PERSONAL PROFILING SCAN (FACE vs BODY) */}
+        {/* STEP 2: PERSONAL PROFILING SCAN (FACE BIOMETRICS) */}
         {currentStep === "SCAN" && (
-          selectedDomain === "apparel" ? (
-            <BodyScan
-              onScanComplete={handleScanComplete}
-              onBack={() => setCurrentStep("CATEGORY")}
-              overrideProfile={userProfile || undefined}
-            />
-          ) : (
-            <CameraScan
-              subcategory={selectedSubcategory}
-              onScanComplete={handleScanComplete}
-              onBack={() => setCurrentStep("CATEGORY")}
-              overrideProfile={userProfile || undefined}
-            />
-          )
-        )}
-
-        {/* STEP 2.5: BODY REPORT CARD (For Apparel Domain) */}
-        {currentStep === "REPORT" && bodyAnalysisReport && (
-          <BodyReportCard
-            report={bodyAnalysisReport}
-            snapshotDataUrl={userProfile?.scan_snapshot_dataurl}
-            onProceedToQuiz={() => setCurrentStep("QUIZ")}
-            onBack={() => setCurrentStep("SCAN")}
+          <CameraScan
+            subcategory={selectedSubcategory}
+            onScanComplete={handleScanComplete}
+            onBack={() => setCurrentStep("CATEGORY")}
+            overrideProfile={userProfile || undefined}
           />
         )}
 
@@ -260,7 +189,7 @@ export default function Home() {
             subcategory={selectedSubcategory}
             userProfile={userProfileDict}
             onSubmitQuiz={handleQuizSubmit}
-            onBack={() => setCurrentStep(selectedDomain === "apparel" ? "REPORT" : "SCAN")}
+            onBack={() => setCurrentStep("SCAN")}
             isLoading={isLoadingRecommendations}
           />
         )}
@@ -345,6 +274,7 @@ export default function Home() {
                     activeItem={activeItem}
                     subcategory={selectedSubcategory}
                     mediaStream={mediaStream}
+                    inputMode={userProfile?.face_analysis_meta?.input_mode || (mediaStream ? "camera" : "upload")}
                   />
                 )}
               </div>

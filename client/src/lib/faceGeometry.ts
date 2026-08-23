@@ -427,12 +427,13 @@ export function computeGenderFeatures(lm: Landmark[]): GenderFeatures {
  * perangkat (UU PDP No. 27/2022).
  */
 export function sampleSkinLab(
-  video: HTMLVideoElement,
+  video: HTMLVideoElement | HTMLImageElement,
   lm: Landmark[]
 ): { l: number; a: number; b: number } | null {
-  if (!video.videoWidth || !video.videoHeight) return null;
+  const W = (video as HTMLVideoElement).videoWidth || (video as HTMLImageElement).naturalWidth;
+  const H = (video as HTMLVideoElement).videoHeight || (video as HTMLImageElement).naturalHeight;
+  if (!W || !H) return null;
   const canvas = document.createElement("canvas");
-  const W = video.videoWidth, H = video.videoHeight;
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext("2d", { willReadFrequently: true });

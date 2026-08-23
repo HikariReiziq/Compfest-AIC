@@ -10,6 +10,7 @@ import {
   Box,
   RotateCcw,
   Sliders,
+  Lock,
 } from "lucide-react";
 import { RecommendationItem } from "../lib/mockData";
 
@@ -20,6 +21,7 @@ interface ARCanvasViewerProps {
   activeItem: RecommendationItem;
   subcategory: string;
   mediaStream?: MediaStream | null;
+  inputMode?: "camera" | "upload";
 }
 
 /* ------------------------------------------------------------------ */
@@ -29,6 +31,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   activeItem,
   subcategory,
   mediaStream,
+  inputMode = "camera",
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -47,8 +50,11 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   const [offsetY, setOffsetY] = useState<number>(0);
   const [scaleMultiplier, setScaleMultiplier] = useState<number>(100);
 
+  const isUploadMode = inputMode === "upload";
+
   // View Mode: 'ar' (Live 3D AR on Face) vs 'studio' (3D 360° Inspection)
-  const [viewMode, setViewMode] = useState<"ar" | "studio">("ar");
+  // If uploaded photo, AR mode is locked and defaults to studio inspection
+  const [viewMode, setViewMode] = useState<"ar" | "studio">(isUploadMode ? "studio" : "ar");
 
   const sub = (activeItem.subcategory || subcategory).toLowerCase();
   const isHat = sub === "hats" || sub === "hat" || sub.includes("hat") || sub.includes("cap");
@@ -550,20 +556,39 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
         {/* Top Floating Action Pill: Mode Selector */}
         <div className="absolute top-4 right-4 z-30 flex items-center space-x-1.5 bg-slate-900/90 backdrop-blur-md p-1 rounded-2xl border border-white/15 shadow-2xl">
-          <button
-            onClick={() => setViewMode("ar")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all ${
-              viewMode === "ar"
-                ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20"
-                : "text-slate-400 hover:text-white"
-            }`}
-          >
-            <Zap className="w-3.5 h-3.5 text-amber-300" />
-            <span>Pasang ke Wajah (AR 3D)</span>
-          </button>
+          {/* Button AR: Disabled with lock icon & tooltip if photo upload */}
+          <div className="relative group">
+            <button
+              onClick={() => {
+                if (!isUploadMode) setViewMode("ar");
+              }}
+              disabled={isUploadMode}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all ${
+                isUploadMode
+                  ? "opacity-40 cursor-not-allowed text-slate-500 bg-slate-800/40"
+                  : viewMode === "ar"
+                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 cursor-pointer"
+                  : "text-slate-400 hover:text-white cursor-pointer"
+              }`}
+            >
+              {isUploadMode ? (
+                <Lock className="w-3.5 h-3.5 text-slate-400" />
+              ) : (
+                <Zap className="w-3.5 h-3.5 text-amber-300" />
+              )}
+              <span>Pasang ke Wajah (AR 3D)</span>
+            </button>
+
+            {isUploadMode && (
+              <div className="absolute right-0 top-full mt-2 w-64 p-2.5 rounded-xl bg-slate-900/95 border border-amber-500/30 text-[11px] text-amber-200/90 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-40 backdrop-blur-md">
+                🔒 <strong>Mode AR Terkunci:</strong> Live Face AR membutuhkan pemindaian video langsung. Gunakan mode <strong>Studio 360°</strong> untuk melihat detail 3D produk.
+              </div>
+            )}
+          </div>
+
           <button
             onClick={() => setViewMode("studio")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer ${
               viewMode === "studio"
                 ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md shadow-purple-500/20"
                 : "text-slate-400 hover:text-white"

@@ -16,18 +16,44 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { UserPersonalProfile, MOCK_PRESETS } from "../lib/mockData";
-import { analyzeSkin, analyzeRatios, analyzeLandmarks } from "../lib/api";
+import { analyzeLandmarks } from "../lib/api";
 import PhotoUpload from "./PhotoUpload";
 import RepositionTool from "./RepositionTool";
 import {
   buildAnalysisPayload,
   collectQualityIssues,
+  computeBrowFeatures,
+  computeEyeFeatures,
+  computeFaceRatios,
+  computeGenderFeatures,
+  computeMeasurementsCm,
+  computeNoseFeatures,
+  computePose,
+  ovalFit,
+  sampleSkinLab,
   Landmark,
 } from "../lib/faceGeometry";
+import { FrameSampler, MIN_SAMPLES } from "../lib/frameSampler";
 
 /** URL model FaceLandmarker resmi (dipakai mode VIDEO dan IMAGE). */
 const FACE_LANDMARKER_MODEL_URL =
   "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
+
+/** Swatch hex MST-01..10 (selaras MST_REFERENCE_TABLE server). */
+const MST_HEX: Record<number, string> = {
+  1: "#F6EDE4", 2: "#F3E7DB", 3: "#F7EAD0", 4: "#EADABA", 5: "#D7BD96",
+  6: "#A07E56", 7: "#825C43", 8: "#604134", 9: "#3A312A", 10: "#292420",
+};
+
+/**
+ * Geometri oval pemandu pada ruang normalisasi video (koordinat landmark,
+ * TIDAK di-mirror — mirror CSS simetris terhadap sumbu x sehingga cx tetap).
+ * Toleransi 1.1 agar kontainment tidak lebih ketat dari garis visual.
+ */
+const GUIDE_OVAL = { cx: 0.5, cy: 0.49, rx: 0.15 * 1.1, ry: 0.25 * 1.1 };
+
+/** Durasi stabilitas HIJAU (ms) sebelum countdown otomatis dimulai. */
+const ALIGNED_STABLE_MS = 1500;
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                             */
@@ -35,7 +61,11 @@ const FACE_LANDMARKER_MODEL_URL =
 type FaceGuideState = "NO_FACE" | "MISALIGNED" | "ALIGNED";
 
 interface CameraScanProps {
-  onScanComplete: (profile: UserPersonalProfile, stream?: MediaStream) => void;
+  onScanComplete: (
+    profile: UserPersonalProfile,
+    stream?: MediaStream,
+    meta?: { inputMode: "camera" | "upload" }
+  ) => void;
   overrideProfile?: UserPersonalProfile | null;
   subcategory?: "glasses" | "hats" | "shirts";
   onBack?: () => void;
@@ -159,10 +189,13 @@ export const CameraScan: React.FC<CameraScanProps> = ({
   const [guideMessage, setGuideMessage] = useState<string>("Memuat detektor AI...");
   const [countdown, setCountdown] = useState<number | null>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
-  const alignedFramesRef = useRef<number>(0);
+  const alignedSinceRef = useRef<number>(0);
 
-  // Extracted ratios from MediaPipe landmarks
-  const extractedRatiosRef = useRef<Record<string, number> | null>(null);
+  // Temporal smoothing (ADR-019) — agregat hanya frame ALIGNED
+  const samplerRef = useRef<FrameSampler>(new FrameSampler());
+  const lastAlignedLmRef = useRef<Landmark[] | null>(null);
+  const lastImgWidthRef = useRef<number>(640);
+  const startScanRef = useRef<() => void>(() => {});
 
   /* ---- Dual-mode state (ADR-013: webcam live vs upload foto) ---- */
   const [mode, setMode] = useState<"camera" | "upload">("camera");
@@ -365,82 +398,82 @@ export const CameraScan: React.FC<CameraScanProps> = ({
     };
   }, [initFaceLandmarker, mode, stopCameraStream]);
 
-  /* ---- Process detected landmarks ---- */
-  const processLandmarks = useCallback((landmarks: any[]) => {
-    if (!landmarks || landmarks.length === 0) {
-      setFaceGuideState("NO_FACE");
-      setGuideMessage("Wajah belum terdeteksi di dalam area pemandu");
-      alignedFramesRef.current = 0;
-      if (countdownRef.current) {
-        clearInterval(countdownRef.current);
-        countdownRef.current = null;
-        setCountdown(null);
-      }
-      return;
+  /* ---- Cancel countdown + reset sampler (dipakai semua state non-HIJAU) ---- */
+  const cancelCountdown = useCallback((message: string) => {
+    alignedSinceRef.current = 0;
+    samplerRef.current.reset();
+    if (countdownRef.current) {
+      clearInterval(countdownRef.current);
+      countdownRef.current = null;
     }
+    setCountdown(null);
+    setGuideMessage(message);
+  }, []);
 
-    // Check bounding box of face
-    const xs = landmarks.map((l: any) => l.x);
-    const ys = landmarks.map((l: any) => l.y);
-    const minX = Math.min(...xs);
-    const maxX = Math.max(...xs);
-    const minY = Math.min(...ys);
-    const maxY = Math.max(...ys);
-    const faceW = maxX - minX;
-    const faceH = maxY - minY;
-    const faceCenterX = (minX + maxX) / 2;
-    const faceCenterY = (minY + maxY) / 2;
+  /* ---- Process detected landmarks — strict oval gate (direktif 2026-08-23) ---- */
+  const processLandmarks = useCallback(
+    (landmarks: any[]) => {
+      if (!landmarks || landmarks.length === 0) {
+        setFaceGuideState("NO_FACE");
+        cancelCountdown("Wajah belum berada di dalam area pemandu");
+        return;
+      }
 
-    // Check head tilt using eye landmarks (left outer 33, right outer 263)
-    const leftEye = landmarks[33];
-    const rightEye = landmarks[263];
-    const eyeDeltaY = Math.abs(leftEye.y - rightEye.y);
-    const eyeDeltaX = Math.max(0.001, Math.abs(leftEye.x - rightEye.x));
-    const tiltAngle = Math.atan2(eyeDeltaY, eyeDeltaX) * (180 / Math.PI);
+      // STAGE: kontainment oval — 4 landmark inti (dahi/dagu/pipi) wajib masuk oval
+      const { inside, faceW } = ovalFit(landmarks as Landmark[], GUIDE_OVAL);
+      const pose = computePose(landmarks as Landmark[]);
+      const poseOk =
+        Math.abs(pose.yaw_deg) <= 15 && Math.abs(pose.roll_deg) <= 15 && Math.abs(pose.pitch_deg) <= 15;
+      const sizeOk = faceW >= 0.18; // terlalu jauh dari kamera
 
-    // Bounding criteria
-    // Center of video is 0.5, 0.5. Since webcam has typical user framing:
-    const isCenteredX = faceCenterX >= 0.25 && faceCenterX <= 0.75;
-    const isCenteredY = faceCenterY >= 0.20 && faceCenterY <= 0.75;
-    const isReasonableSize = faceW >= 0.12 && faceW <= 0.75 && faceH >= 0.15;
-    const isNotHeavilyTilted = tiltAngle < 22;
+      if (!inside) {
+        setFaceGuideState("NO_FACE");
+        cancelCountdown("Wajah belum berada di dalam area pemandu");
+        return;
+      }
+      if (!poseOk || !sizeOk) {
+        setFaceGuideState("MISALIGNED");
+        cancelCountdown(
+          !sizeOk
+            ? "Dekatkan wajah Anda ke arah kamera"
+            : Math.abs(pose.roll_deg) > 15
+              ? "Kepala miring — posisikan tegak lurus ke depan"
+              : "Hadapkan wajah lurus ke kamera"
+        );
+        return;
+      }
 
-    // Calculate face ratios
-    const faceHeight = Math.sqrt(
-      Math.pow(landmarks[10].x - landmarks[152].x, 2) +
-      Math.pow(landmarks[10].y - landmarks[152].y, 2)
-    );
-    const cheekboneWidth = Math.sqrt(
-      Math.pow(landmarks[234].x - landmarks[454].x, 2) +
-      Math.pow(landmarks[234].y - landmarks[454].y, 2)
-    );
-    const foreheadWidth = Math.sqrt(
-      Math.pow(landmarks[127].x - landmarks[356].x, 2) +
-      Math.pow(landmarks[127].y - landmarks[356].y, 2)
-    ) || 0.001;
-    const jawWidth = Math.sqrt(
-      Math.pow(landmarks[172].x - landmarks[397].x, 2) +
-      Math.pow(landmarks[172].y - landmarks[397].y, 2)
-    );
-    const chinWidth = Math.sqrt(
-      Math.pow(landmarks[58].x - landmarks[288].x, 2) +
-      Math.pow(landmarks[58].y - landmarks[288].y, 2)
-    );
-
-    extractedRatiosRef.current = {
-      face_width_to_height: cheekboneWidth / Math.max(0.001, faceHeight),
-      jaw_to_forehead: jawWidth / foreheadWidth,
-      cheekbone_to_jaw: cheekboneWidth / Math.max(0.001, jawWidth),
-      chin_sharpness: chinWidth / Math.max(0.001, jawWidth),
-    };
-
-    if (isCenteredX && isCenteredY && isReasonableSize && isNotHeavilyTilted) {
+      // ---- HIJAU (ALIGNED): stabil berbasis waktu, bukan hitungan frame ----
       setFaceGuideState("ALIGNED");
-      setGuideMessage("Posisi wajah pas! Memulai pemindaian...");
-      alignedFramesRef.current++;
+      setGuideMessage("Posisi wajah pas! Tetap stabil...");
+      const now = performance.now();
+      if (alignedSinceRef.current === 0) alignedSinceRef.current = now;
 
-      // Trigger countdown after 6 stable frames (~0.2s)
-      if (alignedFramesRef.current >= 6 && !countdownRef.current && !isScanning && !scannedProfile) {
+      // Akumulasi fitur temporal — hanya frame ALIGNED (ADR-019)
+      const video = videoRef.current;
+      const skinLab = video ? sampleSkinLab(video, landmarks as Landmark[]) : null;
+      if (skinLab) {
+        samplerRef.current.push({
+          ratios: computeFaceRatios(landmarks as Landmark[]),
+          nose: computeNoseFeatures(landmarks as Landmark[]),
+          eye: computeEyeFeatures(landmarks as Landmark[]),
+          brow: computeBrowFeatures(landmarks as Landmark[]),
+          gender: computeGenderFeatures(landmarks as Landmark[]),
+          pose: { roll_deg: pose.roll_deg, yaw_deg: pose.yaw_deg, pitch_deg: pose.pitch_deg },
+          skinLab,
+        });
+        lastAlignedLmRef.current = landmarks as Landmark[];
+      }
+
+      const stableMs = now - alignedSinceRef.current;
+      const enoughSamples = samplerRef.current.count >= MIN_SAMPLES;
+      if (
+        stableMs >= ALIGNED_STABLE_MS &&
+        enoughSamples &&
+        !countdownRef.current &&
+        !isScanning &&
+        !scannedProfile
+      ) {
         setCountdown(3);
         let count = 3;
         countdownRef.current = setInterval(() => {
@@ -450,32 +483,13 @@ export const CameraScan: React.FC<CameraScanProps> = ({
             if (countdownRef.current) clearInterval(countdownRef.current);
             countdownRef.current = null;
             setCountdown(null);
-            handleStartScan();
+            startScanRef.current();
           }
         }, 1000);
       }
-    } else {
-      setFaceGuideState("MISALIGNED");
-      alignedFramesRef.current = 0;
-      if (countdownRef.current) {
-        clearInterval(countdownRef.current);
-        countdownRef.current = null;
-        setCountdown(null);
-      }
-
-      if (!isReasonableSize) {
-        if (faceW < 0.12) {
-          setGuideMessage("Dekatkan wajah Anda ke arah kamera");
-        } else {
-          setGuideMessage("Mundurkan wajah sedikit agar muat dalam area");
-        }
-      } else if (!isNotHeavilyTilted) {
-        setGuideMessage("Posisikan kepala tegak lurus ke depan");
-      } else if (!isCenteredX || !isCenteredY) {
-        setGuideMessage("Posisikan wajah tepat di dalam oval pemandu");
-      }
-    }
-  }, [isScanning, scannedProfile]);
+    },
+    [cancelCountdown, isScanning, scannedProfile]
+  );
 
   /* ---- Real-time face tracking loop (hanya mode kamera) ---- */
   useEffect(() => {
@@ -499,13 +513,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
               processLandmarks(result.faceLandmarks[0]);
             } else {
               setFaceGuideState("NO_FACE");
-              setGuideMessage("Wajah belum terdeteksi di dalam area pemandu");
-              alignedFramesRef.current = 0;
-              if (countdownRef.current) {
-                clearInterval(countdownRef.current);
-                countdownRef.current = null;
-                setCountdown(null);
-              }
+              cancelCountdown("Wajah belum terdeteksi di dalam area pemandu");
             }
           } catch (e) {
             // Silently recover on dropped frames
@@ -522,7 +530,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
       isLoopActive = false;
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [mode, hasCamera, scannedProfile, isScanning, isModelReady, processLandmarks]);
+  }, [mode, hasCamera, scannedProfile, isScanning, isModelReady, processLandmarks, cancelCountdown]);
 
   /* ---- FaceLandmarker mode IMAGE untuk pipeline upload (deteksi 1×) ---- */
   const getImageLandmarker = useCallback(async () => {
@@ -598,20 +606,39 @@ export const CameraScan: React.FC<CameraScanProps> = ({
         }
         setScanProgress(65);
 
-        // 4. ROI kulit + klasifikasi server (fitur turunan saja — tanpa gambar)
-        const roiBase64 = await cropCenterRoi(snapshotDataUrl);
-        const [skinRes, analysis] = await Promise.all([
-          analyzeSkin(roiBase64, false),
-          analyzeLandmarks(payload as unknown as Record<string, unknown>),
-        ]);
+        // 4. Klasifikasi server — SATU panggilan landmarks dengan skin_lab (patch
+        //    pusat via rgbToLab) + gender_features; ROI gambar tetap di perangkat.
+        const skinLab = sampleSkinLab(img, lms);
+        const fullPayload = {
+          ...payload,
+          ...(skinLab ? { skin_lab: skinLab } : {}),
+          gender_features: computeGenderFeatures(lms),
+        };
+        const analysis = await analyzeLandmarks(fullPayload as unknown as Record<string, unknown>);
         setScanProgress(90);
 
         const defaultPreset = MOCK_PRESETS.indonesian_warm_sawo_matang.profile;
+        const st = analysis?.skin_tone || defaultPreset.skin_tone;
+        const monkIdx = st?.monk_index ?? 6;
         const profile: UserPersonalProfile = {
-          monk_tone: skinRes?.monk_tone || defaultPreset.monk_tone,
-          undertone: skinRes?.undertone || defaultPreset.undertone,
+          monk_tone: {
+            index: monkIdx,
+            code: st?.monk_code || "MST-06",
+            hex: MST_HEX[monkIdx] || "#A07E56",
+            delta_e: 0,
+            description: st?.label_indonesian || "Rich Warm / Sawo Matang",
+          },
+          undertone: {
+            undertone: (st?.undertone as never) || "Warm",
+            confidence: st?.confidence ?? 0.9,
+            season: "-",
+            explanation: "",
+            best_colors: [],
+            clash_colors: [],
+          },
           face_shape: analysis?.face_shape || defaultPreset.face_shape,
-          body_shape: analysis?.body_shape || defaultPreset.body_shape,
+          skin_tone: st,
+          gender: analysis?.gender || defaultPreset.gender,
           // Multi-dimensi diisi hanya bila server mengklasifikasikannya (jujur, bukan asal isi)
           nose_type: analysis?.nose?.label || undefined,
           eye_shape: analysis?.eye?.label || undefined,
@@ -620,6 +647,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
           face_analysis_meta: {
             confidence: analysis?.face_shape?.confidence ?? 0.9,
             source: analysis?.meta?.source || "engine",
+            input_mode: "upload",
           },
           // Snapshot hanya hidup di state sesi (ADR-015) — dipakai Report Card
           scan_snapshot_dataurl: snapshotDataUrl,
@@ -642,7 +670,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
     [getImageLandmarker]
   );
 
-  /* ---- Manual / Auto scan handler ---- */
+  /* ---- Auto/scan handler — SATU panggilan analyzeLandmarks dari agregat temporal ---- */
   const handleStartScan = async () => {
     if (countdownRef.current) {
       clearInterval(countdownRef.current);
@@ -663,40 +691,77 @@ export const CameraScan: React.FC<CameraScanProps> = ({
     }, 200);
 
     try {
-      let base64Image = "";
-      if (hasCamera && videoRef.current && canvasRef.current) {
-        const video = videoRef.current;
-        const canvas = canvasRef.current;
-        canvas.width = 160;
-        canvas.height = 160;
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          // Crop center forehead / cheek ROI
-          const sx = Math.max(0, video.videoWidth * 0.35);
-          const sy = Math.max(0, video.videoHeight * 0.25);
-          const sSize = Math.min(video.videoWidth * 0.3, video.videoHeight * 0.3);
-          ctx.drawImage(video, sx, sy, sSize, sSize, 0, 0, 160, 160);
-          base64Image = canvas.toDataURL("image/jpeg", 0.85);
-        }
+      const defaultPreset = MOCK_PRESETS.indonesian_warm_sawo_matang.profile;
+
+      // Agregat temporal (median rasio + mean LAB) — angka saja, tanpa gambar.
+      let analysis: Awaited<ReturnType<typeof analyzeLandmarks>>;
+      if (samplerRef.current.count >= MIN_SAMPLES) {
+        const agg = samplerRef.current.aggregate();
+        const lm = lastAlignedLmRef.current;
+        const imgW = lastImgWidthRef.current || videoRef.current?.videoWidth || 640;
+        const payload: Record<string, unknown> = {
+          face_ratios: agg.ratios,
+          measurements_cm: lm ? computeMeasurementsCm(lm, imgW) : {},
+          nose_features: agg.nose,
+          eye_features: agg.eye,
+          brow_features: agg.brow,
+          quality: {
+            roll_deg: agg.pose.roll_deg,
+            yaw_deg: agg.pose.yaw_deg,
+            pitch_deg: agg.pose.pitch_deg,
+            luminance: Math.round((agg.skin_lab.l / 100) * 255),
+            face_width_ratio: agg.ratios.face_width_to_height || 0.3,
+          },
+          skin_lab: agg.skin_lab,
+          gender_features: agg.gender,
+        };
+        analysis = await analyzeLandmarks(payload);
+      } else {
+        // Sampler belum cukup (mis. tombol manual dipaksa) — fallback preset deterministik
+        analysis = {
+          face_shape: defaultPreset.face_shape,
+          skin_tone: defaultPreset.skin_tone,
+          gender: defaultPreset.gender,
+          meta: { source: "mock" },
+          is_mock: true,
+        };
       }
-
-      // Use extracted MediaPipe ratios if available
-      const faceRatios = extractedRatiosRef.current || undefined;
-
-      const skinRes = await analyzeSkin(base64Image, !hasCamera);
-      const ratioRes = await analyzeRatios(faceRatios, undefined, !hasCamera);
 
       setTimeout(() => {
         clearInterval(interval);
         setScanProgress(100);
         setIsScanning(false);
 
-        const defaultPreset = MOCK_PRESETS.indonesian_warm_sawo_matang.profile;
+        const st = analysis.skin_tone || defaultPreset.skin_tone;
+        const monkIdx = st?.monk_index ?? 6;
         const profile: UserPersonalProfile = {
-          monk_tone: skinRes?.monk_tone || defaultPreset.monk_tone,
-          undertone: skinRes?.undertone || defaultPreset.undertone,
-          face_shape: ratioRes?.face_shape || defaultPreset.face_shape,
-          body_shape: ratioRes?.body_shape || defaultPreset.body_shape,
+          monk_tone: {
+            index: monkIdx,
+            code: st?.monk_code || "MST-06",
+            hex: MST_HEX[monkIdx] || "#A07E56",
+            delta_e: 0,
+            description: st?.label_indonesian || "Rich Warm / Sawo Matang",
+          },
+          undertone: {
+            undertone: (st?.undertone as never) || "Warm",
+            confidence: st?.confidence ?? 0.9,
+            season: "-",
+            explanation: "",
+            best_colors: [],
+            clash_colors: [],
+          },
+          face_shape: analysis.face_shape || defaultPreset.face_shape,
+          skin_tone: st,
+          gender: analysis.gender || defaultPreset.gender,
+          nose_type: analysis.nose?.label || undefined,
+          eye_shape: analysis.eye?.label || undefined,
+          brow_shape: analysis.brow?.label || undefined,
+          face_measurements: analysis.measurements || undefined,
+          face_analysis_meta: {
+            confidence: analysis.face_shape?.confidence ?? 0.9,
+            source: analysis.meta?.source || "engine",
+            input_mode: "camera",
+          },
         };
 
         setScannedProfile(profile);
@@ -708,6 +773,8 @@ export const CameraScan: React.FC<CameraScanProps> = ({
       setScannedProfile(fallback);
     }
   };
+
+  startScanRef.current = handleStartScan;
 
 
   /* ---- Derived styling ---- */
@@ -1128,7 +1195,8 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                   onClick={() => {
                     setScannedProfile(null);
                     setFaceGuideState("NO_FACE");
-                    alignedFramesRef.current = 0;
+                    alignedSinceRef.current = 0;
+                    samplerRef.current.reset();
                     setCountdown(null);
                     setGuideMessage("Posisikan wajah di dalam oval pemandu");
                     if (mode === "upload") {
@@ -1146,103 +1214,64 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                 </button>
               </div>
 
-              {/* Grid Metrics */}
-              <div className="grid grid-cols-2 gap-2.5 text-xs">
+              {/* Grid Metrics — Standardized 3-Parameter Biometrics */}
+              <div className="grid grid-cols-3 gap-2.5 text-xs">
+                {/* 1. Skin Tone */}
                 <div className="bg-surface-50/70 p-3 rounded-2xl border border-white/5 space-y-1">
-                  <span className="text-slate-400 font-mono text-[10px]">MONK SKIN TONE</span>
-                  <div className="flex items-center space-x-2">
+                  <span className="text-slate-400 font-mono text-[10px]">WARNA KULIT</span>
+                  <div className="flex items-center space-x-1.5">
                     <span
-                      className="w-4 h-4 rounded-full border border-white/30"
-                      style={{ backgroundColor: scannedProfile.monk_tone?.hex || "#96634e" }}
+                      className="w-3.5 h-3.5 rounded-full border border-white/30 shrink-0"
+                      style={{ backgroundColor: scannedProfile.monk_tone?.hex || scannedProfile.skin_tone?.hex || "#A07E56" }}
                     />
-                    <span className="font-bold text-white">{scannedProfile.monk_tone?.code || "MST-06"}</span>
+                    <span className="font-bold text-white text-xs truncate">
+                      {scannedProfile.skin_tone?.tone || "Tan"}
+                    </span>
                   </div>
-                  <p className="text-[11px] text-slate-300">
-                    {scannedProfile.monk_tone?.description || "Medium Warm"}
+                  <p className="text-[10px] text-slate-400 truncate">
+                    {scannedProfile.monk_tone?.code || "MST-06"}
                   </p>
                 </div>
 
-                <div className="bg-surface-50/70 p-3 rounded-2xl border border-white/5 space-y-1">
-                  <span className="text-slate-400 font-mono text-[10px]">UNDERTONE & PALET</span>
-                  <div className="font-bold text-indigo-400">
-                    {scannedProfile.undertone?.undertone || "Warm"} Tone
-                  </div>
-                  <p className="text-[11px] text-slate-300">{scannedProfile.undertone?.season || "Autumn"}</p>
-                </div>
-
+                {/* 2. Face Shape */}
                 <div className="bg-surface-50/70 p-3 rounded-2xl border border-white/5 space-y-1">
                   <span className="text-slate-400 font-mono text-[10px]">BENTUK WAJAH</span>
-                  <div className="font-bold text-white">
-                    {scannedProfile.face_shape?.shape || "Oval"} Face
+                  <div className="font-bold text-white text-xs truncate">
+                    {scannedProfile.face_shape?.shape || "Oval"}
                   </div>
-                  <p className="text-[10px] text-slate-400">
-                    Akurasi {Math.round((scannedProfile.face_shape?.confidence || 0.95) * 100)}%
+                  <p className="text-[10px] text-emerald-400 font-mono">
+                    {Math.round((scannedProfile.face_shape?.confidence || 0.92) * 100)}% Match
                   </p>
                 </div>
 
+                {/* 3. Gender */}
                 <div className="bg-surface-50/70 p-3 rounded-2xl border border-white/5 space-y-1">
-                  <span className="text-slate-400 font-mono text-[10px]">BENTUK TUBUH</span>
-                  <div className="font-bold text-white">
-                    {scannedProfile.body_shape?.shape || "Hourglass"} Silhouette
+                  <span className="text-slate-400 font-mono text-[10px]">GENDER</span>
+                  <div className="font-bold text-indigo-300 text-xs truncate">
+                    {scannedProfile.gender?.label_id === "female" ? "Wanita" : "Pria"}
                   </div>
-                  <p className="text-[10px] text-slate-400">ANSUR II Ratio Valid</p>
-                </div>
-
-                {/* Multi-dimensi: kalibrasi cm via iris (ADR-014) */}
-                {scannedProfile.face_measurements && (
-                  <div className="bg-surface-50/70 p-3 rounded-2xl border border-white/5 space-y-1">
-                    <span className="text-slate-400 font-mono text-[10px]">
-                      UKURAN TERKALIBRASI{" "}
-                      {scannedProfile.face_measurements.calibration === "iris" ? "(IRIS 11,7 MM)" : "(RASIO)"}
-                    </span>
-                    <div className="font-bold text-white text-[11px] leading-relaxed">
-                      Dahi {scannedProfile.face_measurements.forehead_width_cm ?? "—"} · Pipi{" "}
-                      {scannedProfile.face_measurements.cheekbone_width_cm ?? "—"} · Rahang{" "}
-                      {scannedProfile.face_measurements.jaw_width_cm ?? "—"} cm
-                    </div>
-                    <p className="text-[10px] text-slate-400">
-                      Proporsi {scannedProfile.face_measurements.face_proportion || "—"}
-                    </p>
-                  </div>
-                )}
-
-                {/* Multi-dimensi: hidung / mata / alis */}
-                {(scannedProfile.nose_type || scannedProfile.eye_shape || scannedProfile.brow_shape) && (
-                  <div className="bg-surface-50/70 p-3 rounded-2xl border border-white/5 space-y-1">
-                    <span className="text-slate-400 font-mono text-[10px]">HIDUNG · MATA · ALIS</span>
-                    <div className="text-[11px] font-semibold text-slate-100 leading-relaxed">
-                      {scannedProfile.nose_type || "—"}
-                      <br />
-                      {scannedProfile.eye_shape || "—"}
-                      <br />
-                      {scannedProfile.brow_shape || "—"}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Best Colors Preview */}
-              <div className="space-y-1.5 pt-1">
-                <span className="text-[11px] text-slate-400 font-mono">WARNA PALING HARMONIS:</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {(scannedProfile.undertone?.best_colors || []).slice(0, 5).map((col) => (
-                    <div
-                      key={col.name}
-                      className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-surface-50 border border-white/5 text-[11px] text-slate-200"
-                    >
-                      <span
-                        className="w-2.5 h-2.5 rounded-full"
-                        style={{ backgroundColor: col.hex }}
-                      />
-                      <span>{col.name}</span>
-                    </div>
-                  ))}
+                  <p className="text-[10px] text-slate-400">
+                    {scannedProfile.gender?.label_id === "female" ? "Female" : "Male"}
+                  </p>
                 </div>
               </div>
 
+              {/* Detail Fitur Wajah Lanjutan (Pendukung AR & Kacamata) */}
+              {(scannedProfile.face_measurements || scannedProfile.nose_type || scannedProfile.eye_shape) && (
+                <div className="bg-surface-50/40 p-3 rounded-2xl border border-white/5 space-y-1 text-xs">
+                  <span className="text-slate-400 font-mono text-[10px]">PROPORSI GEOMETRI WAJAH</span>
+                  <div className="text-[11px] text-slate-200 leading-relaxed flex flex-wrap gap-x-3 gap-y-0.5">
+                    {scannedProfile.face_measurements && (
+                      <span>Dahi {scannedProfile.face_measurements.forehead_width_cm ?? "—"} · Pipi {scannedProfile.face_measurements.cheekbone_width_cm ?? "—"} · Rahang {scannedProfile.face_measurements.jaw_width_cm ?? "—"} cm</span>
+                    )}
+                    {scannedProfile.nose_type && <span>Hidung: {scannedProfile.nose_type}</span>}
+                    {scannedProfile.eye_shape && <span>Mata: {scannedProfile.eye_shape}</span>}
+                  </div>
+                </div>
+              )}
 
               <button
-                onClick={() => onScanComplete(scannedProfile, streamRef.current || undefined)}
+                onClick={() => onScanComplete(scannedProfile, streamRef.current || undefined, { inputMode: mode })}
                 className="w-full mt-3 py-3.5 rounded-2xl font-bold text-sm text-white bg-gradient-to-r from-indigo-600 via-indigo-500 to-rose-600 hover:scale-[1.02] transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center space-x-2"
               >
                 <span>Lanjut ke Kuesioner Gaya {subcatLabel}</span>

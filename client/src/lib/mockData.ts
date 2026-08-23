@@ -31,13 +31,24 @@ export interface FaceShapeProfile {
   styling_advice: string;
 }
 
-export interface BodyShapeProfile {
-  shape: string;
+/** Output biometrik terstandarisasi 1 dari 3: warna kulit (bucket 5 kategori). */
+export interface SkinToneProfile {
+  tone: "Fair" | "Light" | "Medium" | "Tan" | "Dark" | string;
+  label_indonesian: string;
+  monk_index?: number;
+  monk_code?: string;
+  ita_deg?: number;
+  undertone?: string; // sinyal internal recommender, bukan kartu UI utama
+  hex?: string; // swatch dari MST reference
   confidence: number;
-  ratios: Record<string, number>;
-  silhouette_recommendations: string[];
-  jacket_recommendations: string[];
-  styling_advice: string;
+}
+
+/** Output biometrik terstandarisasi 3 dari 3: gender dari rasio landmark. */
+export interface GenderProfile {
+  label: string; // "Pria (Male)" | "Wanita (Female)"
+  label_id: "male" | "female" | string;
+  confidence: number;
+  method?: string;
 }
 
 /** Ukuran antropometrik wajah terkalibrasi (ADR-014). Null bila mode ratio_only. */
@@ -50,32 +61,22 @@ export interface FaceMeasurements {
   calibration: "iris" | "ratio_only";
 }
 
-/** Ukuran antropometrik tubuh terkalibrasi tinggi badan (cm). */
-export interface BodyMeasurements {
-  shoulder_width_cm: number | null;
-  waist_width_cm: number | null;
-  hip_width_cm: number | null;
-  torso_length_cm: number | null;
-  leg_length_cm: number | null;
-  total_height_cm: number | null;
-  body_proportion: string;
-  calibration: "height_input" | "ratio_only";
-}
-
 export interface UserPersonalProfile {
   monk_tone: MonkSkinTone;
   undertone: UndertoneProfile;
   face_shape: FaceShapeProfile;
-  body_shape: BodyShapeProfile;
+  /** 3-param biometrik terstandarisasi (direktif 2026-08-23). */
+  skin_tone?: SkinToneProfile;
+  gender?: GenderProfile;
   /* --- Bidang multi-dimensi (opsional — jalur lama tetap valid) --- */
   nose_type?: string;
   eye_shape?: string;
   brow_shape?: string;
   face_measurements?: FaceMeasurements;
-  body_measurements?: BodyMeasurements;
   face_analysis_meta?: {
     confidence: number;
     source: string; // "engine" | "mock" | "ratios_fallback"
+    input_mode?: "camera" | "upload";
   };
   /** Snapshot reposisi — HANYA hidup di React state sesi (ADR-015, tanpa persistensi). */
   scan_snapshot_dataurl?: string;
@@ -88,7 +89,7 @@ export interface RecommendationItem {
   id: string;
   name: string;
   category: "Accessories" | "Apparel";
-  subcategory: "glasses" | "hats" | "shirts";
+  subcategory: "glasses" | "hats" | "shirts" | "jackets";
   base_colour: string;
   hex_colour: string;
   usage: string;
@@ -155,22 +156,21 @@ export const MOCK_PRESETS: Record<string, { name: string; profile: UserPersonalP
         calibration: "iris",
       },
       face_analysis_meta: { confidence: 0.94, source: "mock" },
-      body_shape: {
-        shape: "Hourglass",
-        confidence: 0.92,
-        ratios: {
-          shoulder_to_hip_ratio: 1.012,
-          waist_to_hip_ratio: 0.735,
-          waist_to_shoulder_ratio: 0.726,
-        },
-        silhouette_recommendations: ["Fitted Cut", "Wrap Shirt", "Tailored Blazer"],
-        jacket_recommendations: ["Belted Trench Coat", "Cropped Denim Jacket", "Tailored Blazer"],
-        styling_advice: "Proporsi bahu dan pinggul seimbang dengan lekuk pinggang yang tegas. Siluet fitted menonjolkan keanggunan postur alami.",
+      skin_tone: {
+        tone: "Tan",
+        label_indonesian: "Tan (Sawo Matang)",
+        monk_index: 6,
+        monk_code: "MST-06",
+        ita_deg: 69.3,
+        undertone: "Warm",
+        hex: "#A07E56",
+        confidence: 0.9,
       },
+      gender: { label: "Pria (Male)", label_id: "male", confidence: 0.68, method: "landmark_ratio" },
     },
   },
   fair_cool_round: {
-    name: "Preset 2: Fair Cool Skin + Round Face + Pear Body",
+    name: "Preset 2: Fair Cool Skin + Round Face",
     profile: {
       monk_tone: {
         index: 2,
@@ -220,18 +220,16 @@ export const MOCK_PRESETS: Record<string, { name: string; profile: UserPersonalP
         calibration: "iris",
       },
       face_analysis_meta: { confidence: 0.91, source: "mock" },
-      body_shape: {
-        shape: "Pear",
-        confidence: 0.90,
-        ratios: {
-          shoulder_to_hip_ratio: 0.895,
-          waist_to_hip_ratio: 0.760,
-          waist_to_shoulder_ratio: 0.849,
-        },
-        silhouette_recommendations: ["A-Line Cut", "Structured Shoulder Top", "Boatneck"],
-        jacket_recommendations: ["Structured Blazer with Lapels", "Bomber Jacket", "Cropped Utility Jacket"],
-        styling_advice: "Garis pinggul lebih dominan dibandingkan bahu. Gunakan atasan dengan aksen bahu berstruktur untuk menarik perhatian ke tubuh atas.",
+      skin_tone: {
+        tone: "Fair",
+        label_indonesian: "Fair (Sangat Terang)",
+        monk_index: 2,
+        monk_code: "MST-02",
+        undertone: "Cool",
+        hex: "#F3E7DB",
+        confidence: 0.88,
       },
+      gender: { label: "Wanita (Female)", label_id: "female", confidence: 0.66, method: "landmark_ratio" },
     },
   },
 };
