@@ -29,6 +29,8 @@
   - Di toko fisik (*offline*), pembeli menghabiskan waktu di ruang ganti tanpa kepastian, sementara penjual harus merekomendasikan outfit satu per satu secara manual.
 - **Unique Value Proposition (UVP)**:
   - **AI Personal Character Analysis**: Scan kamera wajah 468 titik untuk mendeteksi warna kulit (Monk Scale), undertone, dan bentuk geometri wajah, lalu merekomendasikan aksesoris yang cocok dengan karakter personal user.
+  - **Dual-Mode Face Input + Interactive Repositioning (ADR-013)**: Webcam live ATAU unggah foto (PNG/JPG/JPEG ≤8MB) dengan alat reposisi interaktif (drag/pan, zoom/scale, rotate ±45°) untuk menyelaraskan dahi/mata/dagu ke oval pemandu sebelum analisis — 100% diproses di browser (UU PDP by design).
+  - **Multi-Dimensional Face Analysis + Agency-Grade Report Card (ADR-014/017)**: Analisis 5 dimensi (bentuk wajah 6 kelas, MST + kategori Indonesia, undertone, tipe hidung, bentuk mata & alis) terkalibrasi konstanta iris 11,7 mm menjadi pengukuran cm presisi, disajikan sebagai kartu laporan beranotasi geometris + justifikasi 3 pilar ilmiah (ADR-016), dengan injeksi otomatis ke prompt Gemini.
   - **Category-First Flow**: Pengguna memilih kategori aksesoris terlebih dahulu (Kacamata / Topi), kemudian melakukan pemindaian wajah dan menjawab kuesioner bertarget. Kategori busana tubuh (Baju / Jaket) ditandai sebagai Tahap 2 (membutuhkan sensor pose full-body).
   - **Multi-Batch Targeted Questionnaire**: Kuesioner dinamis tanpa batas batch (Batch 1-5+) didukung Gemini API & local bank untuk penyesuaian gaya mendalam.
   - **Cinematic Processing Telemetry**: Visualisasi pemrosesan data real-time yang memvalidasi setiap preferensi jawaban pengguna sebelum masuk ke studio AR.
@@ -194,8 +196,9 @@
                         ┌───────────────────────────────────────────┐
                         │             CLIENT (Frontend)             │
                         │    Next.js / React + Tailwind + Three.js  │
-                        │     - Single input: Camera Video Stream   │
-                        │     - MediaPipe Pose (33) & Face (468)    │
+                        │  - Dual Input: Webcam Live / Upload Foto  │
+                        │  - MediaPipe Pose (33) & Face (478+Iris)  │
+                        │  - faceGeometry.ts (fitur + kalibrasi cm) │
                         │     - AR Web Canvas Viewer (glTF/GLB)     │
                         └─────────────────────┬─────────────────────┘
                                               │ HTTP POST /api/v1/analyze
@@ -215,6 +218,9 @@
                         │            AI_ENGINE (Core ML)            │
                         │     - OpenCV CIELAB Distance to MST Scale │
                         │     - Random Forest Face Shape Classifier │
+                        │     - Multi-Dim Face Analyzer (ADR-014):  │
+                        │       Nose/Eye/Brow Rule Engine + Diamond │
+                        │     - PillarJustifier (3 Pilar ADR-016)   │
                         │     - ANSUR II Body Shape Ratio Engine    │
                         │     - FashionCLIP Embedding + Similarity  │
                         │     - Dataset: Fashion Images CC0 + SCIN  │
@@ -241,6 +247,12 @@
 - **[2026-08-21] ADR-010**: Standardisasi & Verifikasi 100% Tautan Sumber Dataset & Repositori Terbuka. Seluruh dataset dan repositori pendukung (Google SCIN, Matt Groh Fitzpatrick17k, Penn State OpenLab ANSUR II, HuggingFace Polyvore-outfits, Kaggle Fashion Product Images, Three.js, MediaPipe) telah diaudit dan diverifikasi 100% aktif (HTTP 200 OK) serta bebas risiko lisensi komersial/redistribusi.
 - **[2026-08-21] ADR-011**: Pemilihan Output Top-4 Rekomendasi Terkurasi (*The 4 Style Archetypes*) dan Alur Kustomisasi Bertingkat (Aksesoris: Kacamata/Topi vs Pakaian: Baju/Jaket). Alasan: (1) Mengeliminasi *choice fatigue* / *choice paralysis* sesuai kaidah *Hick's Law*, (2) Mengelompokkan 4 varian gaya logis (#1 Perfect Match, #2 Safe Classic, #3 Bold Statement, #4 Modern Silhouette), (3) Model #1 otomatis terpasang (auto-attach) di WebGL dengan navigasi switch panah Kiri-Kanan yang ringan (< 10MB memory, 60 FPS).
 - **[2026-08-21] ADR-012**: Transisi dari Geometri Primitif Prosedural ke Aset 3D Fotorealistis (`.glb`/`.gltf`) & Head Occluder Mask. Evaluasi visual live webcam menunjukkan bahwa topi yang dibangun dari primitive mesh dasar Three.js (Sphere/Cylinder) terlihat kaku, artifisial, dan bertabrakan dengan rambut/dahi karena ketiadaan depth occlusion. Keputusan: (1) Mengadopsi aset 3D `.glb` bertekstur PBR dari sumber terbuka CC0 (Poly Pizza / Quaternius), (2) Mengintegrasikan Three.js `GLTFLoader` dengan *Head Occlusion Mesh* (invisible depth mask `colorWrite: false, depthWrite: true` berbasis MediaPipe 468 landmark) agar bagian dalam/belakang topi terpotong secara alami oleh kepala pengguna, (3) Menambahkan script otomatis `scripts/download_3d_assets.py` untuk mengunduh dan memvalidasi bundel aset 3D lokal.
+- **[2026-08-23] ADR-013**: Adopsi **input dual-mode** pada modul Pemindaian Wajah — Mode 1 webcam live (oval guide + auto-countdown, dipertahankan) dan Mode 2 unggah foto (PNG/JPG/JPEG ≤8MB, validasi magic bytes + EXIF orientation) dengan *Interactive Repositioning Tool* (drag/pan, zoom/scale, rotate ±45°) yang menyelaraskan dahi/mata/dagu ke oval pemandu sebelum analisis. Seluruh pemrosesan gambar tetap 100% client-side (MediaPipe IMAGE mode, instance terpisah karena running mode immutable) — gambar wajah tidak pernah dikirim ke server (penguatan ADR-003 / UU PDP by design).
+- **[2026-08-23] ADR-014**: Ekspansi **mesin analisis wajah multi-dimensi** dengan arsitektur hybrid client-extract/server-classify (*Alternatif A*; alternatif all-client dan all-server ditolak demi SSOT `ai_engine` yang teruji pytest). Klien mengekstrak 478 landmark (termasuk 10 titik iris 468–477) dan menghitung ±20 fitur geometris + pengukuran terkalibrasi cm memakai konstanta **diameter iris horizontal 11,7 mm** (Roesler et al. 2022 ACM ICMI "Method V"; MediaPipe Iris <10% relative error). Server mengklasifikasi via endpoint baru `POST /analyze/landmarks`: bentuk wajah 6 kelas (+**Diamond** via rule override karena Face Shape 5K tidak memuat kelas Diamond — terverifikasi Kaggle niten19), tipe hidung (Greek/Roman/Bulbous/Broad-Snub/Celestial-Button) via z-profil bridge rule engine, bentuk mata (Almond/Round/Cat-eye/Downturned) via Eye Aspect Ratio + canthal tilt, bentuk alis (Arched/Straight/Soft Curve) via arch-height ratio. Fallback rasio-murni (tanpa nilai cm) bila iris tidak valid; fallback alur `/ratios` lama bila endpoint gagal (backward compatible).
+- **[2026-08-23] ADR-015**: Keputusan persistensi data analisis: **PostgreSQL DITOLAK** (*considered-rejected*, diputuskan bersama pengguna 2026-08-23). Profil analisis tetap hidup di state sesi React + snapshot opsional `localStorage` klien (hanya metrik turunan, tanpa gambar/landmark mentah). Alasan: (1) kepatuhan UU PDP No. 27/2022 + ADR-003 Zero Persistent Biometrics, (2) Batasan MVP penyisihan *"DILARANG: riwayat db"*, (3) menghindari kontradiksi dengan klaim footer aplikasi *"Zero Persistent Biometrics (UU PDP Compliant)"*, (4) efisiensi waktu menjelang deadline.
+- **[2026-08-23] ADR-016**: Kerangka **justifikasi ilmiah 3 pilar** yang menghubungkan biometri ke rekomendasi aksesoris: (1) *Face Shape → kontras siluet* frame vs rahang (Square→frame membulat, Round→frame bersudut, Diamond→browline), (2) *Undertone+MST → warna material* (Warm→emas/acetate hangat; Cool→perak/gunmetal/titanium dingin; termasuk fabric topi), (3) *Nose type/bridge → fit ergonomis* (Broad-Snub/pesek→low-bridge fit/keyhole bridge; Greek/mancung→adjustable nose pads; Roman→bridge tinggi). Seluruh output rekomendasi wajib menyertakan justifikasi pilar terkait.
+- **[2026-08-23] ADR-017**: Penambahan tahap **`REPORT` (Face Analysis Report Card)** ke step machine antara SCAN dan QUIZ: gambar wajah pengguna + overlay anotasi SVG (garis kuning Lebar Dahi/Tulang Pipi/Rahang + rasio proporsi ala referensi desain `docs/design_references/`), grid badge 5 dimensi (Face/Nose/Eye/Brow/MST), MST dipetakan ke kategori Indonesia (Cerah, Terang, Sawo Matang, Gelap Sedang, Gelap), panel pengukuran cm & rasio, 3 kartu pilar, narasi personal + tips (makeup/kacamata/topi), CTA "Lanjut ke Kuesioner Personalisasi" dengan **injeksi otomatis** data laporan ke prompt Gemini.
+- **[2026-08-23] ADR-018**: Batasan lisensi dataset analisis wajah multi-dimensi: **CelebA/CelebA-HQ** (non-komersial riset — 40 atribut biner: Oval/Round/Square_Face, Big_Nose, Pointy_Nose, Arched_Eyebrows, Narrow_Eyes) HANYA untuk validasi/kalibrasi lokal di RTX 4060; *weight* turunan boleh dikirim, **gambar DILARANG redistribusi**. **FairFace** (CC BY 4.0, 108.501 img, termasuk Asia Tenggara) sebagai sumber sampling geometris representatif. **Roboflow eyebrow-shape** (300 img, 6 kelas) untuk kalibrasi alis. Konstanta iris 11,7 mm mengacu literatur terverifikasi — menjunjung standard ADR-010 (100% link aktif).
 
 ---
 
@@ -309,3 +321,13 @@
    - Menambahkan Three.js Face Mesh Occluder (`material.colorWrite = false; material.depthWrite = true`) yang secara otomatis menyembunyikan bagian belakang/dalam topi yang tertutup oleh kepala pengguna.
 3. **Penyelarasan Skala & Offset Anchor**:
    - Melakukan kalibrasi agar beanie/cap membungkus kepala secara pas (*snug fit*) menyerupai video referensi demo.
+
+### D. Sesi 23 Agustus 2026 — Strategic Overhaul Modul Pemindaian Wajah (Sesi Perencanaan, Read-Only Kode):
+1. **Riset & Verifikasi (standar ADR-010)**:
+   - Kalibrasi iris 11,7 mm valid secara akademik (MediaPipe Iris 478 landmark; Roesler et al. 2022 ACM ICMI; AutoPtosis arXiv).
+   - CelebA/CelebA-HQ = non-komersial riset (validasi lokal saja); FairFace & SCIN = CC BY 4.0; Face Shape 5K (Kaggle niten19) = 5 kelas TANPA Diamond; Roboflow eyebrow-shape = 300 img 6 kelas.
+   - Tidak ada dataset terbuka kanonik untuk tipe hidung → strategi landmark-geometry rule engine.
+2. **Gerbang Brainstorming Lulus**: Understanding Lock dikonfirmasi pengguna; desain *Alternatif A* (hybrid client-extract/server-classify) disetujui; 8 keputusan D-1..D-8 tercatat (termasuk D-1: Tanpa DB → ADR-015; D-3: kalibrasi iris; D-4: Diamond rule override).
+3. **SSOT Diperbarui**: MEMORY.md (ADR-013 s.d. ADR-018 + UVP + arsitektur), PRD.md (spesifikasi overhaul + alur dual-mode + dataset tabel g + mermaid), Proposal.md (metodologi analisis multi-dimensi + kalibrasi iris).
+4. **Implementation Plan 4 Fase** disusun di `docs/plans/2026-08-23-face-analysis-overhaul.md` (Fase 1 UI Upload & Reposisi → Fase 2 Backend & Vision Engine → Fase 3 Laporan Analisis → Fase 4 Integrasi Kuesioner & 3D AR) dengan descope ladder: bila waktu habis, Fase 4 dipotong menjadi hanya injeksi prompt + manifest GLB.
+5. **Target Eksekusi**: 4 fase berurutan dalam ~2,5 hari menjelang deadline 25 Agustus 2026 23.55 WIB.

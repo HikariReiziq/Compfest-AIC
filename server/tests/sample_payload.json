@@ -1,0 +1,43 @@
+{
+  "face_ratios": {
+    "face_width_to_height": 0.78,
+    "jaw_to_forehead": 0.85,
+    "cheekbone_to_jaw": 1.18,
+    "chin_sharpness": 0.55,
+    "chin_taper": 0.46
+  },
+  "measurements_cm": {
+    "forehead_width_cm": 12.9,
+    "cheekbone_width_cm": 14.9,
+    "jaw_width_cm": 12.6,
+    "face_height_cm": 22.1,
+    "face_proportion": "1.0:1.2:1",
+    "calibration": "iris"
+  },
+  "nose_features": {
+    "width_to_face": 0.24,
+    "length_to_height": 0.32,
+    "bridge_curvature": 0.02,
+    "bridge_linearity": 0.03,
+    "tip_upturn": 0.08,
+    "alar_to_tip_ratio": 1.4
+  },
+  "eye_features": {
+    "ear_right": 0.33,
+    "ear_left": 0.32,
+    "canthal_tilt_right": 2.0,
+    "canthal_tilt_left": 2.0,
+    "eye_spacing_ratio": 0.35
+  },
+  "brow_features": {
+    "arch_ratio_right": 0.16,
+    "arch_ratio_left": 0.15
+  },
+  "quality": {
+    "roll_deg": 1.0,
+    "yaw_deg": 2.0,
+    "pitch_deg": 3.0,
+    "luminance": 120.0,
+    "face_width_ratio": 0.38
+  }
+}

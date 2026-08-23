@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-08-20T09:32:43.963Z",
+  "entries": [
+    "ai-engineer",
+    "api-design-principles",
+    "api-patterns",
+    "async-python-patterns",
+    "auth-implementation-patterns",
+    "backend-architect",
+    "backend-dev-guidelines",
+    "before-you-build",
+    "brainstorming",
+    "clean-code",
+    "code-review-excellence",
+    "code-showcase-react-ui-patterns",
+    "computer-vision-expert",
+    "database-architect",
+    "database-optimizer",
+    "debugging-strategies",
+    "docs",
+    "fastapi-pro",
+    "frontend-architecture",
+    "frontend-design",
+    "frontend-dev-guidelines",
+    "frontend-developer",
+    "high-end-visual-design",
+    "python-pro",
+    "to-prd",
+    "writing-plans"
+  ]
+}

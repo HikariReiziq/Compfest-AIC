@@ -35,15 +35,16 @@ Solusi parsial sudah ada. Virtual try-on untuk kacamata, kuis gaya dari beberapa
 
 ## Solusi
 
-COBA (Cocokkan Outfit Sesuai Badan Anda) adalah platform web yang memadukan **AI rekomendasi gaya busana berbasis karakter personal** dengan **AR try-on 3D interaktif** sebagai sarana validasi visual langsung di peramban. Alur sistem terstruktur dalam lima tahapan yang mulus:
+COBA (Cocokkan Outfit Sesuai Badan Anda) adalah platform web yang memadukan **AI rekomendasi gaya busana berbasis karakter personal** dengan **AR try-on 3D interaktif** sebagai sarana validasi visual langsung di peramban. Alur sistem terstruktur dalam enam tahapan yang mulus:
 
-1. **Pemindaian Karakter Personal (Camera Scan)**: Sistem membaca fitur visual pengguna secara realtime di peramban (warna kulit dan undertone, bentuk wajah untuk aksesoris, dan rasio proporsi tubuh). Tinggi badan dapat diisi atau dikalibrasi, dan berat badan dimasukkan sebagai preferensi tambahan.
-2. **Pemilihan Domain & Sub-Kategori**: Pengguna memilih fokus eksplorasi gaya awal:
+1. **Pemindaian Karakter Personal Dual-Mode (Camera Scan / Upload + Reposisi)**: Sistem membaca fitur visual pengguna di peramban melalui dua jalur — webcam live dengan pemandu oval otomatis, atau unggah foto (PNG/JPG/JPEG) dengan alat reposisi interaktif (geser, zoom, rotasi) agar dahi, mata, dan dagu selaras dengan pemandu sebelum analisis. Deteksi mencakup warna kulit dan undertone, bentuk wajah, tipe hidung, bentuk mata dan alis (478 titik landmark termasuk iris), serta rasio proporsi tubuh — seluruhnya diproses di perangkat pengguna.
+2. **Kartu Laporan Analisis Wajah (Face Analysis Report Card)**: Hasil analisis disajikan sebagai laporan ala agensi: foto pengguna dengan anotasi garis pengukuran (lebar dahi, tulang pipi, rahang dalam sentimeter terkalibrasi iris), lencana 5 dimensi karakter wajah, justifikasi ilmiah 3 pilar (kontras siluet, warna material, fit ergonomis bridge), narasi personal, dan tips penataan. Seluruh data laporan ter-injeksi otomatis ke tahap kuesioner.
+3. **Pemilihan Domain & Sub-Kategori**: Pengguna memilih fokus eksplorasi gaya awal:
    - **Kategori Aksesoris**: Pilihan sub-kategori kacamata atau topi.
    - **Kategori Pakaian**: Pilihan sub-kategori baju/kaos atau jaket/outerwear.
-3. **Kuesioner Cerdas Bertarget (Targeted Questionnaire)**: Pengguna menjawab pertanyaan ringkas berbasis batch yang spesifik untuk sub-kategori terpilih (kesempatan acara/occasion seperti formal atau kasual, preferensi siluet fit seperti oversized atau slim, serta mood palet warna).
-4. **Kurasi Cerdas Top-4 Rekomendasi (Curated Archetypes)**: Mesin AI menghasilkan 4 opsi rekomendasi terbaik yang telah diselaraskan dengan undertone kulit dan bentuk tubuh/wajah (Pilihan #1: *The Perfect Match*, Pilihan #2: *Safe Classic/Versatile*, Pilihan #3: *Bold Statement*, Pilihan #4: *Modern Silhouette*). Pendekatan 4 pilihan ini dirancang khusus untuk memotong kelelahan memilih (*choice fatigue*) tanpa membatasi variasi.
-5. **Validasi Visual AR Otomatis & Navigasi Switch (Auto-Attach & Switch)**: Model 3D rekomendasi nomor 1 otomatis langsung terpasang pada wajah atau tubuh pengguna secara realtime 3D. Jika pengguna ingin mencoba variasi lain, tersedia tombol navigasi panah Kiri dan Kanan (*Switch*) untuk berganti ke model rekomendasi berikutnya secara instan.
+4. **Kuesioner Cerdas Bertarget (Targeted Questionnaire)**: Pengguna menjawab pertanyaan ringkas berbasis batch yang spesifik untuk sub-kategori terpilih (kesempatan acara/occasion seperti formal atau kasual, preferensi siluet fit seperti oversized atau slim, serta mood palet warna).
+5. **Kurasi Cerdas Top-4 Rekomendasi (Curated Archetypes)**: Mesin AI menghasilkan 4 opsi rekomendasi terbaik yang telah diselaraskan dengan undertone kulit dan bentuk tubuh/wajah (Pilihan #1: *The Perfect Match*, Pilihan #2: *Safe Classic/Versatile*, Pilihan #3: *Bold Statement*, Pilihan #4: *Modern Silhouette*). Pendekatan 4 pilihan ini dirancang khusus untuk memotong kelelahan memilih (*choice fatigue*) tanpa membatasi variasi.
+6. **Validasi Visual AR Otomatis & Navigasi Switch (Auto-Attach & Switch)**: Model 3D rekomendasi nomor 1 otomatis langsung terpasang pada wajah atau tubuh pengguna secara realtime 3D. Jika pengguna ingin mencoba variasi lain, tersedia tombol navigasi panah Kiri dan Kanan (*Switch*) untuk berganti ke model rekomendasi berikutnya secara instan.
 
 Semua data biometrik dan respons kuesioner hanya disimpan selama sesi peramban berlangsung (*session-scoped*) dan otomatis terhapus saat sesi berakhir, menjamin privasi pengguna 100 persen.
 
@@ -79,6 +80,23 @@ Katalog **Fashion Product Images** dipilih sebagai katalog utama karena lisensi 
 ### 3. Klasifikasi Bentuk Wajah (Face Shape)
 - **Face Shape Dataset**: 5.000 citra wajah terbagi ke 5 bentuk (Heart, Oblong, Oval, Round, Square) ([Kaggle Dataset](https://www.kaggle.com/datasets/niten19/face-shape-dataset)).
 - **Face Shape Geometric Features**: Ekstraksi 468 titik landmark via MediaPipe Face Mesh yang diklasifikasikan menggunakan model Random Forest ringan ([GitHub dsmlr/faceshape](https://github.com/dsmlr/faceshape), [GitHub akashchoudhary436/Face-Shape-Detection](https://github.com/akashchoudhary436/Face-Shape-Detection)).
+
+### 4. Analisis Multi-Dimensi Wajah: Tipe Hidung, Bentuk Mata & Alis
+
+Karena belum tersedia dataset terbuka kanonik berlabel tipe hidung, klasifikasi hidung, mata, dan alis dibangun sebagai **landmark-geometry rule engine** atas 478 titik MediaPipe (z-profil bridge hidung, Eye Aspect Ratio + canthal tilt, arch-height ratio alis), lalu divalidasi dan dikalibrasi secara lokal terhadap dataset atribut wajah terbuka:
+
+- **CelebA** (202.599 citra, 40 atribut biner: Big_Nose, Pointy_Nose, Arched_Eyebrows, Narrow_Eyes, Oval/Round/Square_Face) — validasi & kalibrasi lokal saja (lisensi non-komersial riset; gambar tidak didistribusikan ulang) ([MMLab CelebA](https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html)).
+- **FairFace** (108.501 citra CC BY 4.0, seimbang 7 kelompok ras termasuk Asia Tenggara) — sampling geometris representatif demografi Indonesia ([GitHub joojs/fairface](https://github.com/joojs/fairface)).
+- **Eyebrow Shape Dataset** (300 citra, 6 kelas: Straight, Curved, High-Arch, S-Shaped, Soft-Arch, Upward) — kalibrasi rule engine alis ([Roboflow eyebrow-shape](https://universe.roboflow.com/face-hqu83/eyebrow-shape)).
+- **MST-E — Monk Skin Tone Examples** (1.515 citra mencakup 10 tingkat MST) — validasi deteksi warna kulit ([skintone.google/mste-dataset](https://skintone.google/mste-dataset)).
+
+### 5. Kalibrasi Pengukuran Wajah Presisi (Iris 11,7 mm)
+
+Pengukuran wajah dalam sentimeter (lebar dahi, tulang pipi, rahang, tinggi wajah, lebar hidung) dikalibrasi menggunakan **diameter iris horizontal 11,7 mm** sebagai referensi skala alami tubuh manusia dewasa yang nyaris konstan — metode yang menjadi standar normalisasi metrik wajah di literatur:
+
+- **MediaPipe Iris** — 478 landmark (10 titik iris, indeks 468–477) + estimasi jarak kamera dengan galat relatif <10% ([GitHub google/mediapipe — iris](https://github.com/google/mediapipe/blob/master/docs/solutions/iris.md)).
+- **Roesler et al. 2022 (ACM ICMI)** — normalisasi metrik wajah piksel→milimeter via diameter iris 11,7 mm ("Method V") ([dl.acm.org](https://dl.acm.org/doi/fullHtml/10.1145/3536220.3558071)).
+- Rumus: `mm_per_piksel = 11,7 / diameter_iris_piksel`; setiap jarak landmark dikalikan faktor ini menjadi sentimeter. Bila iris tidak terdeteksi confidently (silau kacamata, mata tertutup), sistem otomatis mundur ke mode rasio-murni tanpa nilai absolut.
 
 ---
 
