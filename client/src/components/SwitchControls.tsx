@@ -98,6 +98,19 @@ export const SwitchControls: React.FC<SwitchControlsProps> = ({
           </button>
         </div>
 
+        {/* Centered Preview Thumbnail */}
+        <div className="w-full h-36 rounded-2xl bg-slate-950/80 border border-white/10 flex items-center justify-center p-2 overflow-hidden shadow-inner">
+          <img
+            src={currentItem.preview_image_url || `/images/products/preview/${currentItem.id}.png`}
+            alt={currentItem.name}
+            className="w-full h-full object-contain filter drop-shadow-md"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.style.display = "none";
+            }}
+          />
+        </div>
+
         {/* Compatibility Breakdown Bars */}
         <div className="bg-surface-50/70 rounded-2xl p-4 border border-white/5 space-y-3">
           <div className="flex items-center justify-between text-xs">

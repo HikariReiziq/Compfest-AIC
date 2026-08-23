@@ -352,6 +352,8 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
     (landmarks: any[], group: THREE.Group) => {
       const leftShoulder = landmarks[11];
       const rightShoulder = landmarks[12];
+      const leftHip = landmarks[23];
+      const rightHip = landmarks[24];
 
       if (!leftShoulder || !rightShoulder) return;
 
@@ -359,29 +361,44 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
       const midShoulderY = (leftShoulder.y + rightShoulder.y) / 2;
 
       const posX = (0.5 - midShoulderX) * 4.4;
-      const posY = (0.5 - midShoulderY) * 3.6 + offsetY * 0.01 - 0.2;
-      const posZ = ((leftShoulder.z + rightShoulder.z) / 2 || 0) * -3.0;
+      const posY = (0.5 - midShoulderY) * 3.6 + offsetY * 0.01 - 0.15;
+      const posZ = (((leftShoulder.z || 0) + (rightShoulder.z || 0)) / 2) * -3.2;
 
+      // 1. Roll: Shoulder slope
       const dx = rightShoulder.x - leftShoulder.x;
       const dy = rightShoulder.y - leftShoulder.y;
       const rollAngle = Math.atan2(dy, dx);
+      const safeRoll = THREE.MathUtils.clamp(-rollAngle, -0.65, 0.65);
+
+      // 2. Yaw: Torso rotation around Y
       const depthDiff = (leftShoulder.z || 0) - (rightShoulder.z || 0);
-      const yawAngle = depthDiff * 1.8;
+      const yawAngle = Math.atan2(depthDiff * 2.8, Math.abs(dx) + 0.001);
+      const safeYaw = THREE.MathUtils.clamp(yawAngle, -0.75, 0.75);
+
+      // 3. Pitch: Torso leaning forward / backward
+      let safePitch = 0;
+      if (leftHip && rightHip) {
+        const midHipZ = ((leftHip.z || 0) + (rightHip.z || 0)) / 2;
+        const midShoulderZ = ((leftShoulder.z || 0) + (rightShoulder.z || 0)) / 2;
+        const pitchDelta = (midShoulderZ - midHipZ) * 1.8;
+        safePitch = THREE.MathUtils.clamp(pitchDelta, -0.45, 0.45);
+      }
 
       const shoulderDist = Math.sqrt(dx * dx + dy * dy);
-      const baseScale = shoulderDist * 2.85;
+      const baseScale = shoulderDist * 2.95;
 
       const fitMultiplier = fitStyle === "oversized" ? 1.15 : fitStyle === "slim" ? 0.9 : 1.0;
       const finalScale = baseScale * fitMultiplier;
 
-      group.position.x = THREE.MathUtils.lerp(group.position.x, posX, 0.4);
-      group.position.y = THREE.MathUtils.lerp(group.position.y, posY, 0.4);
-      group.position.z = THREE.MathUtils.lerp(group.position.z, posZ, 0.4);
+      group.position.x = THREE.MathUtils.lerp(group.position.x, posX, 0.45);
+      group.position.y = THREE.MathUtils.lerp(group.position.y, posY, 0.45);
+      group.position.z = THREE.MathUtils.lerp(group.position.z, posZ, 0.45);
 
-      group.rotation.z = THREE.MathUtils.lerp(group.rotation.z, -rollAngle, 0.4);
-      group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, yawAngle, 0.3);
+      group.rotation.z = THREE.MathUtils.lerp(group.rotation.z, safeRoll, 0.45);
+      group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw, 0.45);
+      group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, safePitch, 0.45);
 
-      group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.4);
+      group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.45);
     },
     [fitStyle, offsetY]
   );

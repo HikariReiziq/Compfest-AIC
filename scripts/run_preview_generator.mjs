@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PREVIEW_DIR = path.resolve(__dirname, '../client/public/images/products/preview');
-const BASE_URL = 'http://localhost:3001/preview-generator';
+const BASE_URL = 'http://localhost:3005/preview-generator';
 
 async function main() {
   fs.mkdirSync(PREVIEW_DIR, { recursive: true });
@@ -24,7 +24,7 @@ async function main() {
   await page.goto(BASE_URL, { waitUntil: 'networkidle0', timeout: 30000 });
 
   console.log('⏳ Waiting for Three.js initialization...');
-  await page.waitForFunction(() => window.__READY__ === true, { timeout: 15000 });
+  await page.waitForFunction(() => window.__READY__ === true, { timeout: 60000 });
   console.log('✅ Three.js ready!');
 
   const models = await page.evaluate(() => window.ALL_MODELS);

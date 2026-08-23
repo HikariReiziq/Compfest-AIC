@@ -107,9 +107,9 @@ export default function PreviewGenerator() {
           (gltf) => {
             const model = gltf.scene;
 
-            // Check if model needs rotation
-            const initialBox = new THREE.Box3().setFromObject(model);
-            const rawSize = initialBox.getSize(new THREE.Vector3());
+            // 1. Initial orientation correction if model is lying flat
+            const rawBox = new THREE.Box3().setFromObject(model);
+            const rawSize = rawBox.getSize(new THREE.Vector3());
             if (cat === "glasses" && rawSize.y > rawSize.z * 1.3) {
               model.rotation.x = -Math.PI / 2;
             }
@@ -118,27 +118,45 @@ export default function PreviewGenerator() {
             wrapper.add(model);
             scene.add(wrapper);
 
-            const box = new THREE.Box3().setFromObject(wrapper);
-            const center = box.getCenter(new THREE.Vector3());
-            const size = box.getSize(new THREE.Vector3());
-            model.position.sub(center);
-
-            const maxDim = Math.max(size.x, size.y, size.z) || 1;
-            model.scale.multiplyScalar(1.5 / maxDim);
-
+            // 2. Uniform clean front-facing angle (facing directly front with subtle 8-degree depth)
             if (cat === "glasses") {
-              camera.position.set(0, 0.1, 2.8);
-              wrapper.rotation.set(0.05, -0.3, 0);
+              wrapper.rotation.set(0.04, -0.18, 0);
             } else if (cat === "hats") {
-              camera.position.set(0, 0.5, 2.8);
-              wrapper.rotation.set(-0.15, -0.4, 0);
+              wrapper.rotation.set(0.08, -0.15, 0);
             } else {
-              camera.position.set(0, 0.2, 3.0);
-              wrapper.rotation.set(0, -0.25, 0);
+              wrapper.rotation.set(0.0, -0.12, 0);
             }
 
+            // Force world matrix update so bounding box includes rotations
+            wrapper.updateMatrixWorld(true);
+
+            // 3. Compute exact world bounding box of rotated model
+            const worldBox = new THREE.Box3().setFromObject(wrapper);
+            const worldCenter = worldBox.getCenter(new THREE.Vector3());
+            const worldSize = worldBox.getSize(new THREE.Vector3());
+
+            // 4. Center wrapper precisely at (0, 0, 0)
+            wrapper.position.sub(worldCenter);
+
+            // Force update after centering
+            wrapper.updateMatrixWorld(true);
+
+            // 5. Mathematical camera framing: object fills ~75% of frame (consistent padding, no cut-offs)
+            const fovRad = (camera.fov * Math.PI) / 180;
+            const distH = (worldSize.y / 2) / Math.tan(fovRad / 2);
+            const distW = (worldSize.x / 2) / Math.tan(fovRad / 2);
+            const maxDim = Math.max(worldSize.x, worldSize.y, worldSize.z);
+            const distMax = (maxDim / 2) / Math.tan(fovRad / 2);
+
+            const fitDistance = Math.max(distH, distW, distMax) * 1.30;
+
+            camera.position.set(0, 0, fitDistance);
+            camera.near = Math.max(0.01, fitDistance / 100);
+            camera.far = fitDistance * 100;
             camera.lookAt(0, 0, 0);
             camera.updateProjectionMatrix();
+
+            // Render crisp preview
             renderer.render(scene, camera);
 
             const dataUrl = canvas.toDataURL("image/png");

@@ -339,8 +339,18 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           const center = boxAfter.getCenter(new THREE.Vector3());
           const sizeAfter = boxAfter.getSize(new THREE.Vector3());
 
-          // Center the model at origin
-          model.position.sub(center);
+          // Center X and Y, but align Z/Y anchor so glasses temples extend backward into -Z (ears) and hats rest on forehead
+          if (!isHat) {
+            model.position.x -= center.x;
+            model.position.y -= center.y;
+            // Align front frame to Z = 0 so temples naturally point backwards into -Z towards the ears!
+            model.position.z -= boxAfter.max.z;
+          } else {
+            model.position.x -= center.x;
+            model.position.z -= center.z;
+            // Align bottom crown opening to Y = 0 so it rests naturally on the head
+            model.position.y -= boxAfter.min.y;
+          }
 
           // Apply manifest pivot offset to fine-tune exact anchor point
           if (modelConfig?.pivot_offset) {
@@ -424,7 +434,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   };
 
   /* ------------------------------------------------------------------ */
-  /*  5. Landmark Alignment Loop (Rock-Solid 60 FPS Head Tracking)      */
+  /*  5. Landmark Alignment Loop (Rock-Solid 60 FPS 3D Pose Tracking)   */
   /* ------------------------------------------------------------------ */
   const applyLandmarksTo3DModel = (landmarks: any[], group: THREE.Group) => {
     if (!videoRef.current || !containerRef.current) return;
@@ -435,6 +445,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     // Nasion / Nose Bridge: 168 (top) & 6 (mid bridge)
     // Forehead: 10
     // Nose tip: 4
+    // Chin: 152
     const leftOuter = landmarks[33];
     const leftInner = landmarks[133];
     const rightOuter = landmarks[263];
@@ -442,6 +453,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const nasion = landmarks[168] || landmarks[6];
     const foreheadTop = landmarks[10];
     const noseTip = landmarks[4] || landmarks[1];
+    const chin = landmarks[152];
 
     if (!leftOuter || !rightOuter || !nasion) return;
 
@@ -481,8 +493,8 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const midEyeY = (eyeLY + eyeRY) / 2;
 
     // Anchor: Nasion + MidEye blend for glasses, Forehead for hats
-    const anchorX = isHat ? (foreheadTop ? foreheadTop.x : midEyeX) : (midEyeX * 0.4 + nasion.x * 0.6);
-    const anchorY = isHat ? (foreheadTop ? foreheadTop.y : midEyeY) : (midEyeY * 0.4 + nasion.y * 0.6);
+    const anchorX = isHat ? (foreheadTop ? foreheadTop.x : midEyeX) : (midEyeX * 0.35 + nasion.x * 0.65);
+    const anchorY = isHat ? (foreheadTop ? foreheadTop.y : midEyeY) : (midEyeY * 0.35 + nasion.y * 0.65);
 
     // Screen Pixel Coordinates (Mirrored Video Feed -X)
     const screenX = offsetX + (1 - anchorX) * renderedWidth;
@@ -497,7 +509,8 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const halfW = halfH * (cw / ch);
 
     const worldX = ndcX * halfW;
-    const worldY = ndcY * halfH + (isHat ? 0.38 : -0.02) + offsetY * 0.012;
+    const worldY = ndcY * halfH + (isHat ? 0.32 : -0.01) + offsetY * 0.012;
+    const worldZ = (nasion.z || 0) * -1.8;
 
     // Screen Positions of Both Eyes for Angle & Scale
     const screenLX = offsetX + (1 - eyeLX) * renderedWidth;
@@ -506,49 +519,48 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const screenRY = offsetYPixel + eyeRY * renderedHeight;
 
     // Mirrored delta: On mirrored screen, subject's right eye is on the Left (screenRX < screenLX)
-    // Left-to-Right vector on screen: (screenLX - screenRX, screenLY - screenRY)
     const deltaX = screenLX - screenRX;
     const deltaY = screenLY - screenRY;
     const pixelDist = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-    // 1. Stable Roll (Tilt angle around Z)
-    // When head tilts right, deltaY changes
+    // 1. True 3D Roll (Tilt angle around Z)
     const rollAngle = Math.atan2(deltaY, deltaX);
-    const safeRoll = THREE.MathUtils.clamp(rollAngle, -0.65, 0.65);
+    const safeRoll = THREE.MathUtils.clamp(rollAngle, -0.95, 0.95);
 
-    // 2. Stable Yaw (Left/Right turn)
+    // 2. True 3D Yaw (Head turning Left / Right in 3D Space)
+    // MediaPipe z-depth delta between right and left eye + horizontal nasion shift
+    const eyeZDelta = (rightOuter.z || 0) - (leftOuter.z || 0);
     const screenBridgeX = offsetX + (1 - nasion.x) * renderedWidth;
-    const dLeft = Math.abs(screenLX - screenBridgeX);
-    const dRight = Math.abs(screenBridgeX - screenRX);
-    const yawVal = (dLeft - dRight) / (dLeft + dRight + 0.001);
-    const safeYaw = THREE.MathUtils.clamp(yawVal * 0.7, -0.45, 0.45);
+    const eyeMidScreenX = (screenLX + screenRX) / 2;
+    const noseScreenShift = (screenBridgeX - eyeMidScreenX) / (pixelDist * 0.5 + 0.001);
+    
+    // Combining 3D depth and facial feature perspective foreshortening
+    const rawYaw = (eyeZDelta * 3.2) + (noseScreenShift * 1.1);
+    const safeYaw = THREE.MathUtils.clamp(rawYaw, -0.95, 0.95);
 
-    // 3. Stable Pitch (Up/Down tilt)
+    // 3. True 3D Pitch (Head tilting Up / Down)
     let safePitch = 0;
-    if (noseTip) {
-      const tipY = offsetYPixel + noseTip.y * renderedHeight;
-      const bridgeY = offsetYPixel + nasion.y * renderedHeight;
-      const noseLength = tipY - bridgeY;
-      const expectedLength = pixelDist * 0.42;
-      const pitchRatio = (noseLength - expectedLength) / (expectedLength + 0.001);
-      safePitch = THREE.MathUtils.clamp(pitchRatio * 0.55, -0.25, 0.25);
+    if (chin && foreheadTop) {
+      const vertDepth = ((foreheadTop.z || 0) - (chin.z || 0)) * 2.2;
+      const noseRelY = ((nasion.y - foreheadTop.y) / (chin.y - foreheadTop.y + 0.001) - 0.45) * 2.0;
+      safePitch = THREE.MathUtils.clamp(vertDepth + noseRelY, -0.55, 0.55);
     }
 
-    // World Space Scale (Glasses width is ~1.55x the Inter-Pupillary Distance)
+    // World Space Scale (Glasses width matches real Inter-Pupillary Distance)
     const worldInterPupil = (pixelDist / cw) * (2 * halfW);
-    const baseScale = isHat ? worldInterPupil * 1.95 : worldInterPupil * 1.55;
+    const baseScale = isHat ? worldInterPupil * 1.95 : worldInterPupil * 1.62;
     const finalScale = baseScale * (scaleMultiplier / 100);
 
     // 60 FPS Smooth Interpolation
-    group.position.x = THREE.MathUtils.lerp(group.position.x, worldX, 0.5);
-    group.position.y = THREE.MathUtils.lerp(group.position.y, worldY, 0.5);
-    group.position.z = THREE.MathUtils.lerp(group.position.z, 0.05, 0.5);
+    group.position.x = THREE.MathUtils.lerp(group.position.x, worldX, 0.45);
+    group.position.y = THREE.MathUtils.lerp(group.position.y, worldY, 0.45);
+    group.position.z = THREE.MathUtils.lerp(group.position.z, worldZ, 0.45);
 
-    group.rotation.z = THREE.MathUtils.lerp(group.rotation.z, safeRoll, 0.5);
-    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw, 0.4);
-    group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, safePitch, 0.4);
+    group.rotation.z = THREE.MathUtils.lerp(group.rotation.z, safeRoll, 0.45);
+    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw, 0.45);
+    group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, safePitch, 0.45);
 
-    group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.5);
+    group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.45);
   };;
 
   return (
