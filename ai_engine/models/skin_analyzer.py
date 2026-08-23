@@ -30,6 +30,42 @@ MST_REFERENCE_TABLE = [
 ]
 
 
+# --- Standardisasi skin_tone 5 kategori (direktif 2026-08-23) ---
+# Bucket 5-level diturunkan dari Monk index agar deterministik dan ramah konteks Indonesia
+# (MST-06 "Rich Warm / Sawo Matang" jatuh ke bucket Tan).
+SKIN_TONE_LABELS = {
+    "Fair": "Fair (Sangat Terang)",
+    "Light": "Light (Terang)",
+    "Medium": "Medium (Sedang)",
+    "Tan": "Tan (Sawo Matang)",
+    "Dark": "Dark (Gelap)",
+}
+
+_MONK_TO_SKIN_TONE = [
+    (2, "Fair"),    # MST 1-2
+    (4, "Light"),   # MST 3-4
+    (5, "Medium"),  # MST 5
+    (7, "Tan"),     # MST 6-7
+    (10, "Dark"),   # MST 8-10
+]
+
+
+def monk_to_skin_tone(monk_index: int) -> str:
+    """Petakan Monk index (1-10) ke bucket skin_tone 5 kategori. Clamp input invalid."""
+    idx = max(1, min(10, int(monk_index)))
+    for upper, label in _MONK_TO_SKIN_TONE:
+        if idx <= upper:
+            return label
+    return "Dark"
+
+
+def lab_to_ita(l: float, a: float, b: float) -> float:
+    """Individual Typology Angle derajat (Chardon et al.) — makin tinggi makin terang."""
+    if abs(a) < 1e-6:
+        a = 1e-6
+    return math.degrees(math.atan((l - b) / a))
+
+
 class MonkToneResult:
     """Represents the Monk Skin Tone scale classification result."""
 
