@@ -1,0 +1,380 @@
+{
+  "_version": "1.0.0",
+  "_description": "Per-model GLB calibration metadata for AR Try-On positioning. pivot_offset adjusts center, rotation_correction fixes orientation, scale_factor multiplies normalized scale, anchor_type defines face landmark anchor strategy.",
+
+  "glasses_01_khronos_pbr.glb": {
+    "category": "glasses",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "nasion_pupil"
+  },
+  "glasses_02_rayban_pilot.glb": {
+    "category": "glasses",
+    "pivot_offset": [0, 0, 0.02],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 0.95,
+    "anchor_type": "nasion_pupil"
+  },
+  "glasses_03_facefit_geometric.glb": {
+    "category": "glasses",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.05,
+    "anchor_type": "nasion_pupil"
+  },
+  "glasses_04_facefit_browline.glb": {
+    "category": "glasses",
+    "pivot_offset": [0, 0.01, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "nasion_pupil"
+  },
+  "glasses_05_facefit_slim_aviator.glb": {
+    "category": "glasses",
+    "pivot_offset": [0, -0.01, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.1,
+    "anchor_type": "nasion_pupil"
+  },
+  "glasses_06_facefit_hornrimmed.glb": {
+    "category": "glasses",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "nasion_pupil"
+  },
+  "glasses_07_sunfit_sport.glb": {
+    "category": "glasses",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.05,
+    "anchor_type": "nasion_pupil"
+  },
+
+  "bicorn_hat.glb": {
+    "category": "hats",
+    "pivot_offset": [0, 0.1, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 0.9,
+    "anchor_type": "forehead"
+  },
+  "cowboy hat2.glb": {
+    "category": "hats",
+    "pivot_offset": [0, 0.08, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 0.85,
+    "anchor_type": "forehead"
+  },
+  "cowboy hat5.glb": {
+    "category": "hats",
+    "pivot_offset": [0, 0.08, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 0.85,
+    "anchor_type": "forehead"
+  },
+  "female_beach_hat.glb": {
+    "category": "hats",
+    "pivot_offset": [0, 0.12, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 0.9,
+    "anchor_type": "forehead"
+  },
+  "hat.glb": {
+    "category": "hats",
+    "pivot_offset": [0, 0.05, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "forehead"
+  },
+  "luffys_straw_hat.glb": {
+    "category": "hats",
+    "pivot_offset": [0, 0.1, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 0.8,
+    "anchor_type": "forehead"
+  },
+  "mafia_hat_spy_hat.glb": {
+    "category": "hats",
+    "pivot_offset": [0, 0.06, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "forehead"
+  },
+  "propeller_hat.glb": {
+    "category": "hats",
+    "pivot_offset": [0, 0.08, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 0.95,
+    "anchor_type": "forehead"
+  },
+  "renaissance_hat.glb": {
+    "category": "hats",
+    "pivot_offset": [0, 0.1, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 0.85,
+    "anchor_type": "forehead"
+  },
+  "weathered_pith_hat.glb": {
+    "category": "hats",
+    "pivot_offset": [0, 0.08, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 0.9,
+    "anchor_type": "forehead"
+  },
+  "witch_hat.glb": {
+    "category": "hats",
+    "pivot_offset": [0, 0.15, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 0.75,
+    "anchor_type": "forehead"
+  },
+
+  "shirt_01_adrian_baked_tee.glb": {
+    "category": "shirts",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "shirt_02_francesco_jersey.glb": {
+    "category": "shirts",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "shirt_03_mf_hoodie_51.glb": {
+    "category": "shirts",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "shirt_04_mf_hoodie_106.glb": {
+    "category": "shirts",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "shirt_05_mf_hoodie_64.glb": {
+    "category": "shirts",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "shirt_06_mf_hoodie_80.glb": {
+    "category": "shirts",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "shirt_07_mf_hoodie_108.glb": {
+    "category": "shirts",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "shirt_08_mf_hoodie_97.glb": {
+    "category": "shirts",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "shirt_09_mf_hoodie_36.glb": {
+    "category": "shirts",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "shirt_10_mf_tshirt_111.glb": {
+    "category": "shirts",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "shirt_11_mf_tshirt_54.glb": {
+    "category": "shirts",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "shirt_12_mf_tshirt_141.glb": {
+    "category": "shirts",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "shirt_13_mf_tshirt_48.glb": {
+    "category": "shirts",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "shirt_14_mf_tshirt_76.glb": {
+    "category": "shirts",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "shirt_15_mf_longsleeve_14.glb": {
+    "category": "shirts",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "shirt_16_mf_tanktop_3.glb": {
+    "category": "shirts",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+
+  "color_blocked_shirt.glb": {
+    "category": "shirts_pria",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "football_shirt_fc_barcelona.glb": {
+    "category": "shirts_pria",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "free_shirt.glb": {
+    "category": "shirts_pria",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "man_shirt.glb": {
+    "category": "shirts_pria",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "mens_casual_shirt.glb": {
+    "category": "shirts_pria",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "party_starter_-_layered_t-shirts.glb": {
+    "category": "shirts_pria",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "shirt.glb": {
+    "category": "shirts_pria",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "shirt2.glb": {
+    "category": "shirts_pria",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "shirt_with_long_sleeves.glb": {
+    "category": "shirts_pria",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "sleeveless_shirt.glb": {
+    "category": "shirts_pria",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "t-shirt.glb": {
+    "category": "shirts_pria",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "techwear_shirt.glb": {
+    "category": "shirts_pria",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "t_shirt.glb": {
+    "category": "shirts_pria",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+
+  "off_the_shoulder_shirt_-_ngchipv.glb": {
+    "category": "shirts_wanita",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "skirt_and_t-shirt.glb": {
+    "category": "shirts_wanita",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "soft_brushed_long_sleeve_shirt.glb": {
+    "category": "shirts_wanita",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "sweater_woman.glb": {
+    "category": "shirts_wanita",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "vneck_t-shirt_for_female.glb": {
+    "category": "shirts_wanita",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  },
+  "womens_shirt.glb": {
+    "category": "shirts_wanita",
+    "pivot_offset": [0, 0, 0],
+    "rotation_correction": [0, 0, 0],
+    "scale_factor": 1.0,
+    "anchor_type": "torso"
+  }
+}

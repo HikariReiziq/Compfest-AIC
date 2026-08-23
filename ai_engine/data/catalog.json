@@ -1,11 +1,11 @@
 {
-  "version": "4.1.0",
-  "total_products": 32,
+  "version": "5.0.0",
+  "total_products": 37,
   "items": [
     {
       "id": "glass-01",
       "name": "Khronos PBR Designer Eyewear",
-      "category": "glasses",
+      "category": "Accessories",
       "subcategory": "glasses",
       "modelType": "wayfarer",
       "baseColour": "Gold",
@@ -19,26 +19,20 @@
         "Oval",
         "Heart"
       ],
-      "flatteringBodyShapes": [
-        "Hourglass",
-        "Rectangle",
-        "Pear",
-        "Inverted Triangle",
-        "Apple"
-      ],
       "styleTags": [
         "wayfarer",
         "pbr",
         "gold",
-        "designer"
+        "designer",
+        "luxury"
       ],
-      "description": "Khronos PBR Designer Eyewear dengan geometri 3D fotorealistik berwana Gold untuk kenyamanan gaya Casual.",
+      "description": "Khronos PBR Designer Eyewear dengan bingkai gold mewah yang menyeimbangkan proporsi wajah bulat dan oval.",
       "gender": "Unisex"
     },
     {
       "id": "glass-02",
       "name": "Ray-Ban Aviator Pilot Edition",
-      "category": "glasses",
+      "category": "Accessories",
       "subcategory": "glasses",
       "modelType": "aviator",
       "baseColour": "Charcoal Grey",
@@ -52,26 +46,20 @@
         "Heart",
         "Oval"
       ],
-      "flatteringBodyShapes": [
-        "Hourglass",
-        "Rectangle",
-        "Pear",
-        "Inverted Triangle",
-        "Apple"
-      ],
       "styleTags": [
         "aviator",
         "pilot",
         "classic",
-        "titanium"
+        "titanium",
+        "formal"
       ],
-      "description": "Ray-Ban Aviator Pilot Edition dengan geometri 3D fotorealistik berwana Charcoal Grey untuk kenyamanan gaya Formal.",
+      "description": "Ray-Ban Aviator Pilot Edition dengan material titanium charcoal grey yang memberikan aksen wibawa.",
       "gender": "Unisex"
     },
     {
       "id": "glass-03",
       "name": "FaceFit Urban Geometric Frame",
-      "category": "glasses",
+      "category": "Accessories",
       "subcategory": "glasses",
       "modelType": "geometric",
       "baseColour": "Terracotta",
@@ -82,977 +70,993 @@
       "preview_image_url": "/images/products/preview/glass-03.png",
       "flatteringFaceShapes": [
         "Round",
-        "Oval"
-      ],
-      "flatteringBodyShapes": [
-        "Hourglass",
-        "Rectangle",
-        "Pear",
-        "Inverted Triangle",
-        "Apple"
+        "Oval",
+        "Diamond"
       ],
       "styleTags": [
         "geometric",
+        "octagonal",
         "terracotta",
         "modern",
-        "party"
+        "bold"
       ],
-      "description": "FaceFit Urban Geometric Frame dengan geometri 3D fotorealistik berwana Terracotta untuk kenyamanan gaya Party.",
+      "description": "FaceFit Urban Geometric Frame dengan siluet oktagon kontemporer berwarna terracotta hangat.",
       "gender": "Unisex"
     },
     {
       "id": "glass-04",
-      "name": "FaceFit Executive Browline",
-      "category": "glasses",
+      "name": "FaceFit Vintage Browline Classic",
+      "category": "Accessories",
       "subcategory": "glasses",
       "modelType": "browline",
-      "baseColour": "Navy Blue",
-      "hex_colour": "#1E3A8A",
+      "baseColour": "Dark Tortoiseshell",
+      "hex_colour": "#3E2723",
       "usage": "Formal",
-      "priceIdr": "Rp429.000",
+      "priceIdr": "Rp420.000",
       "model_3d_path": "/images/products/glasses/glasses_04_facefit_browline.glb",
       "preview_image_url": "/images/products/preview/glass-04.png",
       "flatteringFaceShapes": [
-        "Diamond",
+        "Oval",
         "Square",
-        "Oval"
-      ],
-      "flatteringBodyShapes": [
-        "Hourglass",
-        "Rectangle",
-        "Pear",
-        "Inverted Triangle",
-        "Apple"
+        "Diamond"
       ],
       "styleTags": [
         "browline",
-        "executive",
-        "formal",
-        "acetate"
+        "clubmaster",
+        "tortoise",
+        "vintage",
+        "smart"
       ],
-      "description": "FaceFit Executive Browline dengan geometri 3D fotorealistik berwana Navy Blue untuk kenyamanan gaya Formal.",
+      "description": "FaceFit Vintage Browline Classic dengan aksen garis alis tegas bernuansa dark tortoise.",
       "gender": "Unisex"
     },
     {
       "id": "glass-05",
-      "name": "FaceFit Titanium Slim Aviator",
-      "category": "glasses",
+      "name": "FaceFit Slim Wire Aviator",
+      "category": "Accessories",
       "subcategory": "glasses",
       "modelType": "aviator",
-      "baseColour": "Silver Chrome",
-      "hex_colour": "#E5E7EB",
+      "baseColour": "Silver Steel",
+      "hex_colour": "#94A3B8",
       "usage": "Casual",
-      "priceIdr": "Rp379.000",
+      "priceIdr": "Rp329.000",
       "model_3d_path": "/images/products/glasses/glasses_05_facefit_slim_aviator.glb",
       "preview_image_url": "/images/products/preview/glass-05.png",
       "flatteringFaceShapes": [
         "Square",
         "Heart",
-        "Oval"
-      ],
-      "flatteringBodyShapes": [
-        "Hourglass",
-        "Rectangle",
-        "Pear",
-        "Inverted Triangle",
-        "Apple"
+        "Oblong"
       ],
       "styleTags": [
         "aviator",
         "slim",
         "silver",
-        "minimalist"
+        "minimalist",
+        "cool"
       ],
-      "description": "FaceFit Titanium Slim Aviator dengan geometri 3D fotorealistik berwana Silver Chrome untuk kenyamanan gaya Casual.",
+      "description": "FaceFit Slim Wire Aviator dengan kawat perak ultra-ringan yang memberikan kesan sejuk dan berdimensi.",
       "gender": "Unisex"
     },
     {
       "id": "glass-06",
-      "name": "FaceFit Bold Horn-Rimmed Frame",
-      "category": "glasses",
+      "name": "FaceFit Horn-Rimmed Retro",
+      "category": "Accessories",
       "subcategory": "glasses",
-      "modelType": "rectangular",
-      "baseColour": "Pitch Black",
-      "hex_colour": "#18181B",
-      "usage": "Formal",
-      "priceIdr": "Rp399.000",
+      "modelType": "round",
+      "baseColour": "Havana Amber",
+      "hex_colour": "#B45309",
+      "usage": "Casual",
+      "priceIdr": "Rp375.000",
       "model_3d_path": "/images/products/glasses/glasses_06_facefit_hornrimmed.glb",
       "preview_image_url": "/images/products/preview/glass-06.png",
       "flatteringFaceShapes": [
-        "Round",
-        "Oval"
-      ],
-      "flatteringBodyShapes": [
-        "Hourglass",
-        "Rectangle",
-        "Pear",
-        "Inverted Triangle",
-        "Apple"
+        "Square",
+        "Oblong",
+        "Diamond"
       ],
       "styleTags": [
-        "horn-rimmed",
-        "bold",
-        "black",
-        "classic"
+        "hornrimmed",
+        "amber",
+        "retro",
+        "academic",
+        "warm"
       ],
-      "description": "FaceFit Bold Horn-Rimmed Frame dengan geometri 3D fotorealistik berwana Pitch Black untuk kenyamanan gaya Formal.",
+      "description": "FaceFit Horn-Rimmed Retro dengan bingkai lengkung amber yang melembutkan rahang bersiku.",
       "gender": "Unisex"
     },
     {
       "id": "glass-07",
-      "name": "SunFit Polarized Sport Wrap",
-      "category": "glasses",
+      "name": "SunFit Performance Wrap Sport",
+      "category": "Accessories",
       "subcategory": "glasses",
-      "modelType": "sport",
-      "baseColour": "Emerald Green",
-      "hex_colour": "#059669",
+      "modelType": "geometric",
+      "baseColour": "Matte Onyx",
+      "hex_colour": "#0F172A",
       "usage": "Sports",
-      "priceIdr": "Rp320.000",
+      "priceIdr": "Rp299.000",
       "model_3d_path": "/images/products/glasses/glasses_07_sunfit_sport.glb",
       "preview_image_url": "/images/products/preview/glass-07.png",
-      "flatteringFaceShapes": [
-        "Oval",
-        "Square",
-        "Round"
-      ],
-      "flatteringBodyShapes": [
-        "Hourglass",
-        "Rectangle",
-        "Pear",
-        "Inverted Triangle",
-        "Apple"
-      ],
-      "styleTags": [
-        "sport",
-        "wrap",
-        "polarized",
-        "active"
-      ],
-      "description": "SunFit Polarized Sport Wrap dengan geometri 3D fotorealistik berwana Emerald Green untuk kenyamanan gaya Sports.",
-      "gender": "Unisex"
-    },
-    {
-      "id": "hat-01",
-      "name": "Luffy Heritage Straw Hat",
-      "category": "hats",
-      "subcategory": "hats",
-      "modelType": "straw",
-      "baseColour": "Straw Natural",
-      "hex_colour": "#D97706",
-      "usage": "Casual",
-      "priceIdr": "Rp290.000",
-      "model_3d_path": "/images/products/hats/hat_01_luffy_straw.glb",
-      "preview_image_url": "/images/products/preview/hat-01.png",
-      "flatteringFaceShapes": [
-        "Square",
-        "Heart",
-        "Oval"
-      ],
-      "flatteringBodyShapes": [
-        "Hourglass",
-        "Rectangle",
-        "Pear",
-        "Inverted Triangle",
-        "Apple"
-      ],
-      "styleTags": [
-        "straw",
-        "heritage",
-        "anime",
-        "summer"
-      ],
-      "description": "Luffy Heritage Straw Hat dengan geometri 3D fotorealistik berwana Straw Natural untuk kenyamanan gaya Casual.",
-      "gender": "Unisex"
-    },
-    {
-      "id": "hat-02",
-      "name": "MetaFactory Gitcoin Ribbed Beanie",
-      "category": "hats",
-      "subcategory": "hats",
-      "modelType": "beanie",
-      "baseColour": "Charcoal Grey",
-      "hex_colour": "#374151",
-      "usage": "Streetwear",
-      "priceIdr": "Rp280.000",
-      "model_3d_path": "/images/products/hats/hat_02_gitcoin_beanie.glb",
-      "preview_image_url": "/images/products/preview/hat-02.png",
-      "flatteringFaceShapes": [
-        "Oval",
-        "Round",
-        "Diamond"
-      ],
-      "flatteringBodyShapes": [
-        "Hourglass",
-        "Rectangle",
-        "Pear",
-        "Inverted Triangle",
-        "Apple"
-      ],
-      "styleTags": [
-        "beanie",
-        "ribbed",
-        "streetwear",
-        "cozy"
-      ],
-      "description": "MetaFactory Gitcoin Ribbed Beanie dengan geometri 3D fotorealistik berwana Charcoal Grey untuk kenyamanan gaya Streetwear.",
-      "gender": "Unisex"
-    },
-    {
-      "id": "hat-03",
-      "name": "MetaFactory Nordic Blue Thermal Beanie",
-      "category": "hats",
-      "subcategory": "hats",
-      "modelType": "beanie",
-      "baseColour": "Navy Blue",
-      "hex_colour": "#1E3A8A",
-      "usage": "Casual",
-      "priceIdr": "Rp260.000",
-      "model_3d_path": "/images/products/hats/hat_03_blue_beanie.glb",
-      "preview_image_url": "/images/products/preview/hat-03.png",
-      "flatteringFaceShapes": [
-        "Oval",
-        "Round",
-        "Square"
-      ],
-      "flatteringBodyShapes": [
-        "Hourglass",
-        "Rectangle",
-        "Pear",
-        "Inverted Triangle",
-        "Apple"
-      ],
-      "styleTags": [
-        "beanie",
-        "thermal",
-        "blue",
-        "winter"
-      ],
-      "description": "MetaFactory Nordic Blue Thermal Beanie dengan geometri 3D fotorealistik berwana Navy Blue untuk kenyamanan gaya Casual.",
-      "gender": "Unisex"
-    },
-    {
-      "id": "hat-04",
-      "name": "MetaFactory Streetwear Snapback 57",
-      "category": "hats",
-      "subcategory": "hats",
-      "modelType": "cap",
-      "baseColour": "Crimson Red",
-      "hex_colour": "#991B1B",
-      "usage": "Streetwear",
-      "priceIdr": "Rp320.000",
-      "model_3d_path": "/images/products/hats/hat_04_street_snapback.glb",
-      "preview_image_url": "/images/products/preview/hat-04.png",
       "flatteringFaceShapes": [
         "Round",
         "Oval",
         "Heart"
       ],
-      "flatteringBodyShapes": [
-        "Hourglass",
-        "Rectangle",
-        "Pear",
-        "Inverted Triangle",
-        "Apple"
-      ],
       "styleTags": [
-        "snapback",
-        "flat-brim",
-        "streetwear",
-        "urban"
+        "sport",
+        "wrap",
+        "matte",
+        "aerodynamic",
+        "active"
       ],
-      "description": "MetaFactory Streetwear Snapback 57 dengan geometri 3D fotorealistik berwana Crimson Red untuk kenyamanan gaya Streetwear.",
+      "description": "SunFit Performance Wrap Sport dengan desain aerodinamis yang kokoh untuk aktivitas dinamis.",
       "gender": "Unisex"
     },
     {
-      "id": "hat-05",
-      "name": "MetaFactory Harajuku Urban Cap 161",
-      "category": "hats",
+      "id": "hat-01",
+      "name": "Imperial Bicorn Admiral Hat",
+      "category": "Accessories",
       "subcategory": "hats",
-      "modelType": "cap",
-      "baseColour": "Pitch Black",
-      "hex_colour": "#09090B",
+      "modelType": "fedora",
+      "baseColour": "Navy Blue",
+      "hex_colour": "#1E3A8A",
+      "usage": "Formal",
+      "priceIdr": "Rp385.000",
+      "model_3d_path": "/images/products/hats/bicorn_hat.glb",
+      "preview_image_url": "/images/products/preview/hat-01.png",
+      "flatteringFaceShapes": [
+        "Oval",
+        "Heart",
+        "Diamond"
+      ],
+      "styleTags": [
+        "bicorn",
+        "vintage",
+        "navy",
+        "admiral",
+        "statement"
+      ],
+      "description": "Imperial Bicorn Hat bernuansa navy dengan siluet klasik bersejarah untuk penampilan berkarakter.",
+      "gender": "Unisex"
+    },
+    {
+      "id": "hat-02",
+      "name": "Western Rancher Leather Cowboy Hat",
+      "category": "Accessories",
+      "subcategory": "hats",
+      "modelType": "fedora",
+      "baseColour": "Camel Brown",
+      "hex_colour": "#854D0E",
       "usage": "Casual",
-      "priceIdr": "Rp310.000",
-      "model_3d_path": "/images/products/hats/hat_05_urban_cap.glb",
+      "priceIdr": "Rp350.000",
+      "model_3d_path": "/images/products/hats/cowboy hat2.glb",
+      "preview_image_url": "/images/products/preview/hat-02.png",
+      "flatteringFaceShapes": [
+        "Square",
+        "Oval",
+        "Oblong"
+      ],
+      "styleTags": [
+        "cowboy",
+        "leather",
+        "western",
+        "outdoor",
+        "rugged"
+      ],
+      "description": "Western Rancher Cowboy Hat berbahan kulit cokelat camel yang tangguh dan memproteksi dari terik matahari.",
+      "gender": "Unisex"
+    },
+    {
+      "id": "hat-03",
+      "name": "Outlaw Dark Leather Western Hat",
+      "category": "Accessories",
+      "subcategory": "hats",
+      "modelType": "fedora",
+      "baseColour": "Dark Brown",
+      "hex_colour": "#3E2723",
+      "usage": "Casual",
+      "priceIdr": "Rp360.000",
+      "model_3d_path": "/images/products/hats/cowboy hat5.glb",
+      "preview_image_url": "/images/products/preview/hat-03.png",
+      "flatteringFaceShapes": [
+        "Square",
+        "Round",
+        "Oval"
+      ],
+      "styleTags": [
+        "cowboy",
+        "western",
+        "dark",
+        "leather",
+        "rugged"
+      ],
+      "description": "Outlaw Dark Leather Western Hat dengan brim lebar yang memberikan kesan maskulin dan tegas.",
+      "gender": "Unisex"
+    },
+    {
+      "id": "hat-04",
+      "name": "Riviera Wide-Brim Sun Beach Hat",
+      "category": "Accessories",
+      "subcategory": "hats",
+      "modelType": "straw",
+      "baseColour": "Warm Sand",
+      "hex_colour": "#E5D0B1",
+      "usage": "Casual",
+      "priceIdr": "Rp299.000",
+      "model_3d_path": "/images/products/hats/female_beach_hat.glb",
+      "preview_image_url": "/images/products/preview/hat-04.png",
+      "flatteringFaceShapes": [
+        "Oval",
+        "Heart",
+        "Square"
+      ],
+      "styleTags": [
+        "beach",
+        "sunhat",
+        "straw",
+        "summer",
+        "elegant"
+      ],
+      "description": "Riviera Wide-Brim Sun Beach Hat bernuansa natural sand yang anggun untuk liburan pantai dan resort.",
+      "gender": "Women"
+    },
+    {
+      "id": "hat-05",
+      "name": "Classic Sartorial Wool Fedora",
+      "category": "Accessories",
+      "subcategory": "hats",
+      "modelType": "fedora",
+      "baseColour": "Charcoal Grey",
+      "hex_colour": "#334155",
+      "usage": "Formal",
+      "priceIdr": "Rp320.000",
+      "model_3d_path": "/images/products/hats/hat.glb",
       "preview_image_url": "/images/products/preview/hat-05.png",
+      "flatteringFaceShapes": [
+        "Round",
+        "Oval",
+        "Heart"
+      ],
+      "styleTags": [
+        "fedora",
+        "wool",
+        "charcoal",
+        "classic",
+        "formal"
+      ],
+      "description": "Classic Sartorial Wool Fedora dengan crown terstruktur rapi yang memberi ilusi wajah lebih jenjang.",
+      "gender": "Unisex"
+    },
+    {
+      "id": "hat-06",
+      "name": "Straw Voyager Adventure Hat",
+      "category": "Accessories",
+      "subcategory": "hats",
+      "modelType": "straw",
+      "baseColour": "Straw Yellow",
+      "hex_colour": "#CA8A04",
+      "usage": "Casual",
+      "priceIdr": "Rp260.000",
+      "model_3d_path": "/images/products/hats/luffys_straw_hat.glb",
+      "preview_image_url": "/images/products/preview/hat-06.png",
       "flatteringFaceShapes": [
         "Oval",
         "Square",
         "Round"
       ],
-      "flatteringBodyShapes": [
-        "Hourglass",
-        "Rectangle",
-        "Pear",
-        "Inverted Triangle",
-        "Apple"
-      ],
       "styleTags": [
-        "cap",
-        "harajuku",
-        "urban",
-        "baseball"
+        "straw",
+        "yellow",
+        "adventure",
+        "summer",
+        "casual"
       ],
-      "description": "MetaFactory Harajuku Urban Cap 161 dengan geometri 3D fotorealistik berwana Pitch Black untuk kenyamanan gaya Casual.",
+      "description": "Straw Voyager Adventure Hat dari anyaman jerami alami dengan aksen pita merah yang ikonik.",
       "gender": "Unisex"
     },
     {
-      "id": "shirt-01",
-      "name": "Adrian 3D Heavyweight Baked Supima Tee",
-      "category": "shirts",
-      "subcategory": "shirts",
-      "modelType": "tshirt",
-      "baseColour": "Chalk White",
-      "hex_colour": "#F8FAFC",
-      "usage": "Casual",
-      "priceIdr": "Rp280.000",
-      "model_3d_path": "/images/products/shirts/shirt_01_adrian_baked_tee.glb",
-      "preview_image_url": "/images/products/preview/shirt-01.png",
-      "flatteringFaceShapes": [
-        "Oval",
-        "Round",
-        "Square",
-        "Heart",
-        "Diamond"
-      ],
-      "flatteringBodyShapes": [
-        "Hourglass",
-        "Rectangle",
-        "Inverted Triangle",
-        "Pear",
-        "Apple"
-      ],
-      "styleTags": [
-        "tshirt",
-        "supima",
-        "baked",
-        "creases",
-        "essential"
-      ],
-      "description": "Adrian 3D Heavyweight Baked Supima Tee dengan geometri 3D fotorealistik berwana Chalk White untuk kenyamanan gaya Casual.",
-      "gender": "Unisex"
-    },
-    {
-      "id": "shirt-02",
-      "name": "Francesco 3D Athletic Jersey Shirt",
-      "category": "shirts",
-      "subcategory": "shirts",
-      "modelType": "jersey",
-      "baseColour": "Navy Blue",
-      "hex_colour": "#1E3A8A",
-      "usage": "Sports",
-      "priceIdr": "Rp320.000",
-      "model_3d_path": "/images/products/shirts/shirt_02_francesco_jersey.glb",
-      "preview_image_url": "/images/products/preview/shirt-02.png",
-      "flatteringFaceShapes": [
-        "Oval",
-        "Round",
-        "Square",
-        "Heart",
-        "Diamond"
-      ],
-      "flatteringBodyShapes": [
-        "Inverted Triangle",
-        "Rectangle",
-        "Hourglass"
-      ],
-      "styleTags": [
-        "jersey",
-        "athletic",
-        "breathable",
-        "sports"
-      ],
-      "description": "Francesco 3D Athletic Jersey Shirt dengan geometri 3D fotorealistik berwana Navy Blue untuk kenyamanan gaya Sports.",
-      "gender": "Unisex"
-    },
-    {
-      "id": "shirt-03",
-      "name": "MetaFactory 3D Boxy Streetwear Hoodie 51",
-      "category": "shirts",
-      "subcategory": "shirts",
-      "modelType": "hoodie",
-      "baseColour": "Charcoal Black",
-      "hex_colour": "#18181B",
-      "usage": "Streetwear",
-      "priceIdr": "Rp590.000",
-      "model_3d_path": "/images/products/shirts/shirt_03_mf_hoodie_51.glb",
-      "preview_image_url": "/images/products/preview/shirt-03.png",
-      "flatteringFaceShapes": [
-        "Oval",
-        "Round",
-        "Square",
-        "Heart",
-        "Diamond"
-      ],
-      "flatteringBodyShapes": [
-        "Rectangle",
-        "Pear",
-        "Inverted Triangle"
-      ],
-      "styleTags": [
-        "hoodie",
-        "boxy",
-        "streetwear",
-        "heavyweight"
-      ],
-      "description": "MetaFactory 3D Boxy Streetwear Hoodie 51 dengan geometri 3D fotorealistik berwana Charcoal Black untuk kenyamanan gaya Streetwear.",
-      "gender": "Unisex"
-    },
-    {
-      "id": "shirt-04",
-      "name": "MetaFactory 3D Heavyweight Pullover Hoodie 106",
-      "category": "shirts",
-      "subcategory": "shirts",
-      "modelType": "hoodie",
-      "baseColour": "Warm Beige",
-      "hex_colour": "#D97706",
-      "usage": "Casual",
-      "priceIdr": "Rp570.000",
-      "model_3d_path": "/images/products/shirts/shirt_04_mf_hoodie_106.glb",
-      "preview_image_url": "/images/products/preview/shirt-04.png",
-      "flatteringFaceShapes": [
-        "Oval",
-        "Round",
-        "Square",
-        "Heart",
-        "Diamond"
-      ],
-      "flatteringBodyShapes": [
-        "Hourglass",
-        "Rectangle",
-        "Pear"
-      ],
-      "styleTags": [
-        "hoodie",
-        "pullover",
-        "earth-tone",
-        "comfort"
-      ],
-      "description": "MetaFactory 3D Heavyweight Pullover Hoodie 106 dengan geometri 3D fotorealistik berwana Warm Beige untuk kenyamanan gaya Casual.",
-      "gender": "Unisex"
-    },
-    {
-      "id": "shirt-05",
-      "name": "MetaFactory 3D Relaxed Streetwear Hoodie 64",
-      "category": "shirts",
-      "subcategory": "shirts",
-      "modelType": "hoodie",
-      "baseColour": "Olive Green",
-      "hex_colour": "#4D7C0F",
-      "usage": "Casual",
-      "priceIdr": "Rp550.000",
-      "model_3d_path": "/images/products/shirts/shirt_05_mf_hoodie_64.glb",
-      "preview_image_url": "/images/products/preview/shirt-05.png",
-      "flatteringFaceShapes": [
-        "Oval",
-        "Round",
-        "Square",
-        "Heart",
-        "Diamond"
-      ],
-      "flatteringBodyShapes": [
-        "Inverted Triangle",
-        "Rectangle",
-        "Apple"
-      ],
-      "styleTags": [
-        "hoodie",
-        "relaxed",
-        "olive",
-        "streetwear"
-      ],
-      "description": "MetaFactory 3D Relaxed Streetwear Hoodie 64 dengan geometri 3D fotorealistik berwana Olive Green untuk kenyamanan gaya Casual.",
-      "gender": "Unisex"
-    },
-    {
-      "id": "shirt-06",
-      "name": "MetaFactory 3D Oversized Pullover Hoodie 80",
-      "category": "shirts",
-      "subcategory": "shirts",
-      "modelType": "hoodie",
-      "baseColour": "Crimson Red",
-      "hex_colour": "#DC2626",
-      "usage": "Streetwear",
-      "priceIdr": "Rp580.000",
-      "model_3d_path": "/images/products/shirts/shirt_06_mf_hoodie_80.glb",
-      "preview_image_url": "/images/products/preview/shirt-06.png",
-      "flatteringFaceShapes": [
-        "Oval",
-        "Round",
-        "Square",
-        "Heart",
-        "Diamond"
-      ],
-      "flatteringBodyShapes": [
-        "Rectangle",
-        "Pear",
-        "Hourglass"
-      ],
-      "styleTags": [
-        "hoodie",
-        "oversized",
-        "crimson",
-        "bold"
-      ],
-      "description": "MetaFactory 3D Oversized Pullover Hoodie 80 dengan geometri 3D fotorealistik berwana Crimson Red untuk kenyamanan gaya Streetwear.",
-      "gender": "Unisex"
-    },
-    {
-      "id": "shirt-07",
-      "name": "MetaFactory 3D Heavyweight Street Hoodie 108",
-      "category": "shirts",
-      "subcategory": "shirts",
-      "modelType": "hoodie",
+      "id": "hat-07",
+      "name": "Noir Mafia Noir Fedora",
+      "category": "Accessories",
+      "subcategory": "hats",
+      "modelType": "fedora",
       "baseColour": "Pitch Black",
-      "hex_colour": "#09090B",
-      "usage": "Streetwear",
-      "priceIdr": "Rp599.000",
-      "model_3d_path": "/images/products/shirts/shirt_07_mf_hoodie_108.glb",
-      "preview_image_url": "/images/products/preview/shirt-07.png",
-      "flatteringFaceShapes": [
-        "Oval",
-        "Round",
-        "Square",
-        "Heart",
-        "Diamond"
-      ],
-      "flatteringBodyShapes": [
-        "Rectangle",
-        "Inverted Triangle",
-        "Apple"
-      ],
-      "styleTags": [
-        "hoodie",
-        "heavyweight",
-        "black",
-        "street"
-      ],
-      "description": "MetaFactory 3D Heavyweight Street Hoodie 108 dengan geometri 3D fotorealistik berwana Pitch Black untuk kenyamanan gaya Streetwear.",
-      "gender": "Unisex"
-    },
-    {
-      "id": "shirt-08",
-      "name": "MetaFactory 3D Cozy Ribbed Hoodie 97",
-      "category": "shirts",
-      "subcategory": "shirts",
-      "modelType": "hoodie",
-      "baseColour": "Heather Grey",
-      "hex_colour": "#64748B",
-      "usage": "Casual",
-      "priceIdr": "Rp520.000",
-      "model_3d_path": "/images/products/shirts/shirt_08_mf_hoodie_97.glb",
-      "preview_image_url": "/images/products/preview/shirt-08.png",
-      "flatteringFaceShapes": [
-        "Oval",
-        "Round",
-        "Square",
-        "Heart",
-        "Diamond"
-      ],
-      "flatteringBodyShapes": [
-        "Hourglass",
-        "Pear",
-        "Rectangle"
-      ],
-      "styleTags": [
-        "hoodie",
-        "ribbed",
-        "grey",
-        "lounge"
-      ],
-      "description": "MetaFactory 3D Cozy Ribbed Hoodie 97 dengan geometri 3D fotorealistik berwana Heather Grey untuk kenyamanan gaya Casual.",
-      "gender": "Unisex"
-    },
-    {
-      "id": "shirt-09",
-      "name": "MetaFactory 3D Luxury Fleece Hoodie 36",
-      "category": "shirts",
-      "subcategory": "shirts",
-      "modelType": "hoodie",
-      "baseColour": "Sky Blue",
-      "hex_colour": "#0284C7",
-      "usage": "Casual",
-      "priceIdr": "Rp560.000",
-      "model_3d_path": "/images/products/shirts/shirt_09_mf_hoodie_36.glb",
-      "preview_image_url": "/images/products/preview/shirt-09.png",
-      "flatteringFaceShapes": [
-        "Oval",
-        "Round",
-        "Square",
-        "Heart",
-        "Diamond"
-      ],
-      "flatteringBodyShapes": [
-        "Inverted Triangle",
-        "Rectangle",
-        "Hourglass"
-      ],
-      "styleTags": [
-        "hoodie",
-        "fleece",
-        "sky-blue",
-        "luxury"
-      ],
-      "description": "MetaFactory 3D Luxury Fleece Hoodie 36 dengan geometri 3D fotorealistik berwana Sky Blue untuk kenyamanan gaya Casual.",
-      "gender": "Unisex"
-    },
-    {
-      "id": "shirt-10",
-      "name": "MetaFactory 3D Heritage Cotton T-Shirt 111",
-      "category": "shirts",
-      "subcategory": "shirts",
-      "modelType": "tshirt",
-      "baseColour": "Pitch Black",
-      "hex_colour": "#18181B",
-      "usage": "Casual",
+      "hex_colour": "#0F172A",
+      "usage": "Formal",
       "priceIdr": "Rp310.000",
-      "model_3d_path": "/images/products/shirts/shirt_10_mf_tshirt_111.glb",
-      "preview_image_url": "/images/products/preview/shirt-10.png",
+      "model_3d_path": "/images/products/hats/mafia_hat_spy_hat.glb",
+      "preview_image_url": "/images/products/preview/hat-07.png",
       "flatteringFaceShapes": [
-        "Oval",
         "Round",
-        "Square",
         "Heart",
-        "Diamond"
-      ],
-      "flatteringBodyShapes": [
-        "Hourglass",
-        "Rectangle",
-        "Pear",
-        "Inverted Triangle",
-        "Apple"
+        "Oval"
       ],
       "styleTags": [
-        "tshirt",
-        "heritage",
+        "mafia",
+        "spy",
+        "noir",
         "black",
-        "crewneck"
+        "sleek"
       ],
-      "description": "MetaFactory 3D Heritage Cotton T-Shirt 111 dengan geometri 3D fotorealistik berwana Pitch Black untuk kenyamanan gaya Casual.",
+      "description": "Noir Mafia Noir Fedora berwarna hitam pekat misterius yang menambah karisma penampilan formal.",
+      "gender": "Men"
+    },
+    {
+      "id": "hat-08",
+      "name": "Retro Carnival Propeller Cap",
+      "category": "Accessories",
+      "subcategory": "hats",
+      "modelType": "cap",
+      "baseColour": "Multi-Color",
+      "hex_colour": "#3B82F6",
+      "usage": "Party",
+      "priceIdr": "Rp199.000",
+      "model_3d_path": "/images/products/hats/propeller_hat.glb",
+      "preview_image_url": "/images/products/preview/hat-08.png",
+      "flatteringFaceShapes": [
+        "Round",
+        "Oval",
+        "Heart"
+      ],
+      "styleTags": [
+        "propeller",
+        "fun",
+        "carnival",
+        "party",
+        "playful"
+      ],
+      "description": "Retro Carnival Propeller Cap penuh warna ceria untuk festival, pesta kostum, dan acara santai seru.",
       "gender": "Unisex"
     },
     {
-      "id": "shirt-11",
-      "name": "MetaFactory 3D Essential Supima T-Shirt 54",
-      "category": "shirts",
-      "subcategory": "shirts",
-      "modelType": "tshirt",
-      "baseColour": "Chalk White",
-      "hex_colour": "#F8FAFC",
+      "id": "hat-09",
+      "name": "Noble Renaissance Velvet Bonnet",
+      "category": "Accessories",
+      "subcategory": "hats",
+      "modelType": "beret",
+      "baseColour": "Burgundy Red",
+      "hex_colour": "#881337",
+      "usage": "Formal",
+      "priceIdr": "Rp375.000",
+      "model_3d_path": "/images/products/hats/renaissance_hat.glb",
+      "preview_image_url": "/images/products/preview/hat-09.png",
+      "flatteringFaceShapes": [
+        "Square",
+        "Oblong",
+        "Oval"
+      ],
+      "styleTags": [
+        "renaissance",
+        "velvet",
+        "burgundy",
+        "vintage",
+        "regal"
+      ],
+      "description": "Noble Renaissance Velvet Bonnet berbahan beludru burgundy mewah untuk aksen artistik klasik.",
+      "gender": "Unisex"
+    },
+    {
+      "id": "hat-10",
+      "name": "Sahara Safari Weathered Pith Helmet",
+      "category": "Accessories",
+      "subcategory": "hats",
+      "modelType": "fedora",
+      "baseColour": "Desert Khaki",
+      "hex_colour": "#A8A29E",
       "usage": "Casual",
       "priceIdr": "Rp290.000",
-      "model_3d_path": "/images/products/shirts/shirt_11_mf_tshirt_54.glb",
-      "preview_image_url": "/images/products/preview/shirt-11.png",
+      "model_3d_path": "/images/products/hats/weathered_pith_hat.glb",
+      "preview_image_url": "/images/products/preview/hat-10.png",
       "flatteringFaceShapes": [
         "Oval",
-        "Round",
-        "Square",
         "Heart",
         "Diamond"
       ],
-      "flatteringBodyShapes": [
-        "Hourglass",
-        "Rectangle",
-        "Pear",
-        "Inverted Triangle",
-        "Apple"
+      "styleTags": [
+        "safari",
+        "pith",
+        "khaki",
+        "adventure",
+        "outdoor"
+      ],
+      "description": "Sahara Safari Weathered Pith Helmet yang kokoh dan sejuk untuk penjelajahan alam terbuka.",
+      "gender": "Unisex"
+    },
+    {
+      "id": "hat-11",
+      "name": "Eclipse Mystic Pointed Brim Hat",
+      "category": "Accessories",
+      "subcategory": "hats",
+      "modelType": "fedora",
+      "baseColour": "Midnight Purple",
+      "hex_colour": "#4C1D95",
+      "usage": "Party",
+      "priceIdr": "Rp280.000",
+      "model_3d_path": "/images/products/hats/witch_hat.glb",
+      "preview_image_url": "/images/products/preview/hat-11.png",
+      "flatteringFaceShapes": [
+        "Round",
+        "Oval",
+        "Heart"
       ],
       "styleTags": [
-        "tshirt",
-        "supima",
+        "witch",
+        "mystic",
+        "purple",
+        "party",
+        "costume"
+      ],
+      "description": "Eclipse Mystic Pointed Brim Hat dengan puncak meruncing dan brim melingkar bernuansa magis.",
+      "gender": "Women"
+    },
+    {
+      "id": "shirt-pria-01",
+      "name": "Urban Color-Blocked Streetwear Shirt",
+      "category": "Apparel",
+      "subcategory": "shirts",
+      "modelType": "casual",
+      "baseColour": "Terracotta & Olive",
+      "hex_colour": "#C2410C",
+      "usage": "Casual",
+      "priceIdr": "Rp289.000",
+      "model_3d_path": "/images/products/shirts/Pria/color_blocked_shirt.glb",
+      "preview_image_url": "/images/products/preview/shirt-pria-01.png",
+      "flatteringFaceShapes": [
+        "Oval",
+        "Square",
+        "Round",
+        "Heart",
+        "Diamond",
+        "Oblong"
+      ],
+      "styleTags": [
+        "colorblock",
+        "streetwear",
+        "terracotta",
+        "casual",
+        "relaxed"
+      ],
+      "description": "Urban Color-Blocked Shirt dengan perpaduan warna tanah modern untuk penampilan kasual trendi.",
+      "gender": "Men"
+    },
+    {
+      "id": "shirt-pria-02",
+      "name": "FC Barcelona Blaugrana Match Jersey",
+      "category": "Apparel",
+      "subcategory": "shirts",
+      "modelType": "sport",
+      "baseColour": "Royal Navy & Crimson",
+      "hex_colour": "#1E3A8A",
+      "usage": "Sports",
+      "priceIdr": "Rp450.000",
+      "model_3d_path": "/images/products/shirts/Pria/football_shirt_fc_barcelona.glb",
+      "preview_image_url": "/images/products/preview/shirt-pria-02.png",
+      "flatteringFaceShapes": [
+        "Oval",
+        "Square",
+        "Round",
+        "Heart",
+        "Diamond",
+        "Oblong"
+      ],
+      "styleTags": [
+        "football",
+        "jersey",
+        "barcelona",
+        "sport",
+        "athletic"
+      ],
+      "description": "FC Barcelona Official Match Jersey dengan kain breathable berteknologi tinggi untuk kenyamanan maksimal.",
+      "gender": "Men"
+    },
+    {
+      "id": "shirt-pria-03",
+      "name": "Minimalist Essential Crewneck Tee",
+      "category": "Apparel",
+      "subcategory": "shirts",
+      "modelType": "tshirt",
+      "baseColour": "Pure White",
+      "hex_colour": "#F8FAFC",
+      "usage": "Casual",
+      "priceIdr": "Rp179.000",
+      "model_3d_path": "/images/products/shirts/Pria/free_shirt.glb",
+      "preview_image_url": "/images/products/preview/shirt-pria-03.png",
+      "flatteringFaceShapes": [
+        "Oval",
+        "Square",
+        "Round",
+        "Heart",
+        "Diamond",
+        "Oblong"
+      ],
+      "styleTags": [
+        "minimalist",
         "white",
+        "crewneck",
+        "cotton",
         "basic"
       ],
-      "description": "MetaFactory 3D Essential Supima T-Shirt 54 dengan geometri 3D fotorealistik berwana Chalk White untuk kenyamanan gaya Casual.",
-      "gender": "Unisex"
+      "description": "Minimalist Essential Crewneck Tee berbahan 100% combed cotton yang lembut dan sejuk.",
+      "gender": "Men"
     },
     {
-      "id": "shirt-12",
-      "name": "MetaFactory 3D Urban Graphic T-Shirt 141",
-      "category": "shirts",
+      "id": "shirt-pria-04",
+      "name": "Sartorial Crisp Oxford Shirt",
+      "category": "Apparel",
       "subcategory": "shirts",
-      "modelType": "tshirt",
-      "baseColour": "Terracotta",
-      "hex_colour": "#E2725B",
-      "usage": "Casual",
-      "priceIdr": "Rp330.000",
-      "model_3d_path": "/images/products/shirts/shirt_12_mf_tshirt_141.glb",
-      "preview_image_url": "/images/products/preview/shirt-12.png",
-      "flatteringFaceShapes": [
-        "Oval",
-        "Round",
-        "Square",
-        "Heart",
-        "Diamond"
-      ],
-      "flatteringBodyShapes": [
-        "Inverted Triangle",
-        "Rectangle",
-        "Hourglass"
-      ],
-      "styleTags": [
-        "tshirt",
-        "graphic",
-        "terracotta",
-        "urban"
-      ],
-      "description": "MetaFactory 3D Urban Graphic T-Shirt 141 dengan geometri 3D fotorealistik berwana Terracotta untuk kenyamanan gaya Casual.",
-      "gender": "Unisex"
-    },
-    {
-      "id": "shirt-13",
-      "name": "MetaFactory 3D Minimalist Dropped Tee 48",
-      "category": "shirts",
-      "subcategory": "shirts",
-      "modelType": "tshirt",
-      "baseColour": "Olive Green",
-      "hex_colour": "#4D7C0F",
-      "usage": "Streetwear",
-      "priceIdr": "Rp340.000",
-      "model_3d_path": "/images/products/shirts/shirt_13_mf_tshirt_48.glb",
-      "preview_image_url": "/images/products/preview/shirt-13.png",
-      "flatteringFaceShapes": [
-        "Oval",
-        "Round",
-        "Square",
-        "Heart",
-        "Diamond"
-      ],
-      "flatteringBodyShapes": [
-        "Rectangle",
-        "Pear",
-        "Hourglass"
-      ],
-      "styleTags": [
-        "tshirt",
-        "dropped-shoulder",
-        "minimalist",
-        "olive"
-      ],
-      "description": "MetaFactory 3D Minimalist Dropped Tee 48 dengan geometri 3D fotorealistik berwana Olive Green untuk kenyamanan gaya Streetwear.",
-      "gender": "Unisex"
-    },
-    {
-      "id": "shirt-14",
-      "name": "MetaFactory 3D Oversized Vintage T-Shirt 76",
-      "category": "shirts",
-      "subcategory": "shirts",
-      "modelType": "tshirt",
-      "baseColour": "Heather Grey",
-      "hex_colour": "#64748B",
-      "usage": "Casual",
-      "priceIdr": "Rp320.000",
-      "model_3d_path": "/images/products/shirts/shirt_14_mf_tshirt_76.glb",
-      "preview_image_url": "/images/products/preview/shirt-14.png",
-      "flatteringFaceShapes": [
-        "Oval",
-        "Round",
-        "Square",
-        "Heart",
-        "Diamond"
-      ],
-      "flatteringBodyShapes": [
-        "Rectangle",
-        "Inverted Triangle",
-        "Apple"
-      ],
-      "styleTags": [
-        "tshirt",
-        "vintage",
-        "oversized",
-        "grey"
-      ],
-      "description": "MetaFactory 3D Oversized Vintage T-Shirt 76 dengan geometri 3D fotorealistik berwana Heather Grey untuk kenyamanan gaya Casual.",
-      "gender": "Unisex"
-    },
-    {
-      "id": "shirt-15",
-      "name": "MetaFactory 3D Classic Longsleeve Shirt 14",
-      "category": "shirts",
-      "subcategory": "shirts",
-      "modelType": "longsleeve",
-      "baseColour": "Navy Blue",
-      "hex_colour": "#1E3A8A",
+      "modelType": "formal",
+      "baseColour": "Sky Blue",
+      "hex_colour": "#60A5FA",
       "usage": "Formal",
-      "priceIdr": "Rp390.000",
-      "model_3d_path": "/images/products/shirts/shirt_15_mf_longsleeve_14.glb",
-      "preview_image_url": "/images/products/preview/shirt-15.png",
+      "priceIdr": "Rp369.000",
+      "model_3d_path": "/images/products/shirts/Pria/man_shirt.glb",
+      "preview_image_url": "/images/products/preview/shirt-pria-04.png",
       "flatteringFaceShapes": [
         "Oval",
-        "Round",
         "Square",
+        "Round",
         "Heart",
-        "Diamond"
+        "Diamond",
+        "Oblong"
       ],
-      "flatteringBodyShapes": [
-        "Hourglass",
-        "Rectangle",
-        "Pear"
+      "styleTags": [
+        "oxford",
+        "buttondown",
+        "formal",
+        "skyblue",
+        "executive"
+      ],
+      "description": "Sartorial Crisp Oxford Shirt dengan potongan tailored fit yang memancarkan kesan profesional dan elegan.",
+      "gender": "Men"
+    },
+    {
+      "id": "shirt-pria-05",
+      "name": "Resort Breathable Linen Casual Shirt",
+      "category": "Apparel",
+      "subcategory": "shirts",
+      "modelType": "casual",
+      "baseColour": "Warm Beige",
+      "hex_colour": "#D4B996",
+      "usage": "Casual",
+      "priceIdr": "Rp329.000",
+      "model_3d_path": "/images/products/shirts/Pria/mens_casual_shirt.glb",
+      "preview_image_url": "/images/products/preview/shirt-pria-05.png",
+      "flatteringFaceShapes": [
+        "Oval",
+        "Square",
+        "Round",
+        "Heart",
+        "Diamond",
+        "Oblong"
+      ],
+      "styleTags": [
+        "linen",
+        "resort",
+        "beige",
+        "relaxed",
+        "summer"
+      ],
+      "description": "Resort Breathable Linen Shirt berbahan linen premium alami yang sangat nyaman untuk iklim tropis.",
+      "gender": "Men"
+    },
+    {
+      "id": "shirt-pria-06",
+      "name": "Party Starter Layered Dual-Tone Tee",
+      "category": "Apparel",
+      "subcategory": "shirts",
+      "modelType": "streetwear",
+      "baseColour": "Black & Crimson",
+      "hex_colour": "#991B1B",
+      "usage": "Party",
+      "priceIdr": "Rp249.000",
+      "model_3d_path": "/images/products/shirts/Pria/party_starter_-_layered_t-shirts.glb",
+      "preview_image_url": "/images/products/preview/shirt-pria-06.png",
+      "flatteringFaceShapes": [
+        "Oval",
+        "Square",
+        "Round",
+        "Heart",
+        "Diamond",
+        "Oblong"
+      ],
+      "styleTags": [
+        "layered",
+        "party",
+        "dual-tone",
+        "streetwear",
+        "bold"
+      ],
+      "description": "Party Starter Layered Tee dengan efek layering modern yang memberi aksen percaya diri saat hangout malam.",
+      "gender": "Men"
+    },
+    {
+      "id": "shirt-pria-07",
+      "name": "Classic Heavyweight Cotton T-Shirt",
+      "category": "Apparel",
+      "subcategory": "shirts",
+      "modelType": "tshirt",
+      "baseColour": "Navy Blue",
+      "hex_colour": "#1E293B",
+      "usage": "Casual",
+      "priceIdr": "Rp199.000",
+      "model_3d_path": "/images/products/shirts/Pria/shirt.glb",
+      "preview_image_url": "/images/products/preview/shirt-pria-07.png",
+      "flatteringFaceShapes": [
+        "Oval",
+        "Square",
+        "Round",
+        "Heart",
+        "Diamond",
+        "Oblong"
+      ],
+      "styleTags": [
+        "heavyweight",
+        "navy",
+        "classic",
+        "cotton",
+        "versatile"
+      ],
+      "description": "Classic Heavyweight Cotton T-Shirt bernuansa navy pekat yang awet dan tidak mudah pudar.",
+      "gender": "Men"
+    },
+    {
+      "id": "shirt-pria-08",
+      "name": "Smart Knitted Collar Polo Shirt",
+      "category": "Apparel",
+      "subcategory": "shirts",
+      "modelType": "polo",
+      "baseColour": "Olive Green",
+      "hex_colour": "#3F6212",
+      "usage": "Casual",
+      "priceIdr": "Rp279.000",
+      "model_3d_path": "/images/products/shirts/Pria/shirt2.glb",
+      "preview_image_url": "/images/products/preview/shirt-pria-08.png",
+      "flatteringFaceShapes": [
+        "Oval",
+        "Square",
+        "Round",
+        "Heart",
+        "Diamond",
+        "Oblong"
+      ],
+      "styleTags": [
+        "polo",
+        "knit",
+        "olive",
+        "smartcasual",
+        "earthtone"
+      ],
+      "description": "Smart Knitted Collar Polo Shirt bernuansa olive hangat yang pas untuk transisi dari kantor ke kafe.",
+      "gender": "Men"
+    },
+    {
+      "id": "shirt-pria-09",
+      "name": "Tailored Long Sleeve Flannel Shirt",
+      "category": "Apparel",
+      "subcategory": "shirts",
+      "modelType": "casual",
+      "baseColour": "Burgundy & Charcoal",
+      "hex_colour": "#4C0519",
+      "usage": "Casual",
+      "priceIdr": "Rp319.000",
+      "model_3d_path": "/images/products/shirts/Pria/shirt_with_long_sleeves.glb",
+      "preview_image_url": "/images/products/preview/shirt-pria-09.png",
+      "flatteringFaceShapes": [
+        "Oval",
+        "Square",
+        "Round",
+        "Heart",
+        "Diamond",
+        "Oblong"
       ],
       "styleTags": [
         "longsleeve",
-        "classic",
-        "navy",
-        "versatile"
+        "flannel",
+        "burgundy",
+        "cozy",
+        "autumn"
       ],
-      "description": "MetaFactory 3D Classic Longsleeve Shirt 14 dengan geometri 3D fotorealistik berwana Navy Blue untuk kenyamanan gaya Formal.",
-      "gender": "Unisex"
+      "description": "Tailored Long Sleeve Shirt dengan motif halus yang memberikan kehangatan dan dimensi gaya berkelas.",
+      "gender": "Men"
     },
     {
-      "id": "shirt-16",
-      "name": "MetaFactory 3D Summer Athletic Tank Top 3",
-      "category": "shirts",
+      "id": "shirt-pria-10",
+      "name": "Gym & Outdoor Athletic Sleeveless Top",
+      "category": "Apparel",
       "subcategory": "shirts",
-      "modelType": "tanktop",
-      "baseColour": "Crimson Red",
-      "hex_colour": "#DC2626",
+      "modelType": "sport",
+      "baseColour": "Charcoal Grey",
+      "hex_colour": "#334155",
       "usage": "Sports",
-      "priceIdr": "Rp240.000",
-      "model_3d_path": "/images/products/shirts/shirt_16_mf_tanktop_3.glb",
-      "preview_image_url": "/images/products/preview/shirt-16.png",
+      "priceIdr": "Rp169.000",
+      "model_3d_path": "/images/products/shirts/Pria/sleeveless_shirt.glb",
+      "preview_image_url": "/images/products/preview/shirt-pria-10.png",
       "flatteringFaceShapes": [
         "Oval",
-        "Round",
         "Square",
+        "Round",
         "Heart",
-        "Diamond"
-      ],
-      "flatteringBodyShapes": [
-        "Inverted Triangle",
-        "Hourglass"
+        "Diamond",
+        "Oblong"
       ],
       "styleTags": [
-        "tanktop",
+        "sleeveless",
+        "tank",
         "athletic",
-        "summer",
-        "sleeveless"
+        "gym",
+        "breathable"
       ],
-      "description": "MetaFactory 3D Summer Athletic Tank Top 3 dengan geometri 3D fotorealistik berwana Crimson Red untuk kenyamanan gaya Sports.",
-      "gender": "Unisex"
+      "description": "Gym & Outdoor Athletic Sleeveless Top dengan bahan quick-dry yang menjaga tubuh tetap kering dan bebas gerak.",
+      "gender": "Men"
     },
     {
-      "id": "jacket-01",
-      "name": "Streetcore 3D Varsity Bomber Jacket",
+      "id": "shirt-pria-11",
+      "name": "Premium Supima Regular Fit T-Shirt",
       "category": "Apparel",
-      "subcategory": "jackets",
-      "modelType": "varsity",
-      "gender": "Unisex",
-      "baseColour": "Navy Blue",
-      "hex_colour": "#1E3A8A",
+      "subcategory": "shirts",
+      "modelType": "tshirt",
+      "baseColour": "Heather Grey",
+      "hex_colour": "#64748B",
       "usage": "Casual",
-      "priceIdr": "Rp749.000",
-      "model_3d_path": "/images/products/shirts/shirt_03_mf_hoodie_51.glb",
-      "preview_image_url": "/images/products/preview/jacket-01.png",
+      "priceIdr": "Rp219.000",
+      "model_3d_path": "/images/products/shirts/Pria/t-shirt.glb",
+      "preview_image_url": "/images/products/preview/shirt-pria-11.png",
       "flatteringFaceShapes": [
         "Oval",
-        "Round",
         "Square",
+        "Round",
         "Heart",
         "Diamond",
         "Oblong"
       ],
-      "flatteringBodyShapes": [],
       "styleTags": [
-        "varsity",
-        "bomber",
-        "navy",
-        "collegiate",
-        "statement"
+        "supima",
+        "grey",
+        "regularfit",
+        "premium",
+        "soft"
       ],
-      "description": "Streetcore 3D Varsity Bomber Jacket dengan siluet bomber stance klasik berona Navy Blue untuk layering gaya Casual."
+      "description": "Premium Supima Regular Fit T-Shirt dari serat katun terpanjang untuk kelembutan ekstra tahan lama.",
+      "gender": "Men"
     },
     {
-      "id": "jacket-02",
-      "name": "Heritage 3D Rigid Denim Trucker",
+      "id": "shirt-pria-12",
+      "name": "Cyber Techwear Multi-Pocket Tactical Shirt",
       "category": "Apparel",
-      "subcategory": "jackets",
-      "modelType": "denim",
-      "gender": "Unisex",
-      "baseColour": "Indigo Denim",
-      "hex_colour": "#3B5BDB",
-      "usage": "Casual",
-      "priceIdr": "Rp699.000",
-      "model_3d_path": "/images/products/shirts/shirt_04_mf_hoodie_106.glb",
-      "preview_image_url": "/images/products/preview/jacket-02.png",
-      "flatteringFaceShapes": [
-        "Oval",
-        "Round",
-        "Square",
-        "Heart",
-        "Diamond",
-        "Oblong"
-      ],
-      "flatteringBodyShapes": [],
-      "styleTags": [
-        "denim",
-        "trucker",
-        "indigo",
-        "heritage",
-        "versatile"
-      ],
-      "description": "Heritage 3D Rigid Denim Trucker dengan tekstur denim rigid berona Indigo untuk tampilan workwear Casual."
-    },
-    {
-      "id": "jacket-03",
-      "name": "MetaFactory 3D Boxy Coach Jacket 22",
-      "category": "Apparel",
-      "subcategory": "jackets",
-      "modelType": "coach",
-      "gender": "Unisex",
-      "baseColour": "Pitch Black",
+      "subcategory": "shirts",
+      "modelType": "streetwear",
+      "baseColour": "Matte Black",
       "hex_colour": "#09090B",
       "usage": "Streetwear",
-      "priceIdr": "Rp689.000",
-      "model_3d_path": "/images/products/shirts/shirt_07_mf_hoodie_108.glb",
-      "preview_image_url": "/images/products/preview/jacket-03.png",
+      "priceIdr": "Rp399.000",
+      "model_3d_path": "/images/products/shirts/Pria/techwear_shirt.glb",
+      "preview_image_url": "/images/products/preview/shirt-pria-12.png",
       "flatteringFaceShapes": [
         "Oval",
-        "Round",
         "Square",
+        "Round",
         "Heart",
         "Diamond",
         "Oblong"
       ],
-      "flatteringBodyShapes": [],
       "styleTags": [
-        "coach",
-        "boxy",
+        "techwear",
+        "tactical",
         "black",
-        "streetwear",
-        "casual"
+        "multipocket",
+        "futuristic"
       ],
-      "description": "MetaFactory 3D Boxy Coach Jacket 22 dengan potongan boxy modern berona Pitch Black untuk gaya Streetwear."
+      "description": "Cyber Techwear Tactical Shirt dengan saku modular dan material tahan air berdesain futuristik.",
+      "gender": "Men"
     },
     {
-      "id": "jacket-04",
-      "name": "Vertex 3D Cropped Windbreaker 9",
+      "id": "shirt-pria-13",
+      "name": "Everyday Comfort Boxy Oversized Tee",
       "category": "Apparel",
-      "subcategory": "jackets",
-      "modelType": "windbreaker",
-      "gender": "Unisex",
-      "baseColour": "Olive Green",
+      "subcategory": "shirts",
+      "modelType": "tshirt",
+      "baseColour": "Muted Sage",
       "hex_colour": "#4D7C0F",
-      "usage": "Sports",
-      "priceIdr": "Rp649.000",
-      "model_3d_path": "/images/products/shirts/shirt_02_francesco_jersey.glb",
-      "preview_image_url": "/images/products/preview/jacket-04.png",
+      "usage": "Casual",
+      "priceIdr": "Rp229.000",
+      "model_3d_path": "/images/products/shirts/Pria/t_shirt.glb",
+      "preview_image_url": "/images/products/preview/shirt-pria-13.png",
       "flatteringFaceShapes": [
         "Oval",
-        "Round",
         "Square",
+        "Round",
         "Heart",
         "Diamond",
         "Oblong"
       ],
-      "flatteringBodyShapes": [],
       "styleTags": [
-        "windbreaker",
-        "cropped",
-        "olive",
-        "outdoor",
-        "casual"
+        "boxy",
+        "oversized",
+        "sage",
+        "streetwear",
+        "relaxed"
       ],
-      "description": "Vertex 3D Cropped Windbreaker 9 dengan material ringan berona Olive Green untuk aktivitas outdoor dan Sports."
+      "description": "Everyday Comfort Boxy Tee dengan siluet drop-shoulder bernuansa sage green yang menenangkan.",
+      "gender": "Men"
+    },
+    {
+      "id": "shirt-wanita-01",
+      "name": "Boho Off-The-Shoulder Chic Blouse",
+      "category": "Apparel",
+      "subcategory": "shirts",
+      "modelType": "blouse",
+      "baseColour": "Champagne Rose",
+      "hex_colour": "#FB7185",
+      "usage": "Party",
+      "priceIdr": "Rp299.000",
+      "model_3d_path": "/images/products/shirts/Wanita/off_the_shoulder_shirt_-_ngchipv.glb",
+      "preview_image_url": "/images/products/preview/shirt-wanita-01.png",
+      "flatteringFaceShapes": [
+        "Oval",
+        "Square",
+        "Round",
+        "Heart",
+        "Diamond",
+        "Oblong"
+      ],
+      "styleTags": [
+        "offshoulder",
+        "blouse",
+        "rose",
+        "feminine",
+        "chic"
+      ],
+      "description": "Boho Off-The-Shoulder Blouse dengan kerut elastis halus yang menonjolkan keanggunan garis leher dan bahu.",
+      "gender": "Women"
+    },
+    {
+      "id": "shirt-wanita-02",
+      "name": "Summer Breeze Casual Tee & Skirt Twinset",
+      "category": "Apparel",
+      "subcategory": "shirts",
+      "modelType": "casual",
+      "baseColour": "Sky Pastel Blue",
+      "hex_colour": "#38BDF8",
+      "usage": "Casual",
+      "priceIdr": "Rp349.000",
+      "model_3d_path": "/images/products/shirts/Wanita/skirt_and_t-shirt.glb",
+      "preview_image_url": "/images/products/preview/shirt-wanita-02.png",
+      "flatteringFaceShapes": [
+        "Oval",
+        "Square",
+        "Round",
+        "Heart",
+        "Diamond",
+        "Oblong"
+      ],
+      "styleTags": [
+        "summer",
+        "twinset",
+        "pastel",
+        "casual",
+        "cute"
+      ],
+      "description": "Summer Breeze Casual Tee bernuansa biru pastel ceria untuk jalan-jalan santai di akhir pekan.",
+      "gender": "Women"
+    },
+    {
+      "id": "shirt-wanita-03",
+      "name": "Soft Brushed Long Sleeve Top",
+      "category": "Apparel",
+      "subcategory": "shirts",
+      "modelType": "casual",
+      "baseColour": "Muted Lilac",
+      "hex_colour": "#A855F7",
+      "usage": "Casual",
+      "priceIdr": "Rp259.000",
+      "model_3d_path": "/images/products/shirts/Wanita/soft_brushed_long_sleeve_shirt.glb",
+      "preview_image_url": "/images/products/preview/shirt-wanita-03.png",
+      "flatteringFaceShapes": [
+        "Oval",
+        "Square",
+        "Round",
+        "Heart",
+        "Diamond",
+        "Oblong"
+      ],
+      "styleTags": [
+        "longsleeve",
+        "brushed",
+        "lilac",
+        "soft",
+        "cozy"
+      ],
+      "description": "Soft Brushed Long Sleeve Top dengan kain drape halus yang jatuh sempurna di siluet tubuh.",
+      "gender": "Women"
+    },
+    {
+      "id": "shirt-wanita-04",
+      "name": "Nordic Cable Knit Pullover Sweater",
+      "category": "Apparel",
+      "subcategory": "shirts",
+      "modelType": "sweater",
+      "baseColour": "Cream Ivory",
+      "hex_colour": "#FEF3C7",
+      "usage": "Casual",
+      "priceIdr": "Rp389.000",
+      "model_3d_path": "/images/products/shirts/Wanita/sweater_woman.glb",
+      "preview_image_url": "/images/products/preview/shirt-wanita-04.png",
+      "flatteringFaceShapes": [
+        "Oval",
+        "Square",
+        "Round",
+        "Heart",
+        "Diamond",
+        "Oblong"
+      ],
+      "styleTags": [
+        "sweater",
+        "knit",
+        "ivory",
+        "warm",
+        "nordic"
+      ],
+      "description": "Nordic Cable Knit Pullover Sweater bernuansa ivory lembut untuk kenyamanan udara sejuk.",
+      "gender": "Women"
+    },
+    {
+      "id": "shirt-wanita-05",
+      "name": "Fitted V-Neck Soft Cotton Tee",
+      "category": "Apparel",
+      "subcategory": "shirts",
+      "modelType": "tshirt",
+      "baseColour": "Terracotta Coral",
+      "hex_colour": "#F43F5E",
+      "usage": "Casual",
+      "priceIdr": "Rp189.000",
+      "model_3d_path": "/images/products/shirts/Wanita/vneck_t-shirt_for_female.glb",
+      "preview_image_url": "/images/products/preview/shirt-wanita-05.png",
+      "flatteringFaceShapes": [
+        "Oval",
+        "Square",
+        "Round",
+        "Heart",
+        "Diamond",
+        "Oblong"
+      ],
+      "styleTags": [
+        "vneck",
+        "coral",
+        "fitted",
+        "cotton",
+        "feminine"
+      ],
+      "description": "Fitted V-Neck Soft Cotton Tee dengan garis leher V anggun yang memberi ilusi leher lebih ramping.",
+      "gender": "Women"
+    },
+    {
+      "id": "shirt-wanita-06",
+      "name": "Executive Satin Button-Down Shirt",
+      "category": "Apparel",
+      "subcategory": "shirts",
+      "modelType": "formal",
+      "baseColour": "Emerald Green",
+      "hex_colour": "#059669",
+      "usage": "Formal",
+      "priceIdr": "Rp359.000",
+      "model_3d_path": "/images/products/shirts/Wanita/womens_shirt.glb",
+      "preview_image_url": "/images/products/preview/shirt-wanita-06.png",
+      "flatteringFaceShapes": [
+        "Oval",
+        "Square",
+        "Round",
+        "Heart",
+        "Diamond",
+        "Oblong"
+      ],
+      "styleTags": [
+        "satin",
+        "emerald",
+        "formal",
+        "executive",
+        "luxury"
+      ],
+      "description": "Executive Satin Button-Down Shirt bernuansa hijau zamrud berkilau mewah untuk acara formal dan kerja.",
+      "gender": "Women"
     }
   ]
 }

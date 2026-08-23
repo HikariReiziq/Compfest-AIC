@@ -267,13 +267,33 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
       side: THREE.DoubleSide,
     });
 
-    let modelPath = activeItem.model_3d_path || "/images/products/shirts/shirt_01_adrian_baked_tee.glb";
+    let modelPath = activeItem.model_3d_path || "/images/products/shirts/Pria/color_blocked_shirt.glb";
+    const filename = modelPath.split("/").pop() || "";
+
+    // Fetch calibration manifest
+    let modelConfig: any = null;
+    try {
+      fetch("/images/products/glb_manifest.json")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((manifest) => {
+          if (manifest) modelConfig = manifest[filename];
+        })
+        .catch(() => {});
+    } catch {}
 
     const gltfLoader = new GLTFLoader();
     gltfLoader.load(
       modelPath,
       (gltf) => {
         const model = gltf.scene;
+
+        // Apply manifest rotation if any
+        if (modelConfig?.rotation_correction) {
+          const [rx, ry, rz] = modelConfig.rotation_correction;
+          model.rotation.x += rx;
+          model.rotation.y += ry;
+          model.rotation.z += rz;
+        }
 
         // Auto center and scale model
         const box = new THREE.Box3().setFromObject(model);
@@ -283,9 +303,18 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
         model.position.sub(center);
         model.position.y += 0.35;
 
+        // Apply manifest pivot offset
+        if (modelConfig?.pivot_offset) {
+          const [ox, oy, oz] = modelConfig.pivot_offset;
+          model.position.x += ox;
+          model.position.y += oy;
+          model.position.z += oz;
+        }
+
         // Normalize model width (size.x) to ~1.8 standard torso units
         const targetW = size.x > 0 ? size.x : 1.0;
-        const normScale = 1.85 / targetW;
+        const customScaleFactor = modelConfig?.scale_factor || 1.0;
+        const normScale = (1.85 / targetW) * customScaleFactor;
         model.scale.set(normScale * widthScale, normScale, normScale * widthScale);
 
         model.traverse((child) => {

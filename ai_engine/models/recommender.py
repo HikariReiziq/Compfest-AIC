@@ -171,12 +171,12 @@ class StyleRecommender:
         # 1. Filter catalog items by subcategory
         candidate_items = [
             item for item in self.catalog
-            if item.get("category") == subcat or item.get("subcategory") == subcat
+            if item.get("subcategory") == subcat or item.get("category") == subcat or
+               (subcat in ["jackets", "shirts"] and (item.get("category") == "Apparel" or item.get("subcategory") in ["shirts", "jackets"])) or
+               (subcat in ["glasses", "hats"] and item.get("subcategory") == subcat)
         ]
-        if not candidate_items:
-            candidate_items = self.catalog[:4]
 
-        # Helper to unpack profile values whether string or nested dict
+        # Extract profile attributes (3-parameter biometrics) early for candidate filtering
         def extract_profile_str(val: Any, subkey: str = "", default: str = "") -> str:
             if isinstance(val, dict):
                 if subkey and subkey in val:
@@ -186,6 +186,21 @@ class StyleRecommender:
                         return str(val[k])
                 return default
             return str(val) if val is not None else default
+
+        gender = extract_profile_str(user_profile.get("gender"), "label_id", "male").lower()
+
+        # For shirts, filter by gender affinity if available
+        if subcat == "shirts":
+            gender_filtered = [
+                i for i in candidate_items
+                if (gender in ["female", "women"] and i.get("gender") in ["Women", "Unisex"]) or
+                   (gender in ["male", "men"] and i.get("gender") in ["Men", "Unisex"])
+            ]
+            if len(gender_filtered) >= 4:
+                candidate_items = gender_filtered
+
+        if not candidate_items:
+            candidate_items = self.catalog[:4]
 
         # Extract profile attributes (3-parameter biometrics)
         undertone = extract_profile_str(user_profile.get("undertone"), "undertone", "Warm")

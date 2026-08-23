@@ -44,7 +44,7 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
                 <Glasses className="w-7 h-7 text-indigo-400" />
               </div>
               <span className="text-[10px] font-mono px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-bold">
-                ✓ 20 Model 3D GLB
+                ✓ 7 Model 3D GLB
               </span>
             </div>
 
@@ -58,7 +58,7 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
             </div>
 
             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Analisis kontur wajah (6 bentuk wajah, tipe hidung, mata) dan rona kulit untuk kurasi bingkai (*frame*) dan lensa kaca transparan fotorealistik.
+              Analisis kontur wajah (6 bentuk wajah, warna kulit) untuk kurasi bingkai (*Wayfarer, Aviator, Geometric, Browline*) dan lensa kaca transparan fotorealistik.
             </p>
           </div>
 
@@ -81,7 +81,7 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
                 <HardHat className="w-7 h-7 text-rose-400" />
               </div>
               <span className="text-[10px] font-mono px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-bold">
-                ✓ 20 Model 3D GLB
+                ✓ 11 Model 3D GLB
               </span>
             </div>
 
@@ -95,7 +95,7 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
             </div>
 
             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Kurasi 20 siluet *Cap, Beanie, Bucket Hat, Fedora,* dan *Panama* yang presisi membungkus kepala sesuai rasio dahi dan bentuk wajah.
+              Kurasi siluet *Fedora, Western Cowboy, Beach Sunhat, Straw Voyager, Bicorn,* dan *Propeller Cap* yang membungkus dahi dan kepala secara anatomis.
             </p>
           </div>
 
@@ -105,7 +105,7 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
           </div>
         </div>
 
-        {/* 3. Baju (Shirts & Tops) */}
+        {/* 3. Baju (Shirts & Tops - Koleksi Pria & Wanita) */}
         <div
           onClick={() => onSelectCategory("apparel", "shirts")}
           className="glass-panel glass-card-hover rounded-3xl p-7 cursor-pointer group flex flex-col justify-between space-y-6 relative overflow-hidden border border-blue-500/30 hover:border-blue-400 hover:shadow-2xl hover:shadow-blue-500/20 transition-all duration-300"
@@ -118,26 +118,26 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
                 <Shirt className="w-7 h-7 text-blue-400" />
               </div>
               <span className="text-[10px] font-mono px-3 py-1 rounded-full bg-blue-500/15 text-blue-300 border border-blue-500/30 font-bold">
-                ✓ 20 Model 3D GLB
+                ✓ 19 Model (Pria & Wanita)
               </span>
             </div>
 
             <div className="space-y-1">
               <span className="text-[11px] font-mono uppercase tracking-widest text-blue-400 font-semibold">
-                Pakaian Atasan • Tops & Shirts
+                Pakaian Atasan • Pria & Wanita
               </span>
               <h2 className="text-2xl font-bold text-white group-hover:text-blue-300 transition-colors">
-                Baju
+                Baju (T-Shirt & Kemeja)
               </h2>
             </div>
 
             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Fitting 3D presisi **Kemeja Oxford, Kaos Supima, Polo, Hoodie,** dan **Flannel** yang disesuaikan dengan rasio lebar bahu dan lingkar dada.
+              Koleksi terbagi untuk **Pria** (*Oxford, Supima Tee, Polo, Jersey, Techwear*) & **Wanita** (*Off-Shoulder Blouse, Satin Shirt, Knit Sweater, V-Neck*).
             </p>
           </div>
 
           <div className="flex items-center justify-between text-xs font-bold text-blue-400 pt-4 border-t border-white/5 group-hover:text-blue-300">
-            <span>Pindai Tubuh & Coba 3D</span>
+            <span>Pindai & Coba Koleksi 3D</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </div>
         </div>

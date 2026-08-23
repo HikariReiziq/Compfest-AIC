@@ -281,14 +281,28 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   /* ------------------------------------------------------------------ */
   /*  4. Load 3D Model File with Optical Glass Shaders & Auto-Alignment */
   /* ------------------------------------------------------------------ */
-  const loadCategorized3DModel = (group: THREE.Group) => {
+  const loadCategorized3DModel = async (group: THREE.Group) => {
     while (group.children.length > 0) {
       group.remove(group.children[0]);
     }
 
     let modelPath = activeItem.model_3d_path || "";
     if (!modelPath) {
-      modelPath = isHat ? "/images/products/hats/hat_01_fedora.glb" : "/images/products/glasses/glasses-1-.glb";
+      modelPath = isHat ? "/images/products/hats/bicorn_hat.glb" : "/images/products/glasses/glasses_01_khronos_pbr.glb";
+    }
+
+    const filename = modelPath.split("/").pop() || "";
+
+    // Fetch GLB calibration manifest
+    let modelConfig: any = null;
+    try {
+      const manifestRes = await fetch("/images/products/glb_manifest.json");
+      if (manifestRes.ok) {
+        const manifest = await manifestRes.json();
+        modelConfig = manifest[filename] || null;
+      }
+    } catch {
+      // Use standard default normalization if manifest fetch fails
     }
 
     const isGLB = modelPath.endsWith(".glb") || modelPath.endsWith(".gltf");
@@ -309,6 +323,14 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
             model.rotation.x = -Math.PI / 2;
           }
 
+          // Apply manifest rotation correction if specified
+          if (modelConfig?.rotation_correction) {
+            const [rx, ry, rz] = modelConfig.rotation_correction;
+            model.rotation.x += rx;
+            model.rotation.y += ry;
+            model.rotation.z += rz;
+          }
+
           // 2. Wrap in wrapper group to ensure clean normalized transforms
           const wrapper = new THREE.Group();
           wrapper.add(model);
@@ -317,11 +339,22 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           const center = boxAfter.getCenter(new THREE.Vector3());
           const sizeAfter = boxAfter.getSize(new THREE.Vector3());
 
+          // Center the model at origin
           model.position.sub(center);
+
+          // Apply manifest pivot offset to fine-tune exact anchor point
+          if (modelConfig?.pivot_offset) {
+            const [ox, oy, oz] = modelConfig.pivot_offset;
+            model.position.x += ox;
+            model.position.y += oy;
+            model.position.z += oz;
+          }
 
           // Normalize model width (sizeAfter.x) to ~1.45 standard units
           const targetWidth = sizeAfter.x > 0 ? sizeAfter.x : 1.0;
-          const normalizeScale = (isHat ? 1.35 : 1.45) / targetWidth;
+          const baseNormScale = (isHat ? 1.35 : 1.45) / targetWidth;
+          const customScaleFactor = modelConfig?.scale_factor || 1.0;
+          const normalizeScale = baseNormScale * customScaleFactor;
           model.scale.multiplyScalar(normalizeScale);
 
           // 3. Apply Ultra-Realistic PBR Materials
