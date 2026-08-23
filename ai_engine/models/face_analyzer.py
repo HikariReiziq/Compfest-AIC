@@ -287,3 +287,118 @@ class BrowClassifier:
             "confidence": round(0.62 + 0.25 * mid_fit, 2),
             "rule": f"arch ratio {arch:.2f} moderat (lengkung lembut seimbang)",
         }
+
+
+# ------------------------------------------------------------------ #
+#  PillarJustifier — justifikasi ilmiah 3 pilar (ADR-016)            #
+#  Deterministik (string composition), tanpa LLM.                    #
+# ------------------------------------------------------------------ #
+_PILLAR1_APPLICATION = {
+    "Oval": "proporsi Oval yang seimbang memberi kebebasan penuh bereksperimen siluet — manfaatkan frame bersudut maupun membulat sebagai kontras lembut.",
+    "Round": "wajah Round dipertajam oleh siluet frame tegas persegi panjang (Wayfarer/D-Frame) yang memberi garis kontras vertikal pada lengkungan pipi.",
+    "Square": "rahang tegas Square dilembutkan oleh siluet membulat (Round/Oval) — kontras kebalikan untuk meredakan sudut rahang.",
+    "Heart": "dahi lebar Heart diseimbangkan frame bottom-heavy (Aviator/Browline) agar dagu ramping tidak tertelan proporsi atas.",
+    "Oblong": "wajah panjang Oblong diberi ilusi lebar oleh frame oversized tinggi dengan aksen horizontal kuat.",
+    "Diamond": "tulang pipi dominan Diamond paling serasi dengan frame yang menonjolkan garis brow-line dan melebar di atas (Browline/Cat-Eye) — hindari frame sempit tanpa aksen atas.",
+}
+
+_PILLAR2_APPLICATION = {
+    "Warm": "undertone Warm paling bersinar dengan material hangat: emas (gold), titanium cokelat hangat, acetate amber/terracotta. Hindari silver polish dingin yang membuang rona kulit.",
+    "Cool": "undertone Cool selaras dengan material sejuk: silver, titanium abu-abu, hitam matte, dan aksen biru navy. Hindari emas kuning yang terlihat bertabrakan.",
+    "Neutral": "undertone Neutral fleksibel untuk dua dunia — gunakan kombinasi two-tone (emas + silver) atau gunmetal sebagai jalan tengah elegan.",
+    "Olive": "undertone Olive unik butuh material earthy-metal: gunmetal, bronze, dan gold kehijauan; hindari rose gold yang mempertegas rona hijau.",
+}
+
+_PILLAR3_APPLICATION = {
+    "greek": "hidung Greek (Mancung) dengan punggung lurus cocok dengan bridge standar; pad nose silicon klasik memberi kontak merata tanpa tekanan titik.",
+    "roman": "hidung Roman (Lengkung) dengan punggung konveks paling nyaman memakai keyhole bridge — celah kunci mengikuti lengkungan tanpa menggantung di ujung.",
+    "bulbous": "hidung Bulbous (Bulat) dengan ujung lebar butuh bridge lebar + adjustable nose pads agar berat frame tertumpu di septum, bukan di alar.",
+    "broad_snub": "hidung Broad-Snub (Pesek Lebar) membutuhkan low bridge fit / keyhole bridge dan pad ajustabel tinggi agar frame tidak melorot ke pipi.",
+    "celestial_button": "hidung Celestial-Button (Mancung Mungil) dengan pangkal rendah memakai low bridge + pad kecil presisi agar frame duduk stabil tanpa menutup alur mata.",
+}
+
+
+class PillarJustifier:
+    """Menyusun justifikasi 3 pilar: Bentuk Wajah → siluet frame; Undertone →
+    warna material; Tipe Hidung → ergonomi fit bridge/pad."""
+
+    TITLES = {
+        1: "Pilar 1 — Bentuk Wajah → Kontras Siluet Frame",
+        2: "Pilar 2 — Undertone → Warna Material Aksesoris",
+        3: "Pilar 3 — Tipe Hidung → Ergonomi Bridge & Pad",
+    }
+
+    @staticmethod
+    def justify_pillar(pillar: int, ctx: Dict[str, Any]) -> Dict[str, Any]:
+        face = str(ctx.get("face_shape") or "Oval")
+        undertone = str(ctx.get("undertone") or "Neutral")
+        nose_label = str(ctx.get("nose") or "")
+        nose_id = str(ctx.get("nose_id") or "")
+        if not nose_id:
+            # Turunkan id dari label bila ctx hanya membawa label
+            for key, marker in (
+                ("roman", "Roman"), ("broad_snub", "Broad-Snub"), ("bulbous", "Bulbous"),
+                ("celestial_button", "Celestial"),
+            ):
+                if marker in nose_label:
+                    nose_id = key
+                    break
+            if not nose_id:
+                nose_id = "greek"
+
+        if pillar == 1:
+            return {
+                "pillar": 1,
+                "title": PillarJustifier.TITLES[1],
+                "principle": (
+                    "Prinsip kontras siluet: bentuk frame yang berlawanan dengan geometri wajah "
+                    "menciptakan keseimbangan visual yang paling flatteri."
+                ),
+                "scientific_basis": (
+                    f"Berdasarkan rasio antropometrik wajah (lebar dahi : tulang pipi : rahang = "
+                    f"proporsi terkalibrasi iris 11,7 mm), klasifikasi {face} menentukan arah kontras siluet."
+                ),
+                "application": (
+                    f"Untuk bentuk wajah {face}: {_PILLAR1_APPLICATION.get(face, _PILLAR1_APPLICATION['Oval'])}"
+                ),
+            }
+
+        if pillar == 2:
+            return {
+                "pillar": 2,
+                "title": PillarJustifier.TITLES[2],
+                "principle": (
+                    "Prinsip keselarasan warna material: warna material aksesoris harus selaras "
+                    "dengan undertone kulit agar wajah tampak bercahaya, bukan kusam."
+                ),
+                "scientific_basis": (
+                    "Undertone ditentukan dari posisi warna kulit pada ruang warna CIELAB "
+                    "(nilai a* kemerahan dan b* kekuningan) yang diukur dari ROI kulit wajah."
+                ),
+                "application": (
+                    f"Untuk undertone {undertone}: {_PILLAR2_APPLICATION.get(undertone, _PILLAR2_APPLICATION['Neutral'])}"
+                ),
+            }
+
+        if pillar == 3:
+            return {
+                "pillar": 3,
+                "title": PillarJustifier.TITLES[3],
+                "principle": (
+                    "Prinsip ergonomi fit: kenyamanan dan posisi frame yang stabil ditentukan "
+                    "oleh bentuk punggung hidung dan lebar alar — bukan hanya gaya."
+                ),
+                "scientific_basis": (
+                    "Geometri profil-z punggung hidung (landmark 168-6-1) dan lebar alar "
+                    "(landmark 129-358) menentukan tipe bridge yang menumpu bobot frame secara merata."
+                ),
+                "application": (
+                    f"Untuk {nose_label or 'tipe hidung Anda'}: {_PILLAR3_APPLICATION.get(nose_id, _PILLAR3_APPLICATION['greek'])}"
+                ),
+            }
+
+        raise ValueError(f"Pillar harus 1, 2, atau 3 — diterima: {pillar}")
+
+    @staticmethod
+    def justify_all(ctx: Dict[str, Any]) -> List[Dict[str, Any]]:
+        return [PillarJustifier.justify_pillar(p, ctx) for p in (1, 2, 3)]

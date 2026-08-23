@@ -302,3 +302,47 @@ class TestBrowClassifier:
         assert out["label"] == "Soft Curve (Lengkung Lembut)"
         assert out["confidence"] <= 0.5
         assert out["rule"] == "fallback"
+
+
+def _pillar_ctx():
+    return {"face_shape": "Diamond", "undertone": "Warm", "nose": "Broad-Snub (Pesek Lebar)"}
+
+
+class TestPillarJustifier:
+    """Task 2.6 — justifikasi ilmiah 3 pilar (ADR-016)."""
+
+    def test_pillar1_frame_silhouette_contrast(self):
+        from ai_engine.models.face_analyzer import PillarJustifier
+
+        out = PillarJustifier.justify_pillar(1, _pillar_ctx())
+        assert out["pillar"] == 1
+        combined = (out["principle"] + out["scientific_basis"] + out["application"]).lower()
+        assert "siluet" in combined or "kontras" in combined
+        assert "Diamond" in out["application"]
+        assert out["principle"] and out["scientific_basis"] and out["application"]
+
+    def test_pillar2_material_color_matches_undertone(self):
+        from ai_engine.models.face_analyzer import PillarJustifier
+
+        out = PillarJustifier.justify_pillar(2, _pillar_ctx())
+        combined = (out["principle"] + out["scientific_basis"]).lower()
+        assert "cielab" in combined or "undertone" in combined
+        app = out["application"].lower()
+        assert "emas" in app or "gold" in app  # Warm → emas, hindari silver
+        assert "Warm" in out["application"]
+
+    def test_pillar3_nose_ergonomic_fit(self):
+        from ai_engine.models.face_analyzer import PillarJustifier
+
+        out = PillarJustifier.justify_pillar(3, _pillar_ctx())
+        app = out["application"].lower()
+        assert "low bridge" in app or "keyhole" in app or "pad" in app or "nose pad" in app
+        assert "Broad-Snub" in out["application"] or "hidung" in app
+
+    def test_all_three_pillars_complete_indonesian(self):
+        from ai_engine.models.face_analyzer import PillarJustifier
+
+        for p in PillarJustifier.justify_all(_pillar_ctx()):
+            assert p["pillar"] in (1, 2, 3)
+            for field in ("title", "principle", "scientific_basis", "application"):
+                assert isinstance(p[field], str) and len(p[field]) > 10
