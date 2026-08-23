@@ -81,4 +81,28 @@ Gunakan preset evaluasi di toolbar atas untuk melanjutkan tanpa kamera.
 2. **Tombol "Coba Hubungkan Ulang Kamera"**: Menambahkan fungsi `retryCamera` dengan *grace period* 200ms untuk memastikan driver perangkat telah sepenuhnya *unlocked* sebelum meminta `getUserMedia` baru.
 3. **Tombol "Gunakan Simulasi Wajah Indonesia"**: Menambahkan tombol aksi langsung di dalam kotak pesan kendala agar pengguna dapat langsung melanjutkan proses evaluasi AI tanpa terhambat meskipun kamera fisik sedang sibuk.
 
+---
+
+## 5. Pre-existing Test Failure: test_dynamic_questions_endpoint (Environment-Dependent)
+
+### Waktu Kejadian
+* **Tanggal & Waktu**: 23 Agustus 2026 — terdeteksi saat baseline eksekusi Fase 1 overhaul, *sebelum* perubahan kode apa pun.
+* **Komponen**: `server/tests/test_server.py::test_dynamic_questions_endpoint` → `POST /api/v1/questions/generate`.
+
+### Pesan Error
+```text
+AttributeError: ... object has no attribute ... (via starlette middleware errors.py)
+1 failed, 7 passed
+```
+
+### Penyebab (Root Cause)
+Endpoint kuesioner dinamis memanggil layanan Gemini; pada lingkungan host tanpa `GEMINI_API_KEY` aktif, jalur inisialisasi klien melempar `AttributeError` alih-alih jatuh ke fallback dengan rapi. Kegagalan ini **pre-existing** (terverifikasi sebelum commit overhaul pertama) dan berada di luar scope plan overhaul wajah — tidak diubah demi disiplin scope.
+
+### Dampak & Status
+* 7 test lain hijau; seluruh test baru Fase 2 wajib hijau; test ini dicatat sebagai *known env-failure* dan bukan alasan bolehnya test baru gagal.
+* Di dalam Docker (`coba-backend-server` dengan `GEMINI_API_KEY` dari `.env`), endpoint berjalan normal.
+
+### Rencana Perbaikan (opsional, di luar scope)
+Bungkus inisialisasi klien Gemini dengan guard null-safety sehingga lingkungan tanpa API key jatuh ke `question_bank` lokal.
+
 
