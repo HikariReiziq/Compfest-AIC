@@ -392,3 +392,44 @@ class TestFaceAnalyzerOrchestrator:
             assert block in preset, f"preset missing block: {block}"
         assert preset["face_shape"]["shape"] in {"Oval", "Round", "Square", "Heart", "Diamond", "Oblong"}
         assert len(preset["pillars"]) == 3
+
+
+class TestLandmarksEndpoint:
+    """Task 2.8 — POST /api/v1/analyze/landmarks (engine + mock fallback)."""
+
+    def test_landmarks_endpoint_returns_full_report(self):
+        res = client.post("/api/v1/analyze/landmarks", json=_payload())
+        assert res.status_code == 200, res.text
+        body = res.json()
+        assert body["face_shape"]["shape"] in {"Oval", "Round", "Square", "Heart", "Diamond", "Oblong"}
+        assert len(body["pillars"]) == 3
+        assert body["meta"]["source"] == "engine"
+        assert body["meta"]["engine_version"] == "2.0.0"
+        assert body["is_mock"] is False
+        for key in ("nose", "eye", "brow"):
+            assert body[key]["label"] and body[key]["label_id"]
+
+    def test_landmarks_endpoint_422_missing_block(self):
+        p = _payload()
+        del p["brow_features"]
+        res = client.post("/api/v1/analyze/landmarks", json=p)
+        assert res.status_code == 422
+
+    def test_landmarks_endpoint_mock_fallback_on_engine_error(self, monkeypatch):
+        from ai_engine.models.face_analyzer import FaceAnalyzer
+
+        def _boom(request):
+            raise RuntimeError("engine unavailable")
+
+        monkeypatch.setattr(FaceAnalyzer, "analyze", staticmethod(_boom))
+        res = client.post("/api/v1/analyze/landmarks", json=_payload())
+        assert res.status_code == 200, res.text
+        body = res.json()
+        assert body["meta"]["source"] == "mock"
+        assert body["is_mock"] is True
+        assert len(body["pillars"]) == 3
+        assert body["face_shape"]["shape"] == "Oval"
+
+    def test_health_regression_ok(self):
+        res = client.get("/health")
+        assert res.status_code == 200

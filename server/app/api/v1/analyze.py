@@ -13,6 +13,7 @@ if BASE_DIR not in sys.path:
 from ai_engine.models.skin_analyzer import SkinAnalyzer
 from ai_engine.models.face_classifier import FaceShapeClassifier
 from ai_engine.models.body_classifier import BodyShapeClassifier
+from ai_engine.models.face_analyzer import FaceAnalyzer
 from ai_engine.models.mock_generator import MockDataGenerator
 
 from ...config import get_settings
@@ -26,6 +27,14 @@ from ...schemas import (
     MonkToneResponse,
     UndertoneResponse,
     ColorItem,
+    LandmarkAnalysisRequest,
+    LandmarkAnalysisResponse,
+    LandmarkAnalysisMeta,
+    FaceShapeMultiOut,
+    ClassificationOut,
+    MeasurementsIn,
+    PillarOut,
+    NarrativeOut,
 )
 
 router = APIRouter(prefix="/analyze", tags=["Personal Profiling Analysis"])
@@ -197,4 +206,55 @@ def analyze_geometric_ratios(
         body_shape=body_resp,
         is_mock=False,
     )
+
+
+def _landmarks_mock_response() -> LandmarkAnalysisResponse:
+    """Fallback deterministik dari preset multi-dimensi (zero-hardware / judge demo)."""
+    preset = MockDataGenerator.get_preset("indonesian_multi_dim")
+    return LandmarkAnalysisResponse(
+        face_shape=FaceShapeMultiOut(**preset["face_shape"]),
+        body_shape=BodyShapeResponse(**preset["body_shape"]),
+        nose=ClassificationOut(**preset["nose"]),
+        eye=ClassificationOut(**preset["eye"]),
+        brow=ClassificationOut(**preset["brow"]),
+        measurements=MeasurementsIn(**preset["measurements"]),
+        pillars=[PillarOut(**p) for p in preset["pillars"]],
+        narrative=NarrativeOut(**preset["narrative"]),
+        meta=LandmarkAnalysisMeta(engine_version="2.0.0", source="mock"),
+        is_mock=True,
+    )
+
+
+@router.post("/landmarks", response_model=LandmarkAnalysisResponse)
+def analyze_landmarks(
+    request: LandmarkAnalysisRequest,
+    x_mock_data: Optional[str] = Header(None, alias="X-Mock-Data"),
+):
+    """Multi-dimensional landmark analysis (ADR-014).
+
+    Payload hanya berisi fitur turunan (angka) dari 478 landmark MediaPipe —
+    tidak pernah gambar wajah (kepatuhan UU PDP No. 27/2022 by design).
+    """
+    settings = get_settings()
+    is_mock = bool(settings.MOCK_MODE or (x_mock_data and x_mock_data.lower() in ("true", "1")))
+
+    if is_mock:
+        return _landmarks_mock_response()
+
+    try:
+        out = FaceAnalyzer.analyze(request)
+        return LandmarkAnalysisResponse(
+            face_shape=FaceShapeMultiOut(**out["face_shape"]),
+            nose=ClassificationOut(**out["nose"]),
+            eye=ClassificationOut(**out["eye"]),
+            brow=ClassificationOut(**out["brow"]),
+            measurements=out["measurements"],
+            pillars=[PillarOut(**p) for p in out["pillars"]],
+            narrative=NarrativeOut(**out["narrative"]),
+            meta=LandmarkAnalysisMeta(**out["meta"]),
+            is_mock=False,
+        )
+    except Exception:
+        # Graceful degradation: engine gagal → preset deterministik, demo tetap jalan
+        return _landmarks_mock_response()
 
