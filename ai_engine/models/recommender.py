@@ -163,6 +163,8 @@ class StyleRecommender:
             subcat = "hats"
         elif subcat in ["baju", "kaos", "kemeja", "shirts", "tshirt", "apparel"]:
             subcat = "shirts"
+        elif subcat in ["jaket", "jackets", "outerwear"]:
+            subcat = "jackets"
         else:
             subcat = "glasses"
 

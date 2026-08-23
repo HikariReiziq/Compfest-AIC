@@ -1,6 +1,6 @@
 {
-  "version": "4.0.0",
-  "total_products": 28,
+  "version": "4.1.0",
+  "total_products": 32,
   "items": [
     {
       "id": "glass-01",
@@ -32,7 +32,8 @@
         "gold",
         "designer"
       ],
-      "description": "Khronos PBR Designer Eyewear dengan geometri 3D fotorealistik berwana Gold untuk kenyamanan gaya Casual."
+      "description": "Khronos PBR Designer Eyewear dengan geometri 3D fotorealistik berwana Gold untuk kenyamanan gaya Casual.",
+      "gender": "Unisex"
     },
     {
       "id": "glass-02",
@@ -64,7 +65,8 @@
         "classic",
         "titanium"
       ],
-      "description": "Ray-Ban Aviator Pilot Edition dengan geometri 3D fotorealistik berwana Charcoal Grey untuk kenyamanan gaya Formal."
+      "description": "Ray-Ban Aviator Pilot Edition dengan geometri 3D fotorealistik berwana Charcoal Grey untuk kenyamanan gaya Formal.",
+      "gender": "Unisex"
     },
     {
       "id": "glass-03",
@@ -95,7 +97,8 @@
         "modern",
         "party"
       ],
-      "description": "FaceFit Urban Geometric Frame dengan geometri 3D fotorealistik berwana Terracotta untuk kenyamanan gaya Party."
+      "description": "FaceFit Urban Geometric Frame dengan geometri 3D fotorealistik berwana Terracotta untuk kenyamanan gaya Party.",
+      "gender": "Unisex"
     },
     {
       "id": "glass-04",
@@ -127,7 +130,8 @@
         "formal",
         "acetate"
       ],
-      "description": "FaceFit Executive Browline dengan geometri 3D fotorealistik berwana Navy Blue untuk kenyamanan gaya Formal."
+      "description": "FaceFit Executive Browline dengan geometri 3D fotorealistik berwana Navy Blue untuk kenyamanan gaya Formal.",
+      "gender": "Unisex"
     },
     {
       "id": "glass-05",
@@ -159,7 +163,8 @@
         "silver",
         "minimalist"
       ],
-      "description": "FaceFit Titanium Slim Aviator dengan geometri 3D fotorealistik berwana Silver Chrome untuk kenyamanan gaya Casual."
+      "description": "FaceFit Titanium Slim Aviator dengan geometri 3D fotorealistik berwana Silver Chrome untuk kenyamanan gaya Casual.",
+      "gender": "Unisex"
     },
     {
       "id": "glass-06",
@@ -190,7 +195,8 @@
         "black",
         "classic"
       ],
-      "description": "FaceFit Bold Horn-Rimmed Frame dengan geometri 3D fotorealistik berwana Pitch Black untuk kenyamanan gaya Formal."
+      "description": "FaceFit Bold Horn-Rimmed Frame dengan geometri 3D fotorealistik berwana Pitch Black untuk kenyamanan gaya Formal.",
+      "gender": "Unisex"
     },
     {
       "id": "glass-07",
@@ -222,7 +228,8 @@
         "polarized",
         "active"
       ],
-      "description": "SunFit Polarized Sport Wrap dengan geometri 3D fotorealistik berwana Emerald Green untuk kenyamanan gaya Sports."
+      "description": "SunFit Polarized Sport Wrap dengan geometri 3D fotorealistik berwana Emerald Green untuk kenyamanan gaya Sports.",
+      "gender": "Unisex"
     },
     {
       "id": "hat-01",
@@ -254,7 +261,8 @@
         "anime",
         "summer"
       ],
-      "description": "Luffy Heritage Straw Hat dengan geometri 3D fotorealistik berwana Straw Natural untuk kenyamanan gaya Casual."
+      "description": "Luffy Heritage Straw Hat dengan geometri 3D fotorealistik berwana Straw Natural untuk kenyamanan gaya Casual.",
+      "gender": "Unisex"
     },
     {
       "id": "hat-02",
@@ -286,7 +294,8 @@
         "streetwear",
         "cozy"
       ],
-      "description": "MetaFactory Gitcoin Ribbed Beanie dengan geometri 3D fotorealistik berwana Charcoal Grey untuk kenyamanan gaya Streetwear."
+      "description": "MetaFactory Gitcoin Ribbed Beanie dengan geometri 3D fotorealistik berwana Charcoal Grey untuk kenyamanan gaya Streetwear.",
+      "gender": "Unisex"
     },
     {
       "id": "hat-03",
@@ -318,7 +327,8 @@
         "blue",
         "winter"
       ],
-      "description": "MetaFactory Nordic Blue Thermal Beanie dengan geometri 3D fotorealistik berwana Navy Blue untuk kenyamanan gaya Casual."
+      "description": "MetaFactory Nordic Blue Thermal Beanie dengan geometri 3D fotorealistik berwana Navy Blue untuk kenyamanan gaya Casual.",
+      "gender": "Unisex"
     },
     {
       "id": "hat-04",
@@ -350,7 +360,8 @@
         "streetwear",
         "urban"
       ],
-      "description": "MetaFactory Streetwear Snapback 57 dengan geometri 3D fotorealistik berwana Crimson Red untuk kenyamanan gaya Streetwear."
+      "description": "MetaFactory Streetwear Snapback 57 dengan geometri 3D fotorealistik berwana Crimson Red untuk kenyamanan gaya Streetwear.",
+      "gender": "Unisex"
     },
     {
       "id": "hat-05",
@@ -382,7 +393,8 @@
         "urban",
         "baseball"
       ],
-      "description": "MetaFactory Harajuku Urban Cap 161 dengan geometri 3D fotorealistik berwana Pitch Black untuk kenyamanan gaya Casual."
+      "description": "MetaFactory Harajuku Urban Cap 161 dengan geometri 3D fotorealistik berwana Pitch Black untuk kenyamanan gaya Casual.",
+      "gender": "Unisex"
     },
     {
       "id": "shirt-01",
@@ -417,7 +429,8 @@
         "creases",
         "essential"
       ],
-      "description": "Adrian 3D Heavyweight Baked Supima Tee dengan geometri 3D fotorealistik berwana Chalk White untuk kenyamanan gaya Casual."
+      "description": "Adrian 3D Heavyweight Baked Supima Tee dengan geometri 3D fotorealistik berwana Chalk White untuk kenyamanan gaya Casual.",
+      "gender": "Unisex"
     },
     {
       "id": "shirt-02",
@@ -449,7 +462,8 @@
         "breathable",
         "sports"
       ],
-      "description": "Francesco 3D Athletic Jersey Shirt dengan geometri 3D fotorealistik berwana Navy Blue untuk kenyamanan gaya Sports."
+      "description": "Francesco 3D Athletic Jersey Shirt dengan geometri 3D fotorealistik berwana Navy Blue untuk kenyamanan gaya Sports.",
+      "gender": "Unisex"
     },
     {
       "id": "shirt-03",
@@ -481,7 +495,8 @@
         "streetwear",
         "heavyweight"
       ],
-      "description": "MetaFactory 3D Boxy Streetwear Hoodie 51 dengan geometri 3D fotorealistik berwana Charcoal Black untuk kenyamanan gaya Streetwear."
+      "description": "MetaFactory 3D Boxy Streetwear Hoodie 51 dengan geometri 3D fotorealistik berwana Charcoal Black untuk kenyamanan gaya Streetwear.",
+      "gender": "Unisex"
     },
     {
       "id": "shirt-04",
@@ -513,7 +528,8 @@
         "earth-tone",
         "comfort"
       ],
-      "description": "MetaFactory 3D Heavyweight Pullover Hoodie 106 dengan geometri 3D fotorealistik berwana Warm Beige untuk kenyamanan gaya Casual."
+      "description": "MetaFactory 3D Heavyweight Pullover Hoodie 106 dengan geometri 3D fotorealistik berwana Warm Beige untuk kenyamanan gaya Casual.",
+      "gender": "Unisex"
     },
     {
       "id": "shirt-05",
@@ -545,7 +561,8 @@
         "olive",
         "streetwear"
       ],
-      "description": "MetaFactory 3D Relaxed Streetwear Hoodie 64 dengan geometri 3D fotorealistik berwana Olive Green untuk kenyamanan gaya Casual."
+      "description": "MetaFactory 3D Relaxed Streetwear Hoodie 64 dengan geometri 3D fotorealistik berwana Olive Green untuk kenyamanan gaya Casual.",
+      "gender": "Unisex"
     },
     {
       "id": "shirt-06",
@@ -577,7 +594,8 @@
         "crimson",
         "bold"
       ],
-      "description": "MetaFactory 3D Oversized Pullover Hoodie 80 dengan geometri 3D fotorealistik berwana Crimson Red untuk kenyamanan gaya Streetwear."
+      "description": "MetaFactory 3D Oversized Pullover Hoodie 80 dengan geometri 3D fotorealistik berwana Crimson Red untuk kenyamanan gaya Streetwear.",
+      "gender": "Unisex"
     },
     {
       "id": "shirt-07",
@@ -609,7 +627,8 @@
         "black",
         "street"
       ],
-      "description": "MetaFactory 3D Heavyweight Street Hoodie 108 dengan geometri 3D fotorealistik berwana Pitch Black untuk kenyamanan gaya Streetwear."
+      "description": "MetaFactory 3D Heavyweight Street Hoodie 108 dengan geometri 3D fotorealistik berwana Pitch Black untuk kenyamanan gaya Streetwear.",
+      "gender": "Unisex"
     },
     {
       "id": "shirt-08",
@@ -641,7 +660,8 @@
         "grey",
         "lounge"
       ],
-      "description": "MetaFactory 3D Cozy Ribbed Hoodie 97 dengan geometri 3D fotorealistik berwana Heather Grey untuk kenyamanan gaya Casual."
+      "description": "MetaFactory 3D Cozy Ribbed Hoodie 97 dengan geometri 3D fotorealistik berwana Heather Grey untuk kenyamanan gaya Casual.",
+      "gender": "Unisex"
     },
     {
       "id": "shirt-09",
@@ -673,7 +693,8 @@
         "sky-blue",
         "luxury"
       ],
-      "description": "MetaFactory 3D Luxury Fleece Hoodie 36 dengan geometri 3D fotorealistik berwana Sky Blue untuk kenyamanan gaya Casual."
+      "description": "MetaFactory 3D Luxury Fleece Hoodie 36 dengan geometri 3D fotorealistik berwana Sky Blue untuk kenyamanan gaya Casual.",
+      "gender": "Unisex"
     },
     {
       "id": "shirt-10",
@@ -707,7 +728,8 @@
         "black",
         "crewneck"
       ],
-      "description": "MetaFactory 3D Heritage Cotton T-Shirt 111 dengan geometri 3D fotorealistik berwana Pitch Black untuk kenyamanan gaya Casual."
+      "description": "MetaFactory 3D Heritage Cotton T-Shirt 111 dengan geometri 3D fotorealistik berwana Pitch Black untuk kenyamanan gaya Casual.",
+      "gender": "Unisex"
     },
     {
       "id": "shirt-11",
@@ -741,7 +763,8 @@
         "white",
         "basic"
       ],
-      "description": "MetaFactory 3D Essential Supima T-Shirt 54 dengan geometri 3D fotorealistik berwana Chalk White untuk kenyamanan gaya Casual."
+      "description": "MetaFactory 3D Essential Supima T-Shirt 54 dengan geometri 3D fotorealistik berwana Chalk White untuk kenyamanan gaya Casual.",
+      "gender": "Unisex"
     },
     {
       "id": "shirt-12",
@@ -773,7 +796,8 @@
         "terracotta",
         "urban"
       ],
-      "description": "MetaFactory 3D Urban Graphic T-Shirt 141 dengan geometri 3D fotorealistik berwana Terracotta untuk kenyamanan gaya Casual."
+      "description": "MetaFactory 3D Urban Graphic T-Shirt 141 dengan geometri 3D fotorealistik berwana Terracotta untuk kenyamanan gaya Casual.",
+      "gender": "Unisex"
     },
     {
       "id": "shirt-13",
@@ -805,7 +829,8 @@
         "minimalist",
         "olive"
       ],
-      "description": "MetaFactory 3D Minimalist Dropped Tee 48 dengan geometri 3D fotorealistik berwana Olive Green untuk kenyamanan gaya Streetwear."
+      "description": "MetaFactory 3D Minimalist Dropped Tee 48 dengan geometri 3D fotorealistik berwana Olive Green untuk kenyamanan gaya Streetwear.",
+      "gender": "Unisex"
     },
     {
       "id": "shirt-14",
@@ -837,7 +862,8 @@
         "oversized",
         "grey"
       ],
-      "description": "MetaFactory 3D Oversized Vintage T-Shirt 76 dengan geometri 3D fotorealistik berwana Heather Grey untuk kenyamanan gaya Casual."
+      "description": "MetaFactory 3D Oversized Vintage T-Shirt 76 dengan geometri 3D fotorealistik berwana Heather Grey untuk kenyamanan gaya Casual.",
+      "gender": "Unisex"
     },
     {
       "id": "shirt-15",
@@ -869,7 +895,8 @@
         "navy",
         "versatile"
       ],
-      "description": "MetaFactory 3D Classic Longsleeve Shirt 14 dengan geometri 3D fotorealistik berwana Navy Blue untuk kenyamanan gaya Formal."
+      "description": "MetaFactory 3D Classic Longsleeve Shirt 14 dengan geometri 3D fotorealistik berwana Navy Blue untuk kenyamanan gaya Formal.",
+      "gender": "Unisex"
     },
     {
       "id": "shirt-16",
@@ -900,7 +927,132 @@
         "summer",
         "sleeveless"
       ],
-      "description": "MetaFactory 3D Summer Athletic Tank Top 3 dengan geometri 3D fotorealistik berwana Crimson Red untuk kenyamanan gaya Sports."
+      "description": "MetaFactory 3D Summer Athletic Tank Top 3 dengan geometri 3D fotorealistik berwana Crimson Red untuk kenyamanan gaya Sports.",
+      "gender": "Unisex"
+    },
+    {
+      "id": "jacket-01",
+      "name": "Streetcore 3D Varsity Bomber Jacket",
+      "category": "Apparel",
+      "subcategory": "jackets",
+      "modelType": "varsity",
+      "gender": "Unisex",
+      "baseColour": "Navy Blue",
+      "hex_colour": "#1E3A8A",
+      "usage": "Casual",
+      "priceIdr": "Rp749.000",
+      "model_3d_path": "/images/products/shirts/shirt_03_mf_hoodie_51.glb",
+      "preview_image_url": "/images/products/preview/jacket-01.png",
+      "flatteringFaceShapes": [
+        "Oval",
+        "Round",
+        "Square",
+        "Heart",
+        "Diamond",
+        "Oblong"
+      ],
+      "flatteringBodyShapes": [],
+      "styleTags": [
+        "varsity",
+        "bomber",
+        "navy",
+        "collegiate",
+        "statement"
+      ],
+      "description": "Streetcore 3D Varsity Bomber Jacket dengan siluet bomber stance klasik berona Navy Blue untuk layering gaya Casual."
+    },
+    {
+      "id": "jacket-02",
+      "name": "Heritage 3D Rigid Denim Trucker",
+      "category": "Apparel",
+      "subcategory": "jackets",
+      "modelType": "denim",
+      "gender": "Unisex",
+      "baseColour": "Indigo Denim",
+      "hex_colour": "#3B5BDB",
+      "usage": "Casual",
+      "priceIdr": "Rp699.000",
+      "model_3d_path": "/images/products/shirts/shirt_04_mf_hoodie_106.glb",
+      "preview_image_url": "/images/products/preview/jacket-02.png",
+      "flatteringFaceShapes": [
+        "Oval",
+        "Round",
+        "Square",
+        "Heart",
+        "Diamond",
+        "Oblong"
+      ],
+      "flatteringBodyShapes": [],
+      "styleTags": [
+        "denim",
+        "trucker",
+        "indigo",
+        "heritage",
+        "versatile"
+      ],
+      "description": "Heritage 3D Rigid Denim Trucker dengan tekstur denim rigid berona Indigo untuk tampilan workwear Casual."
+    },
+    {
+      "id": "jacket-03",
+      "name": "MetaFactory 3D Boxy Coach Jacket 22",
+      "category": "Apparel",
+      "subcategory": "jackets",
+      "modelType": "coach",
+      "gender": "Unisex",
+      "baseColour": "Pitch Black",
+      "hex_colour": "#09090B",
+      "usage": "Streetwear",
+      "priceIdr": "Rp689.000",
+      "model_3d_path": "/images/products/shirts/shirt_07_mf_hoodie_108.glb",
+      "preview_image_url": "/images/products/preview/jacket-03.png",
+      "flatteringFaceShapes": [
+        "Oval",
+        "Round",
+        "Square",
+        "Heart",
+        "Diamond",
+        "Oblong"
+      ],
+      "flatteringBodyShapes": [],
+      "styleTags": [
+        "coach",
+        "boxy",
+        "black",
+        "streetwear",
+        "casual"
+      ],
+      "description": "MetaFactory 3D Boxy Coach Jacket 22 dengan potongan boxy modern berona Pitch Black untuk gaya Streetwear."
+    },
+    {
+      "id": "jacket-04",
+      "name": "Vertex 3D Cropped Windbreaker 9",
+      "category": "Apparel",
+      "subcategory": "jackets",
+      "modelType": "windbreaker",
+      "gender": "Unisex",
+      "baseColour": "Olive Green",
+      "hex_colour": "#4D7C0F",
+      "usage": "Sports",
+      "priceIdr": "Rp649.000",
+      "model_3d_path": "/images/products/shirts/shirt_02_francesco_jersey.glb",
+      "preview_image_url": "/images/products/preview/jacket-04.png",
+      "flatteringFaceShapes": [
+        "Oval",
+        "Round",
+        "Square",
+        "Heart",
+        "Diamond",
+        "Oblong"
+      ],
+      "flatteringBodyShapes": [],
+      "styleTags": [
+        "windbreaker",
+        "cropped",
+        "olive",
+        "outdoor",
+        "casual"
+      ],
+      "description": "Vertex 3D Cropped Windbreaker 9 dengan material ringan berona Olive Green untuk aktivitas outdoor dan Sports."
     }
   ]
 }

@@ -240,13 +240,13 @@ class CatalogItemSchema(BaseModel):
     subcategory: str
     gender: str
     baseColour: str
-    hexColour: str
+    hex_colour: str
     usage: str
     styleTags: List[str]
     flatteringFaceShapes: Optional[List[str]] = None
     flatteringBodyShapes: Optional[List[str]] = None
-    model3dPath: str
-    previewImageUrl: str
+    model_3d_path: str
+    preview_image_url: str
     description: str
     priceIdr: str
 
