@@ -324,7 +324,10 @@ async def generate_dynamic_questions(
 ) -> List[Dict[str, Any]]:
     """Generates context-aware dynamic questions via Gemini with instant custom fallback."""
     settings = get_settings()
-    api_key = settings.gemini_api_key or os.environ.get("GEMINI_API_KEY", "")
+    api_key = settings.GEMINI_API_KEY or os.environ.get("GEMINI_API_KEY", "")
+    if not api_key:
+        logger.warning("GEMINI_API_KEY is not set. Falling back to static question bank.")
+        return _generate_dynamic_fallback(user_profile, subcategory, batch)
 
     if api_key:
         prompt = _build_tailored_prompt(user_profile, category, subcategory, previous_answers, batch)
