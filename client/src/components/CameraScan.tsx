@@ -21,6 +21,7 @@ import PhotoUpload from "./PhotoUpload";
 import RepositionTool from "./RepositionTool";
 import {
   buildAnalysisPayload,
+  toMetricLandmarks,
   collectQualityIssues,
   computeBrowFeatures,
   computeEyeFeatures,
@@ -194,7 +195,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
   // Temporal smoothing (ADR-019) — agregat hanya frame ALIGNED
   const samplerRef = useRef<FrameSampler>(new FrameSampler());
   const lastAlignedLmRef = useRef<Landmark[] | null>(null);
-  const lastImgWidthRef = useRef<number>(640);
+  const lastImgHeightRef = useRef<number>(480);
   const startScanRef = useRef<() => void>(() => {});
 
   /* ---- Dual-mode state (ADR-013: webcam live vs upload foto) ---- */
@@ -420,8 +421,14 @@ export const CameraScan: React.FC<CameraScanProps> = ({
       }
 
       // STAGE: kontainment oval — 4 landmark inti (dahi/dagu/pipi) wajib masuk oval
+      // (ovalFit tetap koordinat mentah: ia membandingkan dengan oval di layar)
       const { inside, faceW } = ovalFit(landmarks as Landmark[], GUIDE_OVAL);
-      const pose = computePose(landmarks as Landmark[]);
+      const vw = videoRef.current?.videoWidth || 1280;
+      const vh = videoRef.current?.videoHeight || 720;
+      // Rasio dan sudut dihitung di ruang metrik; tanpa ini semua perbandingan
+      // lebar-per-tinggi ikut rasio aspek kamera (lihat toMetricLandmarks).
+      const mlm = toMetricLandmarks(landmarks as Landmark[], vw, vh);
+      const pose = computePose(mlm);
       const poseOk =
         Math.abs(pose.yaw_deg) <= 15 && Math.abs(pose.roll_deg) <= 15 && Math.abs(pose.pitch_deg) <= 15;
       const sizeOk = faceW >= 0.18; // terlalu jauh dari kamera
@@ -454,15 +461,18 @@ export const CameraScan: React.FC<CameraScanProps> = ({
       const skinLab = video ? sampleSkinLab(video, landmarks as Landmark[]) : null;
       if (skinLab) {
         samplerRef.current.push({
-          ratios: computeFaceRatios(landmarks as Landmark[]),
-          nose: computeNoseFeatures(landmarks as Landmark[]),
-          eye: computeEyeFeatures(landmarks as Landmark[]),
-          brow: computeBrowFeatures(landmarks as Landmark[]),
-          gender: computeGenderFeatures(landmarks as Landmark[]),
+          ratios: computeFaceRatios(mlm),
+          nose: computeNoseFeatures(mlm),
+          eye: computeEyeFeatures(mlm),
+          brow: computeBrowFeatures(mlm),
+          gender: computeGenderFeatures(mlm),
           pose: { roll_deg: pose.roll_deg, yaw_deg: pose.yaw_deg, pitch_deg: pose.pitch_deg },
           skinLab,
         });
-        lastAlignedLmRef.current = landmarks as Landmark[];
+        // Simpan versi METRIK: satu-satunya konsumen ref ini adalah
+        // computeMeasurementsCm, yang berkontrak metrik.
+        lastAlignedLmRef.current = mlm;
+        lastImgHeightRef.current = vh;
       }
 
       const stableMs = now - alignedSinceRef.current;
@@ -595,7 +605,9 @@ export const CameraScan: React.FC<CameraScanProps> = ({
 
         // 3. Fitur + quality gates
         const luminance = await computeLuminance(snapshotDataUrl);
-        const payload = buildAnalysisPayload(lms, img.naturalWidth || 640, luminance);
+        const imgW = img.naturalWidth || 640;
+        const imgH = img.naturalHeight || 640;
+        const payload = buildAnalysisPayload(lms, imgW, imgH, luminance);
         const issues = collectQualityIssues(payload.quality);
         if (issues.length > 0 && !ignoreQuality) {
           setQualityIssues(issues);
@@ -612,7 +624,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
         const fullPayload = {
           ...payload,
           ...(skinLab ? { skin_lab: skinLab } : {}),
-          gender_features: computeGenderFeatures(lms),
+          gender_features: computeGenderFeatures(toMetricLandmarks(lms, imgW, imgH)),
         };
         const analysis = await analyzeLandmarks(fullPayload as unknown as Record<string, unknown>);
         setScanProgress(90);
@@ -698,10 +710,10 @@ export const CameraScan: React.FC<CameraScanProps> = ({
       if (samplerRef.current.count >= MIN_SAMPLES) {
         const agg = samplerRef.current.aggregate();
         const lm = lastAlignedLmRef.current;
-        const imgW = lastImgWidthRef.current || videoRef.current?.videoWidth || 640;
+        const imgH = lastImgHeightRef.current || videoRef.current?.videoHeight || 480;
         const payload: Record<string, unknown> = {
           face_ratios: agg.ratios,
-          measurements_cm: lm ? computeMeasurementsCm(lm, imgW) : {},
+          measurements_cm: lm ? computeMeasurementsCm(lm, imgH) : {},
           nose_features: agg.nose,
           eye_features: agg.eye,
           brow_features: agg.brow,
@@ -717,11 +729,23 @@ export const CameraScan: React.FC<CameraScanProps> = ({
         };
         analysis = await analyzeLandmarks(payload);
       } else {
-        // Sampler belum cukup (mis. tombol manual dipaksa) — fallback preset deterministik
+        // Sampler belum cukup (mis. tombol manual dipaksa) — fallback preset deterministik.
+        //
+        // `gender` sengaja TIDAK diambil dari preset. Preset mock berisi
+        // {label_id: "male", confidence: 0.68}, sehingga menekan scan sebelum 15
+        // sampel terkumpul selalu melaporkan "Pria" dengan keyakinan yang tampak
+        // meyakinkan, apa pun wajahnya. Itu sumber hasil berubah-ubah yang
+        // terpisah dari deadband, dan tidak terlihat karena angkanya wajar.
         analysis = {
           face_shape: defaultPreset.face_shape,
           skin_tone: defaultPreset.skin_tone,
-          gender: defaultPreset.gender,
+          gender: {
+            label: "Belum Pasti (Uncertain)",
+            label_id: "uncertain",
+            confidence: 0.5,
+            method: "landmark_ratio",
+            rule: "sampel temporal belum cukup",
+          },
           meta: { source: "mock" },
           is_mock: true,
         };
@@ -1247,11 +1271,24 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                 {/* 3. Gender */}
                 <div className="bg-surface-50/70 p-3 rounded-2xl border border-white/5 space-y-1">
                   <span className="text-slate-400 font-mono text-[10px]">GENDER</span>
+                  {/* Tiga nilai, bukan dua. Menuliskan ini sebagai ternary
+                      "female ? Wanita : Pria" akan menampilkan hasil yang ragu
+                      sebagai "Pria" — persis bias yang dihapus oleh deadband. */}
                   <div className="font-bold text-indigo-300 text-xs truncate">
-                    {scannedProfile.gender?.label_id === "female" ? "Wanita" : "Pria"}
+                    {scannedProfile.gender?.label_id === "female"
+                      ? "Wanita"
+                      : scannedProfile.gender?.label_id === "male"
+                        ? "Pria"
+                        : "Belum Pasti"}
                   </div>
                   <p className="text-[10px] text-slate-400">
-                    {scannedProfile.gender?.label_id === "female" ? "Female" : "Male"}
+                    {scannedProfile.gender?.label_id === "female"
+                      ? "Female"
+                      : scannedProfile.gender?.label_id === "male"
+                        ? "Male"
+                        : scannedProfile.gender?.leaning
+                          ? `Condong ${scannedProfile.gender.leaning === "female" ? "Wanita" : "Pria"} — dikonfirmasi lewat kuesioner`
+                          : "Dikonfirmasi lewat kuesioner"}
                   </p>
                 </div>
               </div>

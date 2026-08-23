@@ -187,7 +187,9 @@ class StyleRecommender:
                 return default
             return str(val) if val is not None else default
 
-        gender = extract_profile_str(user_profile.get("gender"), "label_id", "male").lower()
+        # Default "uncertain", bukan "male". Profil tanpa gender bukan berarti
+        # laki-laki, dan estimator kini memang boleh mengembalikan nilai ketiga.
+        gender = extract_profile_str(user_profile.get("gender"), "label_id", "uncertain").lower()
 
         # For shirts, filter by gender affinity if available
         if subcat == "shirts":
@@ -207,7 +209,9 @@ class StyleRecommender:
         face_shape = extract_profile_str(user_profile.get("face_shape"), "shape", "Oval")
         mst_code = extract_profile_str(user_profile.get("monk_tone"), "code", "MST-06")
         skin_tone = extract_profile_str(user_profile.get("skin_tone"), "tone", "Tan")
-        gender = extract_profile_str(user_profile.get("gender"), "label_id", "male").lower()
+        # Default "uncertain", bukan "male". Profil tanpa gender bukan berarti
+        # laki-laki, dan estimator kini memang boleh mengembalikan nilai ketiga.
+        gender = extract_profile_str(user_profile.get("gender"), "label_id", "uncertain").lower()
 
         # Extract quiz attributes
         quiz_occasion = str(quiz_answers.get("occasion", "Casual"))
@@ -302,8 +306,18 @@ class StyleRecommender:
             # D. Style & Gender Affinity Score (0 - 100)
             # ----------------------------------------------------
             style_affinity = 85.0
-            # Gender match bonus
-            if item_gender == "unisex" or (gender == "female" and "women" in item_gender) or (gender == "male" and "men" in item_gender):
+            # Gender match bonus.
+            #
+            # Saat gender "uncertain", hanya item unisex yang dapat bonus. Item
+            # bergender tidak dinaikkan MAUPUN diturunkan, sehingga peringkat
+            # antar keduanya ditentukan sinyal lain. Ini disengaja: menebak di
+            # sini akan mengembalikan bias yang baru saja dihapus, dan untuk
+            # kacamata pun tidak berpengaruh karena seluruh katalognya unisex.
+            if (
+                item_gender == "unisex"
+                or (gender == "female" and "women" in item_gender)
+                or (gender == "male" and "men" in item_gender)
+            ):
                 style_affinity += 8.0
 
             if quiz_brand_style and any(quiz_brand_style.lower() in t for t in style_tags):

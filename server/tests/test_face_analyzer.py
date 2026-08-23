@@ -501,11 +501,18 @@ class TestThreeParamBiometrics:
         assert out["gender"]["label_id"] == "female"
 
     def test_gender_fallback_without_features(self):
+        """Payload tanpa fitur dimorfisme harus mengaku ragu, bukan menebak.
+
+        Sebelumnya jalur ini mengembalikan "male". Itu berarti setiap payload
+        yang kehilangan gender_features diam-diam dilaporkan sebagai laki-laki,
+        dan bias itu tidak terlihat di UI karena confidence-nya tetap tampil
+        wajar.
+        """
         from ai_engine.models.face_analyzer import FaceAnalyzer
         from app.schemas import LandmarkAnalysisRequest
 
         out = FaceAnalyzer.analyze(LandmarkAnalysisRequest(**_payload()))
-        assert out["gender"]["label_id"] in {"male", "female"}
+        assert out["gender"]["label_id"] == "uncertain"
         assert out["gender"]["confidence"] <= 0.55
 
     def test_analyze_deterministic_repeat(self):

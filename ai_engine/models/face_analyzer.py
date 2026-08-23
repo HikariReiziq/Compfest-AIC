@@ -480,19 +480,34 @@ class FaceAnalyzer:
 
     @staticmethod
     def _classify_gender(request: Any) -> Dict[str, Any]:
-        """Fitur dimorfisme → GenderEstimator; tanpa fitur → fallback jujur."""
+        """Fitur dimorfisme → GenderEstimator; tanpa fitur → mengaku ragu.
+
+        Pose ikut diteruskan. Dua dari empat rasio dimorfisme bergantung arah
+        hadap, dan `quality` sudah membawa yaw serta pitch hasil ukur klien,
+        jadi tidak ada alasan membiarkan estimator menebak tanpa itu.
+        """
         from ai_engine.models.gender_estimator import GenderEstimator
 
         feats = getattr(request, "gender_features", None)
         if feats is None:
+            # Sebelumnya baris ini mengembalikan "Pria (Male)". Payload tanpa
+            # fitur bukan bukti seseorang laki-laki; menebak di sini adalah
+            # sumber ketidakkonsistenan yang sama dengan yang ditangani deadband.
             return {
-                "label": "Pria (Male)",
-                "label_id": "male",
+                "label": "Belum Pasti (Uncertain)",
+                "label_id": "uncertain",
                 "confidence": 0.5,
                 "method": "landmark_ratio",
                 "rule": "fallback_no_features",
             }
-        return GenderEstimator.classify(feats.model_dump())
+
+        quality = getattr(request, "quality", None)
+        pose = (
+            {"yaw_deg": quality.yaw_deg, "pitch_deg": quality.pitch_deg}
+            if quality is not None
+            else None
+        )
+        return GenderEstimator.classify(feats.model_dump(), pose=pose)
 
     @staticmethod
     def analyze(request: Any) -> Dict[str, Any]:

@@ -86,25 +86,56 @@ export function midpoint(a: Landmark, b: Landmark): Landmark {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Ruang metrik — WAJIB sebelum rasio/sudut apa pun                   */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Konversi landmark MediaPipe ke ruang metrik (satuan = tinggi gambar).
+ *
+ * MediaPipe menormalkan x terhadap LEBAR gambar dan y terhadap TINGGI-nya.
+ * Rasio atau sudut yang mencampur kedua sumbu pada koordinat mentah ikut
+ * membawa rasio aspek kamera: webcam 16:9 menyusutkan setiap perbandingan
+ * lebar-per-tinggi sebesar 9/16. Wajah dengan face_aspect fisik 0,74 tampak
+ * 0,42 di kamera 16:9, 0,55 di 4:3, dan 0,99 di foto potret 3:4 — orang yang
+ * sama, kamera berbeda, klasifikasi berbeda. Inilah sumber bias "female"
+ * pada deteksi gender live-camera dan distorsi face_width_to_height yang
+ * dikirim ke classifier bentuk wajah, yang thresholdnya (lihat
+ * server/tests/sample_payload.json, face_width_to_height 0,78) memang
+ * dirancang untuk rasio fisik.
+ *
+ * x dan z dikali W/H (z dinormalkan MediaPipe seperti x); y dibiarkan.
+ * Semua fungsi rasio, pose, dan pengukuran di file ini mengharapkan landmark
+ * hasil fungsi ini. Yang tetap memakai koordinat mentah hanyalah operasi
+ * layar/piksel: ovalFit, sampleSkinLab, dan penempatan AR.
+ */
+export function toMetricLandmarks(lm: Landmark[], width: number, height: number): Landmark[] {
+  const k = width / Math.max(1, height);
+  return lm.map((p) => ({ x: p.x * k, y: p.y, z: (p.z ?? 0) * k }));
+}
+
+/* ------------------------------------------------------------------ */
 /*  Kalibrasi iris → cm                                               */
 /* ------------------------------------------------------------------ */
 
 /** Diameter iris rata-rata (kanan+kiri) dalam piksel; `valid=false` bila
- *  model mengembalikan data iris kosong/nol atau nilai tak masuk akal. */
-export function irisDiameterPx(lm: Landmark[], imageWidth: number): { px: number; valid: boolean } {
-  const dR = dist2(lm[LM.irisR[1]], lm[LM.irisR[3]]) * imageWidth;
-  const dL = dist2(lm[LM.irisL[1]], lm[LM.irisL[3]]) * imageWidth;
+ *  model mengembalikan data iris kosong/nol atau nilai tak masuk akal.
+ *  Kontrak: `lm` metrik (toMetricLandmarks), sehingga jarak bersatuan tinggi
+ *  gambar dan pengali piksel yang benar adalah TINGGI — dulu dikali lebar,
+ *  yang menggelembungkan mm_per_px di kamera 16:9. */
+export function irisDiameterPx(lm: Landmark[], imageHeight: number): { px: number; valid: boolean } {
+  const dR = dist2(lm[LM.irisR[1]], lm[LM.irisR[3]]) * imageHeight;
+  const dL = dist2(lm[LM.irisL[1]], lm[LM.irisL[3]]) * imageHeight;
   const px = (dR + dL) / 2;
-  const valid = px > 4 && px < imageWidth * 0.25;
+  const valid = px > 4 && px < imageHeight * 0.25;
   return { px, valid };
 }
 
 /** mm_per_px = 11,7 / diameter_iris_px. Fallback `ratio_only` bila iris invalid. */
 export function calibrationScale(
   lm: Landmark[],
-  imageWidth: number
+  imageHeight: number
 ): { mmPerPx: number | null; mode: "iris" | "ratio_only" } {
-  const { px, valid } = irisDiameterPx(lm, imageWidth);
+  const { px, valid } = irisDiameterPx(lm, imageHeight);
   if (!valid) return { mmPerPx: null, mode: "ratio_only" };
   return { mmPerPx: IRIS_MM / px, mode: "iris" };
 }
@@ -119,13 +150,16 @@ export interface FaceMeasurements {
   calibration: "iris" | "ratio_only";
 }
 
-/** Ukuran antropometrik (gaya ANSUR II) dalam cm. Nilai null bila ratio_only. */
-export function computeMeasurementsCm(lm: Landmark[], imageWidth: number): FaceMeasurements {
-  const { mmPerPx, mode } = calibrationScale(lm, imageWidth);
-  const wForehead = dist2(lm[LM.foreheadL], lm[LM.foreheadR]) * imageWidth;
-  const wCheek = dist2(lm[LM.cheekL], lm[LM.cheekR]) * imageWidth;
-  const wJaw = dist2(lm[LM.jawL], lm[LM.jawR]) * imageWidth;
-  const hFace = dist2(lm[LM.faceTop], lm[LM.chinBottom]) * imageWidth;
+/** Ukuran antropometrik (gaya ANSUR II) dalam cm. Nilai null bila ratio_only.
+ *  Kontrak: `lm` metrik. Dulu tinggi wajah (jarak vertikal, ternormalisasi
+ *  terhadap tinggi gambar) dikali LEBAR gambar — di kamera 16:9 face_height_cm
+ *  membengkak 78% relatif terhadap lebar-lebar lain. */
+export function computeMeasurementsCm(lm: Landmark[], imageHeight: number): FaceMeasurements {
+  const { mmPerPx, mode } = calibrationScale(lm, imageHeight);
+  const wForehead = dist2(lm[LM.foreheadL], lm[LM.foreheadR]) * imageHeight;
+  const wCheek = dist2(lm[LM.cheekL], lm[LM.cheekR]) * imageHeight;
+  const wJaw = dist2(lm[LM.jawL], lm[LM.jawR]) * imageHeight;
+  const hFace = dist2(lm[LM.faceTop], lm[LM.chinBottom]) * imageHeight;
   const cm = (pxLen: number): number | null =>
     mmPerPx ? Math.round(((pxLen * mmPerPx) / 10) * 100) / 100 : null;
   const prop = (n: number): number => Math.round((n / (wJaw || 1e-6)) * 10) / 10;
@@ -272,7 +306,9 @@ export interface PoseQuality {
   pitch_deg: number;
 }
 
-/** Aproksimasi pose dari asimetri landmark. Gate: |yaw|≤15°, |pitch|≤15°, |roll|≤10°. */
+/** Aproksimasi pose dari asimetri landmark. Gate: |yaw|≤15°, |pitch|≤15°, |roll|≤10°.
+ *  Kontrak: `lm` metrik — atan2 pada koordinat mentah menyusutkan sudut roll
+ *  sebesar rasio aspek kamera. */
 export function computePose(lm: Landmark[]): PoseQuality {
   const roll =
     (Math.atan2(lm[LM.cheekR].y - lm[LM.cheekL].y, lm[LM.cheekR].x - lm[LM.cheekL].x) * 180) /
@@ -306,23 +342,29 @@ export interface LandmarkAnalysisPayload {
   quality: QualitySignals;
 }
 
-/** Payload lengkap untuk POST /api/v1/analyze/landmarks — hanya angka, tanpa gambar. */
+/** Payload lengkap untuk POST /api/v1/analyze/landmarks — hanya angka, tanpa gambar.
+ *  Terima landmark MENTAH plus dimensi gambar; konversi metrik terjadi di sini,
+ *  satu pintu, supaya tidak ada pemanggil yang bisa lupa. */
 export function buildAnalysisPayload(
-  lm: Landmark[],
+  lmRaw: Landmark[],
   imageWidth: number,
+  imageHeight: number,
   luminance: number
 ): LandmarkAnalysisPayload {
-  const wCheekPx = dist2(lm[LM.cheekL], lm[LM.cheekR]) * imageWidth;
+  const lm = toMetricLandmarks(lmRaw, imageWidth, imageHeight);
+  // Fraksi layar, bukan rasio wajah: pakai koordinat mentah (x sudah 0..1
+  // terhadap lebar gambar).
+  const widthFraction = round4(dist2(lmRaw[LM.cheekL], lmRaw[LM.cheekR]));
   return {
     face_ratios: computeFaceRatios(lm),
-    measurements_cm: computeMeasurementsCm(lm, imageWidth),
+    measurements_cm: computeMeasurementsCm(lm, imageHeight),
     nose_features: computeNoseFeatures(lm),
     eye_features: computeEyeFeatures(lm),
     brow_features: computeBrowFeatures(lm),
     quality: {
       ...computePose(lm),
       luminance,
-      face_width_ratio: round4(wCheekPx / Math.max(1, imageWidth)),
+      face_width_ratio: widthFraction,
     },
   };
 }

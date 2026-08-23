@@ -47,8 +47,15 @@ class TestGenderEstimator:
         assert out["confidence"] >= 0.55
 
     def test_neutral_falls_back_with_low_confidence(self):
+        """Vektor netral persis tidak boleh dipaksa jadi label.
+
+        Diperbarui bersama penambahan deadband. Versi lama menerima label apa
+        pun asal confidence-nya rendah, padahal justru di sinilah labelnya
+        berubah-ubah antar pemindaian: skor nol berarti tidak ada dasar untuk
+        memilih, bukan berarti "laki-laki dengan keyakinan rendah".
+        """
         out = GenderEstimator.classify(_features())
-        assert out["label"] in ("Pria (Male)", "Wanita (Female)")
+        assert out["label_id"] == "uncertain"
         assert out["confidence"] < 0.62  # sinyal lemah → jujur rendah
 
     def test_invalid_features_low_confidence(self):
@@ -64,3 +71,103 @@ class TestGenderEstimator:
         a = GenderEstimator.classify(vec)
         b = GenderEstimator.classify(vec)
         assert a == b
+
+
+class TestGenderDeadband:
+    """Deadband + koreksi pose — jawaban atas gender yang berubah-ubah.
+
+    Sebelum ini, label ditentukan murni oleh tanda skor. Karena `face_aspect`
+    dan `brow_to_eye` ikut berubah oleh arah hadap kepala, wajah yang sama bisa
+    keluar sebagai male lalu female hanya dengan menoleh dalam batas yang masih
+    diloloskan quality gate.
+    """
+
+    def test_zona_ragu_tetap_melaporkan_kecondongan(self):
+        """Ragu bukan berarti tidak tahu apa-apa; tandanya tetap informatif."""
+        out = GenderEstimator.classify(_features(jaw_to_cheek=0.87, face_aspect=0.755))
+        assert out["label_id"] == "uncertain"
+        assert out["leaning"] == "male"
+
+    def test_payload_kosong_tidak_punya_kecondongan(self):
+        """Tanpa fitur sama sekali tidak ada dasar untuk melaporkan arah."""
+        out = GenderEstimator.classify(
+            _features(jaw_to_cheek=0.0, brow_to_eye=0.0, lip_to_face_width=0.0, face_aspect=0.0)
+        )
+        assert out["label_id"] == "uncertain"
+        assert "leaning" not in out
+
+    def test_deadband_tidak_lebih_lebar_dari_galat_sisa(self):
+        """Deadband disempitkan setelah koreksi pose menghapus penyebab ayunan.
+
+        Yang perlu ditutup kini hanya galat pengukuran sudut (maksimum ~0.027 di
+        batas gate 15 derajat), bukan lagi ayunan pose 0.035. Deadband yang
+        terlalu lebar menolak wajah yang sinyalnya sebenarnya jelas.
+        """
+        assert GenderEstimator.DEADBAND <= 0.03
+
+    def test_skor_dalam_deadband_tidak_dipaksa_berlabel(self):
+        # Vektor yang skornya persis di sekitar nol.
+        out = GenderEstimator.classify(
+            _features(jaw_to_cheek=0.87, face_aspect=0.755)
+        )
+        assert out["label_id"] == "uncertain"
+        assert out["confidence"] == 0.50
+        assert "deadband" in out["rule"]
+
+    def test_sinyal_kuat_tetap_berlabel_tegas(self):
+        """Deadband tidak boleh membuat sistem menolak menjawab untuk wajah jelas."""
+        pria = GenderEstimator.classify(
+            _features(jaw_to_cheek=0.97, brow_to_eye=0.11, lip_to_face_width=0.36, face_aspect=0.80)
+        )
+        wanita = GenderEstimator.classify(
+            _features(jaw_to_cheek=0.74, brow_to_eye=0.22, lip_to_face_width=0.49, face_aspect=0.71)
+        )
+        assert pria["label_id"] == "male"
+        assert wanita["label_id"] == "female"
+
+    def test_rasio_lebar_per_lebar_kebal_terhadap_yaw(self):
+        """jaw_to_cheek dan lip_to_face_width tidak boleh disentuh koreksi pose."""
+        f = _features()
+        # yaw dan pitch sengaja BERBEDA. Kalau keduanya sama besar, faktor
+        # cos(yaw)/cos(pitch) menjadi 1 dan test ini lolos tanpa menguji apa pun.
+        out = GenderEstimator._undo_pose(dict(f), {"yaw_deg": 14, "pitch_deg": 3})
+        assert out["jaw_to_cheek"] == f["jaw_to_cheek"]
+        assert out["lip_to_face_width"] == f["lip_to_face_width"]
+        # Dua sisanya justru HARUS berubah.
+        assert out["face_aspect"] != f["face_aspect"]
+        assert out["brow_to_eye"] != f["brow_to_eye"]
+
+    def test_label_stabil_di_seluruh_pose_yang_lolos_gate(self):
+        """Wajah yang sama, arah hadap berbeda, harus memberi label sama."""
+        import math
+
+        jaw, brow, lip, aspect = 0.97, 0.11, 0.36, 0.80
+        labels = set()
+        for yaw in (-15, -8, 0, 8, 15):
+            for pitch in (-15, 0, 15):
+                cy = math.cos(math.radians(abs(yaw)))
+                cp = math.cos(math.radians(abs(pitch)))
+                # Nilai sebagaimana TERAMATI pada pose tersebut.
+                observed = _features(
+                    jaw_to_cheek=jaw,
+                    brow_to_eye=brow * cp / cy,
+                    lip_to_face_width=lip,
+                    face_aspect=aspect * cy / cp,
+                )
+                labels.add(
+                    GenderEstimator.classify(
+                        observed, pose={"yaw_deg": yaw, "pitch_deg": pitch}
+                    )["label_id"]
+                )
+        assert labels == {"male"}, f"label ikut berubah oleh pose: {labels}"
+
+    def test_pose_ekstrem_tidak_meledakkan_koreksi(self):
+        """Pembagian dengan cos mendekati nol harus ditolak, bukan menghasilkan angka liar."""
+        f = _features()
+        out = GenderEstimator._undo_pose(dict(f), {"yaw_deg": 89, "pitch_deg": 0})
+        assert out == f
+
+    def test_pose_tidak_wajib(self):
+        """Pemanggil lama tanpa argumen pose harus tetap jalan."""
+        vec = _features(jaw_to_cheek=0.97, brow_to_eye=0.11, lip_to_face_width=0.36, face_aspect=0.80)
+        assert GenderEstimator.classify(vec)["label_id"] == "male"
