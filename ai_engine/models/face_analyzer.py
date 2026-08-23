@@ -236,3 +236,54 @@ class EyeShapeClassifier:
             "confidence": round(0.62 + 0.25 * (0.6 * straightness + 0.4 * almond_fit), 2),
             "rule": f"EAR {ear:.2f} moderat + tilt {tilt:.1f}° netral (rasio klasik almond)",
         }
+
+
+# ------------------------------------------------------------------ #
+#  Brow Shape Classifier — 3 taksonomi (ADR-014)                     #
+#  Sinyal: arch ratio = elevasi puncak alis / panjang alis (105/334  #
+#  terhadap garis dasar 70-107 / 300-337), rata kanan-kiri.          #
+# ------------------------------------------------------------------ #
+BROW_ARCH_HIGH = 0.20
+BROW_ARCH_FLAT = 0.10
+
+
+class BrowClassifier:
+    @staticmethod
+    def classify(f: Dict[str, float]) -> Dict[str, Any]:
+        arch_r = f.get("arch_ratio_right", 0.0) or 0.0
+        arch_l = f.get("arch_ratio_left", 0.0) or 0.0
+        arch = (arch_r + arch_l) / 2
+
+        if arch_r == 0 and arch_l == 0:
+            return {
+                "label": "Soft Curve (Lengkung Lembut)",
+                "label_id": "soft_curve",
+                "confidence": 0.45,
+                "rule": "fallback",
+            }
+
+        if arch > BROW_ARCH_HIGH:
+            margin = (arch - BROW_ARCH_HIGH) / BROW_ARCH_HIGH
+            return {
+                "label": "Arched (Tegak)",
+                "label_id": "arched",
+                "confidence": _conf(margin),
+                "rule": f"arch ratio {arch:.2f} > {BROW_ARCH_HIGH} (puncak alis dominan)",
+            }
+
+        if arch < BROW_ARCH_FLAT:
+            margin = (BROW_ARCH_FLAT - arch) / BROW_ARCH_FLAT
+            return {
+                "label": "Straight (Lurus)",
+                "label_id": "straight",
+                "confidence": _conf(margin),
+                "rule": f"arch ratio {arch:.2f} < {BROW_ARCH_FLAT} (alis hampir datar)",
+            }
+
+        mid_fit = 1.0 - min(1.0, abs(arch - 0.15) / 0.15)
+        return {
+            "label": "Soft Curve (Lengkung Lembut)",
+            "label_id": "soft_curve",
+            "confidence": round(0.62 + 0.25 * mid_fit, 2),
+            "rule": f"arch ratio {arch:.2f} moderat (lengkung lembut seimbang)",
+        }

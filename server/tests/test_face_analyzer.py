@@ -265,3 +265,40 @@ class TestEyeShapeClassifier:
         assert out["label"] == "Almond (Almond)"
         assert out["confidence"] <= 0.5
         assert out["rule"] == "fallback"
+
+
+def _brow(**over):
+    f = {"arch_ratio_right": 0.15, "arch_ratio_left": 0.16}
+    f.update(over)
+    return f
+
+
+class TestBrowClassifier:
+    """Task 2.5 — Arched/Straight/Soft Curve via arch-height ratio."""
+
+    def test_arched_high_arch(self):
+        from ai_engine.models.face_analyzer import BrowClassifier
+
+        out = BrowClassifier.classify(_brow(arch_ratio_right=0.26, arch_ratio_left=0.24))
+        assert out["label"] == "Arched (Tegak)"
+
+    def test_straight_flat_arch(self):
+        from ai_engine.models.face_analyzer import BrowClassifier
+
+        out = BrowClassifier.classify(_brow(arch_ratio_right=0.07, arch_ratio_left=0.08))
+        assert out["label"] == "Straight (Lurus)"
+
+    def test_soft_curve_baseline(self):
+        from ai_engine.models.face_analyzer import BrowClassifier
+
+        out = BrowClassifier.classify(_brow())
+        assert out["label"] == "Soft Curve (Lengkung Lembut)"
+        assert out["confidence"] >= 0.6
+
+    def test_invalid_features_fallback_soft_curve(self):
+        from ai_engine.models.face_analyzer import BrowClassifier
+
+        out = BrowClassifier.classify(_brow(arch_ratio_right=0.0, arch_ratio_left=0.0))
+        assert out["label"] == "Soft Curve (Lengkung Lembut)"
+        assert out["confidence"] <= 0.5
+        assert out["rule"] == "fallback"
