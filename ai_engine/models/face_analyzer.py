@@ -92,3 +92,87 @@ def classify_face_shape(ratios: Dict[str, float]) -> Dict[str, Any]:
         "hat_recommendations": result.hat_recommendations,
         "styling_advice": result.styling_advice,
     }
+
+
+# ------------------------------------------------------------------ #
+#  Nose Type Rule Engine — 5 taksonomi (ADR-014)                     #
+#  Sinyal utama: bridge_curvature (profil-z 168→6→1), width_to_face  #
+#  (lebar alar / lebar pipi), tip_upturn, alar_to_tip_ratio.         #
+# ------------------------------------------------------------------ #
+NOSE_CURVATURE_CONVEX = 0.12   # > ini → punggung konveks (Roman)
+NOSE_CURVATURE_CONCAVE = -0.12 # < ini → punggung cekung
+NOSE_WIDE = 0.30               # lebar alar dominan (Bulbous/Snub)
+NOSE_TIP_UPTURN = 0.15         # ujung terangkat (Celestial-Button)
+
+
+class NoseClassifier:
+    """Klasifikasi tipe hidung dari fitur turunan (tanpa dataset publik kanonik —
+    strategi defensible: rule engine atas landmark geometry)."""
+
+    @staticmethod
+    def classify(f: Dict[str, float]) -> Dict[str, Any]:
+        width = f.get("width_to_face", 0.0) or 0.0
+        curvature = f.get("bridge_curvature", 0.0) or 0.0
+        upturn = f.get("tip_upturn", 0.0) or 0.0
+        alar_tip = f.get("alar_to_tip_ratio", 0.0) or 0.0
+
+        # Fitur tak valid (semua nol) → fallback jujur ber-confidence rendah
+        if width == 0 and curvature == 0 and upturn == 0 and alar_tip == 0:
+            return {
+                "label": "Greek (Mancung)",
+                "label_id": "greek",
+                "confidence": 0.45,
+                "rule": "fallback",
+            }
+
+        if curvature > NOSE_CURVATURE_CONVEX:
+            margin = (curvature - NOSE_CURVATURE_CONVEX) / max(NOSE_CURVATURE_CONVEX, 1e-6)
+            return {
+                "label": "Roman (Lengkung)",
+                "label_id": "roman",
+                "confidence": _conf(margin),
+                "rule": f"bridge_curvature {curvature:.2f} > +{NOSE_CURVATURE_CONVEX} (punggung konveks)",
+            }
+
+        if curvature < NOSE_CURVATURE_CONCAVE:
+            if width > NOSE_WIDE:
+                margin = (NOSE_WIDE - 0) + (width - NOSE_WIDE) + (NOSE_CURVATURE_CONCAVE - curvature)
+                return {
+                    "label": "Broad-Snub (Pesek Lebar)",
+                    "label_id": "broad_snub",
+                    "confidence": _conf(margin),
+                    "rule": f"bridge cekung {curvature:.2f} + lebar alar {width:.2f} > {NOSE_WIDE}",
+                }
+            margin = (NOSE_CURVATURE_CONCAVE - curvature) / abs(NOSE_CURVATURE_CONCAVE) + (
+                upturn / NOSE_TIP_UPTURN if upturn > 0 else 0.0
+            )
+            return {
+                "label": "Celestial-Button (Mancung Mungil)",
+                "label_id": "celestial_button",
+                "confidence": _conf(margin),
+                "rule": f"bridge cekung {curvature:.2f} + tip_upturn {upturn:.2f}",
+            }
+
+        if width > NOSE_WIDE and alar_tip > 1.6:
+            margin = (width - NOSE_WIDE) / NOSE_WIDE + (alar_tip - 1.6) / 1.6
+            return {
+                "label": "Bulbous (Bulat)",
+                "label_id": "bulbous",
+                "confidence": _conf(margin),
+                "rule": f"lebar alar {width:.2f} + rasio alar/ujung {alar_tip:.2f} dominan",
+            }
+
+        # Baseline: punggung relatif lurus & proporsi moderat
+        straightness = 1.0 - min(1.0, abs(curvature) / abs(NOSE_CURVATURE_CONCAVE))
+        moderate = 1.0 - min(1.0, abs(width - 0.26) / 0.26)
+        return {
+            "label": "Greek (Mancung)",
+            "label_id": "greek",
+            "confidence": round(0.60 + 0.25 * (0.6 * straightness + 0.4 * moderate), 2),
+            "rule": f"bridge lurus (curvature {curvature:.2f}) + lebar moderat ({width:.2f})",
+        }
+
+
+def _conf(margin: float, base: float = 0.62, span: float = 0.30) -> float:
+    """Confidence 0.62..0.92 berdasarkan margin relatif terhadap threshold."""
+    return round(min(0.95, base + span * min(1.0, margin)), 2)

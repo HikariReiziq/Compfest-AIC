@@ -154,3 +154,63 @@ class TestFaceShapeDiamond:
             assert out["styling_advice"]
         assert FACE_SHAPE_LABELS_ID["Oblong"] == "Oblong (Persegi Panjang)"
         assert set(FACE_SHAPE_LABELS_ID) == {"Oval", "Round", "Square", "Heart", "Diamond", "Oblong"}
+
+
+def _nose(**over):
+    f = {
+        "width_to_face": 0.24,
+        "length_to_height": 0.32,
+        "bridge_curvature": 0.02,
+        "bridge_linearity": 0.03,
+        "tip_upturn": 0.08,
+        "alar_to_tip_ratio": 1.4,
+    }
+    f.update(over)
+    return f
+
+
+class TestNoseClassifier:
+    """Task 2.3 — rule engine 5 tipe hidung via profil-z punggung + lebar alar."""
+
+    def test_roman_convex_bridge(self):
+        from ai_engine.models.face_analyzer import NoseClassifier
+
+        out = NoseClassifier.classify(_nose(bridge_curvature=0.16))
+        assert out["label"] == "Roman (Lengkung)"
+        assert out["confidence"] >= 0.55
+        assert out["rule"]
+
+    def test_celestial_button_concave_upturned(self):
+        from ai_engine.models.face_analyzer import NoseClassifier
+
+        out = NoseClassifier.classify(_nose(bridge_curvature=-0.16, tip_upturn=0.20))
+        assert out["label"] == "Celestial-Button (Mancung Mungil)"
+
+    def test_broad_snub_wide_concave(self):
+        from ai_engine.models.face_analyzer import NoseClassifier
+
+        out = NoseClassifier.classify(_nose(bridge_curvature=-0.14, width_to_face=0.31, tip_upturn=0.05))
+        assert out["label"] == "Broad-Snub (Pesek Lebar)"
+
+    def test_bulbous_wide_tip(self):
+        from ai_engine.models.face_analyzer import NoseClassifier
+
+        out = NoseClassifier.classify(_nose(bridge_curvature=0.01, width_to_face=0.33, alar_to_tip_ratio=1.8))
+        assert out["label"] == "Bulbous (Bulat)"
+
+    def test_greek_straight_baseline(self):
+        from ai_engine.models.face_analyzer import NoseClassifier
+
+        out = NoseClassifier.classify(_nose())
+        assert out["label"] == "Greek (Mancung)"
+        assert out["confidence"] >= 0.6
+
+    def test_invalid_features_fallback_greek(self):
+        from ai_engine.models.face_analyzer import NoseClassifier
+
+        out = NoseClassifier.classify(
+            _nose(width_to_face=0.0, length_to_height=0.0, bridge_curvature=0.0, tip_upturn=0.0, alar_to_tip_ratio=0.0)
+        )
+        assert out["label"] == "Greek (Mancung)"
+        assert out["confidence"] <= 0.5
+        assert out["rule"] == "fallback"
