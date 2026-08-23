@@ -1,6 +1,72 @@
-import { UserPersonalProfile, RecommendationItem, MOCK_PRESETS } from "./mockData";
+import { UserPersonalProfile, RecommendationItem, MOCK_PRESETS, FaceMeasurements } from "./mockData";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+
+/* ------------------------------------------------------------------ */
+/*  Multi-Dimensional Landmark Analysis (ADR-014)                     */
+/*  Payload hanya fitur turunan (angka) — tanpa gambar wajah.         */
+/* ------------------------------------------------------------------ */
+export interface LandmarkAnalysisResult {
+  face_shape?: UserPersonalProfile["face_shape"];
+  body_shape?: UserPersonalProfile["body_shape"];
+  nose?: { label?: string; confidence?: number; rule?: string };
+  eye?: { label?: string; confidence?: number; rule?: string };
+  brow?: { label?: string; confidence?: number; rule?: string };
+  measurements?: FaceMeasurements;
+  pillars?: Array<{
+    pillar: number;
+    title?: string;
+    principle?: string;
+    scientific_basis?: string;
+    application?: string;
+  }>;
+  narrative?: { summary?: string; tips?: string[] };
+  meta?: { engine_version?: string; source?: string };
+  is_mock?: boolean;
+}
+
+/**
+ * POST /api/v1/analyze/landmarks — klasifikasi server-side atas fitur turunan.
+ * Fallback rantai lama: bila endpoint baru tidak tersedia/gagal, gunakan
+ * /analyze/ratios (wajah tetap terklasifikasi; hidung/mata/alis menjadi
+ * undefined dan UI wajib aman terhadapnya via optional chaining).
+ */
+export async function analyzeLandmarks(payload: Record<string, unknown>): Promise<LandmarkAnalysisResult> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/analyze/landmarks`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`landmarks API ${res.status}`);
+    return await res.json();
+  } catch (error) {
+    console.warn("Landmark analysis API unavailable, falling back to ratios endpoint:", error);
+    try {
+      const ratios = (payload as { face_ratios?: Record<string, number> }).face_ratios;
+      const legacy = await analyzeRatios(ratios, undefined, false);
+      return {
+        face_shape: legacy?.face_shape || undefined,
+        body_shape: legacy?.body_shape || undefined,
+        measurements: (payload as { measurements_cm?: FaceMeasurements }).measurements_cm,
+        narrative: {
+          summary: `Analisis bentuk wajah via jalur rasio geometri (${legacy?.face_shape?.shape || "Oval"}).`,
+        },
+        meta: { source: "ratios_fallback" },
+        is_mock: Boolean(legacy?.is_mock),
+      };
+    } catch {
+      const preset = MOCK_PRESETS.indonesian_warm_sawo_matang.profile;
+      return {
+        face_shape: preset.face_shape,
+        body_shape: preset.body_shape,
+        measurements: (payload as { measurements_cm?: FaceMeasurements }).measurements_cm,
+        meta: { source: "mock" },
+        is_mock: true,
+      };
+    }
+  }
+}
 
 
 /* ------------------------------------------------------------------ */

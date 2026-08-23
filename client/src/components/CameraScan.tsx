@@ -12,9 +12,22 @@ import {
   XCircle,
   Eye,
   Check,
+  ImagePlus,
+  ShieldCheck,
 } from "lucide-react";
 import { UserPersonalProfile, MOCK_PRESETS } from "../lib/mockData";
-import { analyzeSkin, analyzeRatios } from "../lib/api";
+import { analyzeSkin, analyzeRatios, analyzeLandmarks } from "../lib/api";
+import PhotoUpload from "./PhotoUpload";
+import RepositionTool from "./RepositionTool";
+import {
+  buildAnalysisPayload,
+  collectQualityIssues,
+  Landmark,
+} from "../lib/faceGeometry";
+
+/** URL model FaceLandmarker resmi (dipakai mode VIDEO dan IMAGE). */
+const FACE_LANDMARKER_MODEL_URL =
+  "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                             */
@@ -59,6 +72,61 @@ function getCameraErrorMessage(err: unknown): string {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Upload pipeline helpers (DOM-dependent — di luar faceGeometry)     */
+/* ------------------------------------------------------------------ */
+class UploadAnalysisError extends Error {}
+
+/** Rata-rata luminance 0..255 dari snapshot (downscale 64×64). */
+function computeLuminance(dataUrl: string): Promise<number> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const cv = document.createElement("canvas");
+        cv.width = 64;
+        cv.height = 64;
+        const ctx = cv.getContext("2d");
+        if (!ctx) return resolve(128);
+        ctx.drawImage(img, 0, 0, 64, 64);
+        const d = ctx.getImageData(0, 0, 64, 64).data;
+        let sum = 0;
+        for (let i = 0; i < d.length; i += 4) sum += (d[i] + d[i + 1] + d[i + 2]) / 3;
+        resolve(Math.round(sum / (d.length / 4)));
+      } catch {
+        resolve(128);
+      }
+    };
+    img.onerror = () => resolve(128);
+    img.src = dataUrl;
+  });
+}
+
+/** Crop ROI kulit dahi/pipi tengah-atas (mirror pola mode video: ±30% frame). */
+function cropCenterRoi(dataUrl: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const s = Math.min(img.naturalWidth, img.naturalHeight) * 0.3;
+        const sx = Math.max(0, img.naturalWidth / 2 - s / 2);
+        const sy = Math.max(0, img.naturalHeight * 0.25);
+        const cv = document.createElement("canvas");
+        cv.width = 160;
+        cv.height = 160;
+        const ctx = cv.getContext("2d");
+        if (!ctx) return reject(new Error("canvas unavailable"));
+        ctx.drawImage(img, sx, sy, s, s, 0, 0, 160, 160);
+        resolve(cv.toDataURL("image/jpeg", 0.85));
+      } catch (e) {
+        reject(e as Error);
+      }
+    };
+    img.onerror = () => reject(new Error("decode failed"));
+    img.src = dataUrl;
+  });
+}
+
+/* ------------------------------------------------------------------ */
 /*  Component                                                         */
 /* ------------------------------------------------------------------ */
 export const CameraScan: React.FC<CameraScanProps> = ({
@@ -96,6 +164,18 @@ export const CameraScan: React.FC<CameraScanProps> = ({
   // Extracted ratios from MediaPipe landmarks
   const extractedRatiosRef = useRef<Record<string, number> | null>(null);
 
+  /* ---- Dual-mode state (ADR-013: webcam live vs upload foto) ---- */
+  const [mode, setMode] = useState<"camera" | "upload">("camera");
+  const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
+  const [uploadStage, setUploadStage] = useState<"select" | "reposition">("select");
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [qualityIssues, setQualityIssues] = useState<string[]>([]);
+  const lastSnapshotRef = useRef<string | null>(null);
+
+  // FaceLandmarker instance khusus mode IMAGE (deteksi satu kali pada foto)
+  const imageLandmarkerRef = useRef<any>(null);
+  const filesetRef = useRef<any>(null);
+
   useEffect(() => {
     if (overrideProfile) {
       setScannedProfile(overrideProfile);
@@ -112,14 +192,14 @@ export const CameraScan: React.FC<CameraScanProps> = ({
       const filesetResolver = await FilesetResolver.forVisionTasks(
         "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
       );
+      filesetRef.current = filesetResolver; // dipakai ulang oleh landmarker mode IMAGE
 
       let landmarker: any = null;
       try {
         // Try GPU delegate first
         landmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
           baseOptions: {
-            modelAssetPath:
-              "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+            modelAssetPath: FACE_LANDMARKER_MODEL_URL,
             delegate: "GPU",
           },
           runningMode: "VIDEO",
@@ -132,8 +212,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
         // Fallback to CPU delegate
         landmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
           baseOptions: {
-            modelAssetPath:
-              "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+            modelAssetPath: FACE_LANDMARKER_MODEL_URL,
             delegate: "CPU",
           },
           runningMode: "VIDEO",
@@ -200,7 +279,42 @@ export const CameraScan: React.FC<CameraScanProps> = ({
     }
   }, [initFaceLandmarker]);
 
+  /* ---- Pelepasan stream kamera (pola ERROR.md #4: cegah device lock) ---- */
+  const stopCameraStream = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  }, []);
+
+  /* ---- Pindah tab mode: lepas webcam saat keluar mode kamera ---- */
+  const switchMode = useCallback(
+    (next: "camera" | "upload") => {
+      if (next === mode) return;
+      if (next === "upload") {
+        stopCameraStream();
+        if (rafRef.current) cancelAnimationFrame(rafRef.current);
+        if (countdownRef.current) {
+          clearInterval(countdownRef.current);
+          countdownRef.current = null;
+        }
+        setCountdown(null);
+        setCameraError(null);
+      } else {
+        setUploadError(null);
+        setQualityIssues([]);
+      }
+      setMode(next);
+    },
+    [mode, stopCameraStream]
+  );
+
   useEffect(() => {
+    if (mode !== "camera") return; // kamera hanya hidup di tab kamera
+
     let cancelled = false;
 
     async function setupCamera() {
@@ -245,13 +359,11 @@ export const CameraScan: React.FC<CameraScanProps> = ({
 
     return () => {
       cancelled = true;
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((t) => t.stop());
-      }
+      stopCameraStream();
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       if (countdownRef.current) clearInterval(countdownRef.current);
     };
-  }, [initFaceLandmarker]);
+  }, [initFaceLandmarker, mode, stopCameraStream]);
 
   /* ---- Process detected landmarks ---- */
   const processLandmarks = useCallback((landmarks: any[]) => {
@@ -365,9 +477,9 @@ export const CameraScan: React.FC<CameraScanProps> = ({
     }
   }, [isScanning, scannedProfile]);
 
-  /* ---- Real-time face tracking loop ---- */
+  /* ---- Real-time face tracking loop (hanya mode kamera) ---- */
   useEffect(() => {
-    if (!hasCamera || scannedProfile || isScanning) return;
+    if (mode !== "camera" || !hasCamera || scannedProfile || isScanning) return;
 
     let isLoopActive = true;
 
@@ -410,7 +522,125 @@ export const CameraScan: React.FC<CameraScanProps> = ({
       isLoopActive = false;
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [hasCamera, scannedProfile, isScanning, isModelReady, processLandmarks]);
+  }, [mode, hasCamera, scannedProfile, isScanning, isModelReady, processLandmarks]);
+
+  /* ---- FaceLandmarker mode IMAGE untuk pipeline upload (deteksi 1×) ---- */
+  const getImageLandmarker = useCallback(async () => {
+    if (imageLandmarkerRef.current) return imageLandmarkerRef.current;
+    const vision = await import("@mediapipe/tasks-vision");
+    const { FaceLandmarker, FilesetResolver } = vision;
+
+    let fileset = filesetRef.current;
+    if (!fileset) {
+      fileset = await FilesetResolver.forVisionTasks(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+      );
+      filesetRef.current = fileset;
+    }
+
+    const buildOptions = (delegate: "GPU" | "CPU") => ({
+      baseOptions: { modelAssetPath: FACE_LANDMARKER_MODEL_URL, delegate },
+      runningMode: "IMAGE" as const,
+      numFaces: 1,
+      outputFaceBlendshapes: false,
+      outputFacialTransformationMatrixes: false,
+    });
+
+    let landmarker: any = null;
+    try {
+      landmarker = await FaceLandmarker.createFromOptions(fileset, buildOptions("GPU"));
+    } catch (gpuErr) {
+      console.warn("IMAGE-mode GPU delegate failed, using CPU:", gpuErr);
+      landmarker = await FaceLandmarker.createFromOptions(fileset, buildOptions("CPU"));
+    }
+    imageLandmarkerRef.current = landmarker;
+    return landmarker;
+  }, []);
+
+  /* ---- Pipeline analisis foto upload (ADR-013/014) ---- */
+  const analyzePhoto = useCallback(
+    async (snapshotDataUrl: string, ignoreQuality: boolean = false) => {
+      setUploadError(null);
+      setQualityIssues([]);
+      setIsScanning(true);
+      setScanProgress(10);
+      try {
+        // 1. Decode snapshot
+        const img = new Image();
+        await new Promise<void>((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = () => reject(new UploadAnalysisError("Gagal membaca snapshot foto."));
+          img.src = snapshotDataUrl;
+        });
+        setScanProgress(25);
+
+        // 2. Deteksi landmark satu kali (mode IMAGE)
+        const landmarker = await getImageLandmarker();
+        const result = landmarker.detect(img);
+        const lms: Landmark[] | undefined = result?.faceLandmarks?.[0];
+        if (!lms || lms.length < 400) {
+          throw new UploadAnalysisError(
+            "Wajah tidak terdeteksi. Pastikan foto frontal dan wajah berada di dalam oval pemandu."
+          );
+        }
+        setScanProgress(45);
+
+        // 3. Fitur + quality gates
+        const luminance = await computeLuminance(snapshotDataUrl);
+        const payload = buildAnalysisPayload(lms, img.naturalWidth || 640, luminance);
+        const issues = collectQualityIssues(payload.quality);
+        if (issues.length > 0 && !ignoreQuality) {
+          setQualityIssues(issues);
+          setUploadStage("reposition");
+          setIsScanning(false);
+          setScanProgress(0);
+          return;
+        }
+        setScanProgress(65);
+
+        // 4. ROI kulit + klasifikasi server (fitur turunan saja — tanpa gambar)
+        const roiBase64 = await cropCenterRoi(snapshotDataUrl);
+        const [skinRes, analysis] = await Promise.all([
+          analyzeSkin(roiBase64, false),
+          analyzeLandmarks(payload as unknown as Record<string, unknown>),
+        ]);
+        setScanProgress(90);
+
+        const defaultPreset = MOCK_PRESETS.indonesian_warm_sawo_matang.profile;
+        const profile: UserPersonalProfile = {
+          monk_tone: skinRes?.monk_tone || defaultPreset.monk_tone,
+          undertone: skinRes?.undertone || defaultPreset.undertone,
+          face_shape: analysis?.face_shape || defaultPreset.face_shape,
+          body_shape: analysis?.body_shape || defaultPreset.body_shape,
+          // Multi-dimensi diisi hanya bila server mengklasifikasikannya (jujur, bukan asal isi)
+          nose_type: analysis?.nose?.label || undefined,
+          eye_shape: analysis?.eye?.label || undefined,
+          brow_shape: analysis?.brow?.label || undefined,
+          face_measurements: analysis?.measurements || payload.measurements_cm,
+          face_analysis_meta: {
+            confidence: analysis?.face_shape?.confidence ?? 0.9,
+            source: analysis?.meta?.source || "engine",
+          },
+          // Snapshot hanya hidup di state sesi (ADR-015) — dipakai Report Card
+          scan_snapshot_dataurl: snapshotDataUrl,
+        };
+
+        setScanProgress(100);
+        setScannedProfile(profile);
+      } catch (e) {
+        if (e instanceof UploadAnalysisError) {
+          setUploadError(e.message);
+        } else {
+          console.warn("Upload analysis error:", e);
+          setUploadError("Analisis gagal. Coba ulangi atau gunakan foto lain.");
+        }
+        setUploadStage("reposition");
+      } finally {
+        setIsScanning(false);
+      }
+    },
+    [getImageLandmarker]
+  );
 
   /* ---- Manual / Auto scan handler ---- */
   const handleStartScan = async () => {
@@ -510,9 +740,139 @@ export const CameraScan: React.FC<CameraScanProps> = ({
         </p>
       </div>
 
+      {/* Dual-mode tabs (ADR-013): Kamera Live vs Upload Foto */}
+      <div className="flex justify-center">
+        <div className="inline-flex rounded-2xl border border-white/10 bg-surface-100 p-1 gap-1">
+          <button
+            type="button"
+            onClick={() => switchMode("camera")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+              mode === "camera"
+                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <Camera className="w-4 h-4" />
+            Kamera Live
+          </button>
+          <button
+            type="button"
+            onClick={() => switchMode("upload")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+              mode === "upload"
+                ? "bg-orange-600 text-white shadow-lg shadow-orange-600/30"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <ImagePlus className="w-4 h-4" />
+            Upload Foto
+          </button>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-        {/* Camera Scanner Viewport */}
-        <div className="lg:col-span-7 relative bg-surface-100 rounded-3xl overflow-hidden border border-white/10 shadow-2xl aspect-[4/3] flex items-center justify-center">
+        {/* Scanner Viewport — Kamera Live / Upload Foto */}
+        <div
+          className={`lg:col-span-7 relative bg-surface-100 rounded-3xl overflow-hidden border border-white/10 shadow-2xl flex items-center justify-center ${
+            mode === "upload" ? "aspect-auto min-h-[440px] py-4" : "aspect-[4/3]"
+          }`}
+        >
+          {mode === "upload" ? (
+            /* ---------- Mode Upload Foto (ADR-013) ---------- */
+            <div className="w-full max-w-xl mx-auto px-4 space-y-4">
+              {uploadStage === "select" ? (
+                <div className="space-y-4">
+                  <PhotoUpload
+                    onPhotoLoaded={(dataUrl) => {
+                      setPhotoDataUrl(dataUrl);
+                      setUploadStage("reposition");
+                      setUploadError(null);
+                      setQualityIssues([]);
+                    }}
+                  />
+                  <p className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400 text-center">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    Foto diproses sepenuhnya di perangkat Anda — hanya angka hasil analisis yang
+                    dikirim, bukan gambar wajah.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {photoDataUrl && (
+                    <RepositionTool
+                      photoDataUrl={photoDataUrl}
+                      onConfirm={(snap) => {
+                        lastSnapshotRef.current = snap;
+                        void analyzePhoto(snap, false);
+                      }}
+                      onBack={() => {
+                        setUploadStage("select");
+                        setQualityIssues([]);
+                        setUploadError(null);
+                      }}
+                    />
+                  )}
+
+                  {qualityIssues.length > 0 && (
+                    <div className="glass-panel rounded-2xl p-4 space-y-2.5 border border-yellow-500/30">
+                      <div className="flex items-center gap-2 text-yellow-300 text-xs font-bold">
+                        <AlertTriangle className="w-4 h-4" />
+                        Perlu Penyesuaian Foto
+                      </div>
+                      <ul className="text-[11px] text-slate-300 list-disc pl-4 space-y-1">
+                        {qualityIssues.map((q) => (
+                          <li key={q}>{q}</li>
+                        ))}
+                      </ul>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (lastSnapshotRef.current) void analyzePhoto(lastSnapshotRef.current, true);
+                        }}
+                        className="w-full py-2.5 rounded-xl text-xs font-semibold text-yellow-200 bg-yellow-500/15 hover:bg-yellow-500/25 border border-yellow-400/40 transition-colors"
+                      >
+                        Lanjutkan Analisis (abaikan peringatan)
+                      </button>
+                    </div>
+                  )}
+
+                  {uploadError && (
+                    <div className="glass-panel rounded-2xl p-4 border border-red-500/30 flex items-start gap-2.5">
+                      <XCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                      <div className="space-y-1.5 flex-1">
+                        <p className="text-xs text-red-300 leading-relaxed">{uploadError}</p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (lastSnapshotRef.current) void analyzePhoto(lastSnapshotRef.current, false);
+                          }}
+                          className="text-[11px] font-semibold text-slate-300 underline hover:text-white"
+                        >
+                          Coba Analisis Ulang
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {isScanning && mode === "upload" && (
+                    <div className="glass-panel rounded-2xl p-4 border border-orange-500/30">
+                      <div className="flex justify-between text-xs font-mono text-orange-300 mb-2">
+                        <span>Menganalisis Foto via AI Vision...</span>
+                        <span>{scanProgress}%</span>
+                      </div>
+                      <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-orange-600 via-amber-500 to-emerald-400 transition-all duration-300"
+                          style={{ width: `${scanProgress}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          ) : (
+            <>
           {hasCamera ? (
             <video
               ref={videoRef}
@@ -655,6 +1015,8 @@ export const CameraScan: React.FC<CameraScanProps> = ({
               </div>
             </div>
           )}
+            </>
+          )}
         </div>
 
         {/* Profile Output or Action Card */}
@@ -672,8 +1034,16 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                     1
                   </span>
                   <span>
-                    Posisikan wajah Anda tepat di dalam lingkaran pemandu virtual hingga berubah{" "}
-                    <strong className="text-emerald-400">hijau</strong>.
+                    {mode === "upload"
+                      ? "Unggah foto frontal lalu sejajarkan dahi, mata, dan dagu ke dalam oval pemandu."
+                      : "Posisikan wajah Anda tepat di dalam lingkaran pemandu virtual hingga berubah "}
+                    {mode === "camera" && (
+                      <strong className="text-emerald-400">hijau</strong>
+                    )}
+                    {mode === "upload" && (
+                      <strong className="text-orange-400"> sebelum analisis</strong>
+                    )}
+                    .
                   </span>
                 </li>
                 <li className="flex items-start space-x-2.5">
@@ -761,6 +1131,13 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                     alignedFramesRef.current = 0;
                     setCountdown(null);
                     setGuideMessage("Posisikan wajah di dalam oval pemandu");
+                    if (mode === "upload") {
+                      setUploadStage("select");
+                      setPhotoDataUrl(null);
+                      setUploadError(null);
+                      setQualityIssues([]);
+                      lastSnapshotRef.current = null;
+                    }
                   }}
                   className="text-xs text-slate-400 hover:text-white flex items-center space-x-1"
                 >
@@ -810,6 +1187,38 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                   </div>
                   <p className="text-[10px] text-slate-400">ANSUR II Ratio Valid</p>
                 </div>
+
+                {/* Multi-dimensi: kalibrasi cm via iris (ADR-014) */}
+                {scannedProfile.face_measurements && (
+                  <div className="bg-surface-50/70 p-3 rounded-2xl border border-white/5 space-y-1">
+                    <span className="text-slate-400 font-mono text-[10px]">
+                      UKURAN TERKALIBRASI{" "}
+                      {scannedProfile.face_measurements.calibration === "iris" ? "(IRIS 11,7 MM)" : "(RASIO)"}
+                    </span>
+                    <div className="font-bold text-white text-[11px] leading-relaxed">
+                      Dahi {scannedProfile.face_measurements.forehead_width_cm ?? "—"} · Pipi{" "}
+                      {scannedProfile.face_measurements.cheekbone_width_cm ?? "—"} · Rahang{" "}
+                      {scannedProfile.face_measurements.jaw_width_cm ?? "—"} cm
+                    </div>
+                    <p className="text-[10px] text-slate-400">
+                      Proporsi {scannedProfile.face_measurements.face_proportion || "—"}
+                    </p>
+                  </div>
+                )}
+
+                {/* Multi-dimensi: hidung / mata / alis */}
+                {(scannedProfile.nose_type || scannedProfile.eye_shape || scannedProfile.brow_shape) && (
+                  <div className="bg-surface-50/70 p-3 rounded-2xl border border-white/5 space-y-1">
+                    <span className="text-slate-400 font-mono text-[10px]">HIDUNG · MATA · ALIS</span>
+                    <div className="text-[11px] font-semibold text-slate-100 leading-relaxed">
+                      {scannedProfile.nose_type || "—"}
+                      <br />
+                      {scannedProfile.eye_shape || "—"}
+                      <br />
+                      {scannedProfile.brow_shape || "—"}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Best Colors Preview */}

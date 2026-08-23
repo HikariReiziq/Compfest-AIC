@@ -40,11 +40,32 @@ export interface BodyShapeProfile {
   styling_advice: string;
 }
 
+/** Ukuran antropometrik wajah terkalibrasi (ADR-014). Null bila mode ratio_only. */
+export interface FaceMeasurements {
+  forehead_width_cm: number | null;
+  cheekbone_width_cm: number | null;
+  jaw_width_cm: number | null;
+  face_height_cm: number | null;
+  face_proportion: string;
+  calibration: "iris" | "ratio_only";
+}
+
 export interface UserPersonalProfile {
   monk_tone: MonkSkinTone;
   undertone: UndertoneProfile;
   face_shape: FaceShapeProfile;
   body_shape: BodyShapeProfile;
+  /* --- Bidang multi-dimensi (opsional — jalur lama tetap valid) --- */
+  nose_type?: string;
+  eye_shape?: string;
+  brow_shape?: string;
+  face_measurements?: FaceMeasurements;
+  face_analysis_meta?: {
+    confidence: number;
+    source: string; // "engine" | "mock" | "ratios_fallback"
+  };
+  /** Snapshot reposisi — HANYA hidup di React state sesi (ADR-015, tanpa persistensi). */
+  scan_snapshot_dataurl?: string;
 }
 
 export interface RecommendationItem {
@@ -109,6 +130,18 @@ export const MOCK_PRESETS: Record<string, { name: string; profile: UserPersonalP
         hat_recommendations: ["Fedora", "Bucket Hat", "Beanie", "Baseball Cap"],
         styling_advice: "Bentuk wajah oval memiliki proporsi alami paling seimbang. Bebas mengeksplorasi siluet kacamata bersudut maupun membulat.",
       },
+      nose_type: "Greek (Mancung)",
+      eye_shape: "Almond (Almond)",
+      brow_shape: "Soft Curve (Lengkung Lembut)",
+      face_measurements: {
+        forehead_width_cm: 13.98,
+        cheekbone_width_cm: 14.92,
+        jaw_width_cm: 10.41,
+        face_height_cm: 22.4,
+        face_proportion: "1.3:1.4:1",
+        calibration: "iris",
+      },
+      face_analysis_meta: { confidence: 0.94, source: "mock" },
       body_shape: {
         shape: "Hourglass",
         confidence: 0.92,
@@ -162,6 +195,18 @@ export const MOCK_PRESETS: Record<string, { name: string; profile: UserPersonalP
         hat_recommendations: ["Fedora with Crown", "Structured Baseball Cap", "Newsboy Cap"],
         styling_advice: "Wajah bulat sangat serasi dengan kacamata berbingkai tegas/persegi panjang untuk memberi kontur tegas pada wajah.",
       },
+      nose_type: "Broad-Snub (Pesek Lebar)",
+      eye_shape: "Round (Bulat)",
+      brow_shape: "Arched (Tegak)",
+      face_measurements: {
+        forehead_width_cm: 14.6,
+        cheekbone_width_cm: 15.3,
+        jaw_width_cm: 13.9,
+        face_height_cm: 20.1,
+        face_proportion: "1.1:1.1:1",
+        calibration: "iris",
+      },
+      face_analysis_meta: { confidence: 0.91, source: "mock" },
       body_shape: {
         shape: "Pear",
         confidence: 0.90,
