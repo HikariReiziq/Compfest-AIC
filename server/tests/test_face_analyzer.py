@@ -104,3 +104,53 @@ class TestSchemas:
         req = LandmarkAnalysisRequest(**p)
         assert req.measurements_cm.forehead_width_cm is None
         assert req.measurements_cm.calibration == "ratio_only"
+
+
+class TestFaceShapeDiamond:
+    """Task 2.2 — 6 kelas bentuk wajah dengan Diamond rule override."""
+
+    def test_diamond_override_triggered(self):
+        from ai_engine.models.face_analyzer import classify_face_shape
+
+        ratios = {
+            "face_width_to_height": 0.72,
+            "jaw_to_forehead": 0.75,
+            "cheekbone_to_jaw": 1.34,
+            "chin_sharpness": 0.52,
+            "chin_taper": 0.50,
+        }
+        out = classify_face_shape(ratios)
+        assert out["shape"] == "Diamond"
+        assert out["method"] == "rule_override"
+        assert out["confidence"] >= 0.80
+        assert "Berlian" in out["label_indonesian"]
+        assert out["glasses_recommendations"]
+        assert out["hat_recommendations"]
+
+    def test_diamond_not_triggered_for_balanced_face(self):
+        from ai_engine.models.face_analyzer import classify_face_shape
+
+        ratios = {
+            "face_width_to_height": 0.75,
+            "jaw_to_forehead": 0.90,
+            "cheekbone_to_jaw": 1.05,
+            "chin_sharpness": 0.90,
+            "chin_taper": 0.60,
+        }
+        out = classify_face_shape(ratios)
+        assert out["shape"] != "Diamond"
+        assert out["method"] in ("random_forest", "rule_based")
+
+    def test_label_indonesian_mapping_consistent(self):
+        from ai_engine.models.face_analyzer import classify_face_shape, FACE_SHAPE_LABELS_ID
+
+        vectors = [
+            {"face_width_to_height": 0.62, "jaw_to_forehead": 0.95, "cheekbone_to_jaw": 1.02, "chin_sharpness": 0.62},
+            {"face_width_to_height": 0.86, "jaw_to_forehead": 0.93, "cheekbone_to_jaw": 1.10, "chin_sharpness": 0.74},
+        ]
+        for v in vectors:
+            out = classify_face_shape(v)
+            assert out["label_indonesian"] == FACE_SHAPE_LABELS_ID.get(out["shape"], out["shape"])
+            assert out["styling_advice"]
+        assert FACE_SHAPE_LABELS_ID["Oblong"] == "Oblong (Persegi Panjang)"
+        assert set(FACE_SHAPE_LABELS_ID) == {"Oval", "Round", "Square", "Heart", "Diamond", "Oblong"}
