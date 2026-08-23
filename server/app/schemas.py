@@ -82,6 +82,114 @@ class RatioAnalyzeResponse(BaseModel):
     is_mock: bool = False
 
 
+# --- Multi-Dimensional Landmark Analysis Schemas (ADR-014) ---
+class FaceRatiosIn(BaseModel):
+    face_width_to_height: float
+    jaw_to_forehead: float
+    cheekbone_to_jaw: float
+    chin_sharpness: float
+    chin_taper: Optional[float] = None
+
+
+class MeasurementsIn(BaseModel):
+    forehead_width_cm: Optional[float] = None
+    cheekbone_width_cm: Optional[float] = None
+    jaw_width_cm: Optional[float] = None
+    face_height_cm: Optional[float] = None
+    face_proportion: str = ""
+    calibration: str = "ratio_only"  # "iris" | "ratio_only"
+
+
+class NoseFeaturesIn(BaseModel):
+    width_to_face: float
+    length_to_height: float
+    bridge_curvature: float
+    bridge_linearity: Optional[float] = None
+    tip_upturn: float
+    alar_to_tip_ratio: float
+
+
+class EyeFeaturesIn(BaseModel):
+    ear_right: float
+    ear_left: float
+    canthal_tilt_right: float
+    canthal_tilt_left: float
+    eye_spacing_ratio: Optional[float] = None
+
+
+class BrowFeaturesIn(BaseModel):
+    arch_ratio_right: float
+    arch_ratio_left: float
+
+
+class QualityIn(BaseModel):
+    roll_deg: float
+    yaw_deg: float
+    pitch_deg: float
+    luminance: float
+    face_width_ratio: float
+
+
+class LandmarkAnalysisRequest(BaseModel):
+    """Payload fitur turunan dari 478 landmark — angka saja, tanpa gambar (UU PDP)."""
+
+    face_ratios: FaceRatiosIn
+    measurements_cm: MeasurementsIn
+    nose_features: NoseFeaturesIn
+    eye_features: EyeFeaturesIn
+    brow_features: BrowFeaturesIn
+    quality: QualityIn
+
+
+class ClassificationOut(BaseModel):
+    label: str
+    label_id: str
+    confidence: float
+    rule: Optional[str] = None
+
+
+class FaceShapeMultiOut(BaseModel):
+    shape: str
+    label_indonesian: str
+    confidence: float
+    method: str  # "random_forest" | "rule_based" | "rule_override"
+    ratios: Dict[str, float]
+    glasses_recommendations: List[str]
+    hat_recommendations: List[str]
+    styling_advice: str
+
+
+class PillarOut(BaseModel):
+    pillar: int
+    title: str
+    principle: str
+    scientific_basis: str
+    application: str
+
+
+class NarrativeOut(BaseModel):
+    summary: str
+    tips: List[str] = []
+
+
+class LandmarkAnalysisMeta(BaseModel):
+    engine_version: str = "2.0.0"
+    source: str = "engine"  # "engine" | "mock"
+
+
+class LandmarkAnalysisResponse(BaseModel):
+    face_shape: FaceShapeMultiOut
+    body_shape: Optional[BodyShapeResponse] = None
+    nose: ClassificationOut
+    eye: ClassificationOut
+    brow: ClassificationOut
+    measurements: MeasurementsIn
+    pillars: List[PillarOut]
+    narrative: NarrativeOut
+    meta: LandmarkAnalysisMeta
+    is_mock: bool = False
+
+
 # --- Recommendation Schemas ---
 class RecommendationRequest(BaseModel):
     subcategory: str = Field(..., description="Target subcategory: glasses, hats, shirts, jackets")
