@@ -388,7 +388,7 @@ class TestFaceAnalyzerOrchestrator:
         from ai_engine.models.mock_generator import MockDataGenerator
 
         preset = MockDataGenerator.get_preset("indonesian_multi_dim")
-        for block in ("face_shape", "body_shape", "nose", "eye", "brow", "measurements", "pillars", "narrative"):
+        for block in ("face_shape", "skin_tone", "gender", "nose", "eye", "brow", "measurements", "pillars", "narrative"):
             assert block in preset, f"preset missing block: {block}"
         assert preset["face_shape"]["shape"] in {"Oval", "Round", "Square", "Heart", "Diamond", "Oblong"}
         assert len(preset["pillars"]) == 3

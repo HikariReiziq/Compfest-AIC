@@ -42,7 +42,6 @@ def get_recommendations(
             "monk_tone": preset["monk_tone"]["code"],
             "undertone": preset["undertone"]["undertone"],
             "face_shape": preset["face_shape"]["shape"],
-            "body_shape": preset["body_shape"]["shape"],
         }
 
     quiz = request.quiz_answers or {

@@ -190,7 +190,6 @@ class StyleRecommender:
         # Extract profile attributes
         undertone = extract_profile_str(user_profile.get("undertone"), "undertone", "Warm")
         face_shape = extract_profile_str(user_profile.get("face_shape"), "shape", "Oval")
-        body_shape = extract_profile_str(user_profile.get("body_shape"), "shape", "Hourglass")
         mst_code = extract_profile_str(user_profile.get("monk_tone"), "code", "MST-06")
 
         # Extract quiz attributes
@@ -263,20 +262,9 @@ class StyleRecommender:
                 else:
                     shape_score = 84.0
             else:
-                # Shirts / Apparel
-                flattering_bodies = [b.lower() for b in item.get("flatteringBodyShapes", [])]
-                if body_shape.lower() in flattering_bodies:
-                    shape_score = 97.0
-                elif body_shape.lower() == "hourglass":
-                    shape_score = 95.0
-                elif body_shape.lower() == "rectangle" and model_type in ["hoodie", "tshirt", "oversized"]:
-                    shape_score = 94.0
-                elif body_shape.lower() == "inverted triangle" and model_type in ["jersey", "tshirt", "tanktop"]:
-                    shape_score = 94.0
-                elif body_shape.lower() == "pear" and model_type in ["hoodie", "longsleeve"]:
-                    shape_score = 93.0
-                else:
-                    shape_score = 85.0
+                # Shirts / Apparel — netral sampai scoring gaya D2 (face_shape tidak
+                # memediasi siluet apparel; bobot dipindah ke kuesioner).
+                shape_score = 85.0
 
             # ----------------------------------------------------
             # C. Occasion, Fit & Personality Score (0 - 100)
@@ -357,7 +345,7 @@ class StyleRecommender:
                 reason = (
                     f"Rekomendasi terbaik skor {entry['total_score']:.1f}%. Disesuaikan untuk kebutuhan {quiz_occasion}, "
                     f"rona {base_col} berpadu harmonis dengan undertone {undertone} kulit Anda "
-                    f"dan siluet {item_name} menyeimbangkan proporsi {face_shape if subcat != 'shirts' else body_shape}."
+                    f"dan siluet {item_name} menyeimbangkan proporsi wajah {face_shape}."
                 )
             elif idx == 1:
                 reason = (
@@ -403,7 +391,6 @@ class StyleRecommender:
             "monk_tone": mst_code,
             "undertone": undertone,
             "face_shape": face_shape,
-            "body_shape": body_shape,
             "quiz_answers": quiz_answers,
             "total_candidates": len(candidate_items),
         }

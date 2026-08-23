@@ -44,22 +44,10 @@ class MockDataGenerator:
                 "glasses_recommendations": ["Wayfarer", "Aviator", "Round Classic", "Geometric Frame"],
                 "hat_recommendations": ["Fedora", "Bucket Hat", "Beanie", "Baseball Cap"],
                 "styling_advice": "Bentuk wajah oval memiliki proporsi alami paling seimbang. Anda bebas bereksplorasi dengan berbagai siluet kacamata dan topi."
-            },
-            "body_shape": {
-                "shape": "Hourglass",
-                "confidence": 0.92,
-                "ratios": {
-                    "shoulder_to_hip_ratio": 1.012,
-                    "waist_to_hip_ratio": 0.735,
-                    "waist_to_shoulder_ratio": 0.726
-                },
-                "silhouette_recommendations": ["Fitted Cut", "Wrap Shirt", "Tailored Blazer"],
-                "jacket_recommendations": ["Belted Trench Coat", "Cropped Denim Jacket", "Tailored Blazer"],
-                "styling_advice": "Proporsi bahu dan pinggul seimbang sempurna dengan lekuk pinggang yang tegas. Siluet fitted menonjolkan keanggunan postur alami Anda."
             }
         },
         "fair_cool_round": {
-            "name": "Preset 2: Fair Cool Skin + Round Face + Pear Body",
+            "name": "Preset 2: Fair Cool Skin + Round Face",
             "monk_tone": {
                 "index": 2,
                 "code": "MST-02",
@@ -95,22 +83,10 @@ class MockDataGenerator:
                 "glasses_recommendations": ["Rectangular Frame", "Square Wayfarer", "Geometric D-Frame"],
                 "hat_recommendations": ["Fedora with Crown", "Structured Baseball Cap", "Newsboy Cap"],
                 "styling_advice": "Wajah bulat sangat serasi dengan kacamata berbingkai tegas/persegi panjang untuk memberi ketegasan garis wajah."
-            },
-            "body_shape": {
-                "shape": "Pear",
-                "confidence": 0.90,
-                "ratios": {
-                    "shoulder_to_hip_ratio": 0.895,
-                    "waist_to_hip_ratio": 0.760,
-                    "waist_to_shoulder_ratio": 0.849
-                },
-                "silhouette_recommendations": ["A-Line Cut", "Structured Shoulder Top", "Boatneck"],
-                "jacket_recommendations": ["Structured Blazer with Lapels", "Bomber Jacket", "Cropped Utility Jacket"],
-                "styling_advice": "Garis pinggul lebih dominan dibandingkan bahu. Gunakan atasan dengan aksen bahu berstruktur untuk menarik fokus ke tubuh atas."
             }
         },
         "deep_olive_square": {
-            "name": "Preset 3: Deep Olive Skin + Square Face + Inverted Triangle Body",
+            "name": "Preset 3: Deep Olive Skin + Square Face",
             "monk_tone": {
                 "index": 7,
                 "code": "MST-07",
@@ -146,18 +122,6 @@ class MockDataGenerator:
                 "glasses_recommendations": ["Round Classic", "Oval Metal Frame", "Soft Aviator"],
                 "hat_recommendations": ["Beret", "Bucket Hat", "Slouchy Beanie"],
                 "styling_advice": "Garis rahang tegas diseimbangkan dengan kacamata berbingkai membulat atau oval untuk menciptakan kelembutan visual."
-            },
-            "body_shape": {
-                "shape": "Inverted Triangle",
-                "confidence": 0.92,
-                "ratios": {
-                    "shoulder_to_hip_ratio": 1.135,
-                    "waist_to_hip_ratio": 0.810,
-                    "waist_to_shoulder_ratio": 0.713
-                },
-                "silhouette_recommendations": ["V-Neck Cut", "Raglan Sleeve", "Relaxed Fit"],
-                "jacket_recommendations": ["Casual Oversized Jacket", "Unstructured Cardigan", "Straight Zip Jacket"],
-                "styling_advice": "Bahu bidang atletis diseimbangkan dengan atasan berkerah V-neck dan jaket tanpa bantalan bahu."
             }
         },
         "indonesian_multi_dim": {
@@ -176,18 +140,6 @@ class MockDataGenerator:
                 "glasses_recommendations": ["Wayfarer", "Aviator", "Round Classic", "Geometric Frame"],
                 "hat_recommendations": ["Fedora", "Bucket Hat", "Beanie", "Baseball Cap"],
                 "styling_advice": "Bentuk wajah oval memiliki proporsi alami paling seimbang. Bebas mengeksplorasi siluet kacamata bersudut maupun membulat."
-            },
-            "body_shape": {
-                "shape": "Hourglass",
-                "confidence": 0.92,
-                "ratios": {
-                    "shoulder_to_hip_ratio": 1.012,
-                    "waist_to_hip_ratio": 0.735,
-                    "waist_to_shoulder_ratio": 0.726
-                },
-                "silhouette_recommendations": ["Fitted Cut", "Wrap Shirt", "Tailored Blazer"],
-                "jacket_recommendations": ["Belted Trench Coat", "Cropped Denim Jacket", "Tailored Blazer"],
-                "styling_advice": "Proporsi bahu dan pinggul seimbang dengan lekuk pinggang yang tegas."
             },
             "skin_tone": {
                 "tone": "Tan",

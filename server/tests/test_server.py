@@ -49,18 +49,12 @@ def test_analyze_ratios_endpoint():
             "jaw_to_forehead": 0.82,
             "cheekbone_to_jaw": 1.18,
             "chin_sharpness": 0.64
-        },
-        "body_ratios": {
-            "shoulder_to_hip_ratio": 1.0,
-            "waist_to_hip_ratio": 0.72,
-            "waist_to_shoulder_ratio": 0.72
         }
     }
     resp = client.post("/api/v1/analyze/ratios", json=payload)
     assert resp.status_code == 200
     data = resp.json()
     assert data["face_shape"]["shape"] == "Oval"
-    assert data["body_shape"]["shape"] == "Hourglass"
 
 
 def test_recommend_endpoint_top_4_glasses():
@@ -69,8 +63,7 @@ def test_recommend_endpoint_top_4_glasses():
         "user_profile": {
             "monk_tone": "MST-06",
             "undertone": "Warm",
-            "face_shape": "Oval",
-            "body_shape": "Hourglass"
+            "face_shape": "Oval"
         },
         "quiz_answers": {
             "occasion": "Casual",
@@ -96,8 +89,7 @@ def test_recommend_endpoint_jackets():
         "user_profile": {
             "monk_tone": "MST-06",
             "undertone": "Warm",
-            "face_shape": "Oval",
-            "body_shape": "Hourglass"
+            "face_shape": "Oval"
         },
         "quiz_answers": {
             "occasion": "Casual",
@@ -133,7 +125,7 @@ def test_catalog_endpoints():
 
 
 def test_analyze_ratios_partial_face_only():
-    """Verify that when only face_ratios are provided, body_shape still safely returns a default response."""
+    """Verify face-only payload classifies Square and returns no body_shape key."""
     payload = {
         "face_ratios": {
             "face_width_to_height": 0.85,
@@ -147,8 +139,7 @@ def test_analyze_ratios_partial_face_only():
     data = resp.json()
     assert data["face_shape"] is not None
     assert data["face_shape"]["shape"] == "Square"
-    assert data["body_shape"] is not None
-    assert data["body_shape"]["shape"] == "Hourglass"
+    assert "body_shape" not in data
 
 
 def test_dynamic_questions_endpoint():
@@ -159,8 +150,7 @@ def test_dynamic_questions_endpoint():
         "user_profile": {
             "monk_tone": "MST-06",
             "undertone": "Warm",
-            "face_shape": "Oval",
-            "body_shape": "Hourglass"
+            "face_shape": "Oval"
         },
         "batch": 1
     }

@@ -10,7 +10,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models.skin_analyzer import SkinAnalyzer, MST_REFERENCE_TABLE
 from models.face_classifier import FaceShapeClassifier
-from models.body_classifier import BodyShapeClassifier
 from models.recommender import StyleRecommender
 from models.mock_generator import MockDataGenerator
 
@@ -72,30 +71,6 @@ def test_face_classifier_oval_and_round():
     assert round_res.shape in ["Round", "Square"]
 
 
-def test_body_classifier_hourglass_and_pear():
-    classifier = BodyShapeClassifier()
-    
-    # Hourglass profile: balanced shoulder-hip, narrow waist
-    hourglass_ratios = {
-        "shoulder_to_hip_ratio": 1.0,
-        "waist_to_hip_ratio": 0.72,
-        "waist_to_shoulder_ratio": 0.72,
-    }
-    hg_res = classifier.classify(hourglass_ratios)
-    assert hg_res.shape == "Hourglass"
-    assert len(hg_res.silhouette_recommendations) > 0
-    assert len(hg_res.jacket_recommendations) > 0
-
-    # Pear profile: wider hips
-    pear_ratios = {
-        "shoulder_to_hip_ratio": 0.88,
-        "waist_to_hip_ratio": 0.75,
-        "waist_to_shoulder_ratio": 0.85,
-    }
-    pear_res = classifier.classify(pear_ratios)
-    assert pear_res.shape == "Pear"
-
-
 def test_style_recommender_top_4_curation():
     recommender = StyleRecommender()
     
@@ -103,7 +78,6 @@ def test_style_recommender_top_4_curation():
         "monk_tone": "MST-06",
         "undertone": "Warm",
         "face_shape": "Oval",
-        "body_shape": "Hourglass",
     }
     quiz_answers = {
         "occasion": "Casual",
@@ -135,7 +109,7 @@ def test_mock_generator():
     assert preset["monk_tone"]["code"] == "MST-06"
     assert preset["undertone"]["undertone"] == "Warm"
     assert preset["face_shape"]["shape"] == "Oval"
-    assert preset["body_shape"]["shape"] == "Hourglass"
+    assert "body_shape" not in preset
     
     presets_list = MockDataGenerator.list_presets()
     assert len(presets_list) >= 3
