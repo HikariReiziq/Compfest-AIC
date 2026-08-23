@@ -346,3 +346,49 @@ class TestPillarJustifier:
             assert p["pillar"] in (1, 2, 3)
             for field in ("title", "principle", "scientific_basis", "application"):
                 assert isinstance(p[field], str) and len(p[field]) > 10
+
+
+class TestFaceAnalyzerOrchestrator:
+    """Task 2.7 — FaceAnalyzer.analyze() + mock preset multi-dimensi."""
+
+    def test_analyze_returns_full_report(self):
+        from ai_engine.models.face_analyzer import FaceAnalyzer
+        from app.schemas import LandmarkAnalysisRequest
+
+        req = LandmarkAnalysisRequest(**_payload())
+        out = FaceAnalyzer.analyze(req)
+
+        for key in ("face_shape", "nose", "eye", "brow", "measurements", "pillars", "narrative", "meta"):
+            assert key in out, f"missing key: {key}"
+        assert out["meta"]["engine_version"] == "2.0.0"
+        assert len(out["pillars"]) == 3
+        assert out["nose"]["label"].startswith(("Greek", "Roman", "Bulbous", "Broad-Snub", "Celestial"))
+        assert out["eye"]["label"].startswith(("Almond", "Round", "Cat-eye", "Downturned"))
+        assert out["brow"]["label"].startswith(("Arched", "Straight", "Soft Curve"))
+
+    def test_narrative_summary_indonesian_mentions_shape(self):
+        from ai_engine.models.face_analyzer import FaceAnalyzer
+        from app.schemas import LandmarkAnalysisRequest
+
+        out = FaceAnalyzer.analyze(LandmarkAnalysisRequest(**_payload()))
+        summary = out["narrative"]["summary"]
+        assert len(summary) > 30
+        assert out["face_shape"]["shape"] in summary
+        assert out["narrative"]["tips"], "tips kosong"
+
+    def test_measurements_echo_iris_calibration(self):
+        from ai_engine.models.face_analyzer import FaceAnalyzer
+        from app.schemas import LandmarkAnalysisRequest
+
+        out = FaceAnalyzer.analyze(LandmarkAnalysisRequest(**_payload()))
+        assert out["measurements"].calibration == "iris"
+        assert out["measurements"].forehead_width_cm == 12.9
+
+    def test_mock_preset_multi_dim_complete(self):
+        from ai_engine.models.mock_generator import MockDataGenerator
+
+        preset = MockDataGenerator.get_preset("indonesian_multi_dim")
+        for block in ("face_shape", "body_shape", "nose", "eye", "brow", "measurements", "pillars", "narrative"):
+            assert block in preset, f"preset missing block: {block}"
+        assert preset["face_shape"]["shape"] in {"Oval", "Round", "Square", "Heart", "Diamond", "Oblong"}
+        assert len(preset["pillars"]) == 3

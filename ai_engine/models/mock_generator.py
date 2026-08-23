@@ -159,6 +159,78 @@ class MockDataGenerator:
                 "jacket_recommendations": ["Casual Oversized Jacket", "Unstructured Cardigan", "Straight Zip Jacket"],
                 "styling_advice": "Bahu bidang atletis diseimbangkan dengan atasan berkerah V-neck dan jaket tanpa bantalan bahu."
             }
+        },
+        "indonesian_multi_dim": {
+            "name": "Preset 4: Multi-Dimensional Analysis (Karakter Indonesia Lengkap)",
+            "face_shape": {
+                "shape": "Oval",
+                "label_indonesian": "Oval (Oval)",
+                "confidence": 0.93,
+                "method": "random_forest",
+                "ratios": {
+                    "face_width_to_height": 0.78,
+                    "jaw_to_forehead": 0.85,
+                    "cheekbone_to_jaw": 1.18,
+                    "chin_sharpness": 0.55
+                },
+                "glasses_recommendations": ["Wayfarer", "Aviator", "Round Classic", "Geometric Frame"],
+                "hat_recommendations": ["Fedora", "Bucket Hat", "Beanie", "Baseball Cap"],
+                "styling_advice": "Bentuk wajah oval memiliki proporsi alami paling seimbang. Bebas mengeksplorasi siluet kacamata bersudut maupun membulat."
+            },
+            "body_shape": {
+                "shape": "Hourglass",
+                "confidence": 0.92,
+                "ratios": {
+                    "shoulder_to_hip_ratio": 1.012,
+                    "waist_to_hip_ratio": 0.735,
+                    "waist_to_shoulder_ratio": 0.726
+                },
+                "silhouette_recommendations": ["Fitted Cut", "Wrap Shirt", "Tailored Blazer"],
+                "jacket_recommendations": ["Belted Trench Coat", "Cropped Denim Jacket", "Tailored Blazer"],
+                "styling_advice": "Proporsi bahu dan pinggul seimbang dengan lekuk pinggang yang tegas."
+            },
+            "nose": {"label": "Greek (Mancung)", "label_id": "greek", "confidence": 0.86, "rule": "bridge lurus + lebar moderat"},
+            "eye": {"label": "Almond (Almond)", "label_id": "almond", "confidence": 0.88, "rule": "EAR moderat + tilt netral"},
+            "brow": {"label": "Soft Curve (Lengkung Lembut)", "label_id": "soft_curve", "confidence": 0.85, "rule": "arch ratio moderat"},
+            "measurements": {
+                "forehead_width_cm": 12.9,
+                "cheekbone_width_cm": 14.9,
+                "jaw_width_cm": 12.6,
+                "face_height_cm": 22.1,
+                "face_proportion": "1.0:1.2:1",
+                "calibration": "iris"
+            },
+            "pillars": [
+                {
+                    "pillar": 1,
+                    "title": "Pilar 1 — Bentuk Wajah → Kontras Siluet Frame",
+                    "principle": "Prinsip kontras siluet: bentuk frame yang berlawanan dengan geometri wajah menciptakan keseimbangan visual yang paling flatteri.",
+                    "scientific_basis": "Berdasarkan rasio antropometrik wajah terkalibrasi iris 11,7 mm, klasifikasi Oval menentukan arah kontras siluet.",
+                    "application": "Untuk bentuk wajah Oval: proporsi seimbang memberi kebebasan penuh bereksperimen siluet frame."
+                },
+                {
+                    "pillar": 2,
+                    "title": "Pilar 2 — Undertone → Warna Material Aksesoris",
+                    "principle": "Prinsip keselarasan warna material: warna material aksesoris harus selaras dengan undertone kulit.",
+                    "scientific_basis": "Undertone ditentukan dari posisi warna kulit pada ruang warna CIELAB (nilai a* dan b*).",
+                    "application": "Untuk undertone Warm: material hangat seperti emas dan titanium cokelat; hindari silver dingin."
+                },
+                {
+                    "pillar": 3,
+                    "title": "Pilar 3 — Tipe Hidung → Ergonomi Bridge & Pad",
+                    "principle": "Prinsip ergonomi fit: posisi frame stabil ditentukan oleh bentuk punggung hidung dan lebar alar.",
+                    "scientific_basis": "Geometri profil-z punggung hidung (landmark 168-6-1) dan lebar alar (129-358) menentukan tipe bridge.",
+                    "application": "Untuk Greek (Mancung): bridge standar dengan pad silicon klasik memberi kontak merata."
+                }
+            ],
+            "narrative": {
+                "summary": "Analisis multi-dimensi menunjukkan bentuk wajah Oval dengan proporsi seimbang, hidung mancung, mata almond, dan alis lengkung lembut — kombinasi yang sangat fleksibel untuk berbagai siluet aksesoris.",
+                "tips": [
+                    "Eksplorasi frame bersudut maupun membulat — keduanya flatteri untuk Oval.",
+                    "Pilih material emas/titanium hangat untuk memaksimalkan undertone Warm.",
+                    "Bridge standar dengan pad silicon menjamin kenyamanan sepanjang hari."
+                ]
+            }
         }
     }
 

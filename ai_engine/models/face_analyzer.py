@@ -402,3 +402,55 @@ class PillarJustifier:
     @staticmethod
     def justify_all(ctx: Dict[str, Any]) -> List[Dict[str, Any]]:
         return [PillarJustifier.justify_pillar(p, ctx) for p in (1, 2, 3)]
+
+
+class FaceAnalyzer:
+    """Orchestrator satu-panggilan: payload landmark → laporan multi-dimensi.
+
+    Menggabungkan classify_face_shape + Nose/Eye/BrowClassifier +
+    PillarJustifier + narasi Indonesia deterministik (tanpa LLM — latency
+    rendah untuk UX scan). Undertone tidak ada di payload landmark (datang
+    dari analisis kulit terpisah); Pillar 2 memakai default "Neutral".
+    """
+
+    ENGINE_VERSION = "2.0.0"
+
+    @staticmethod
+    def analyze(request: Any) -> Dict[str, Any]:
+        face = classify_face_shape(request.face_ratios.model_dump())
+        nose = NoseClassifier.classify(request.nose_features.model_dump())
+        eye = EyeShapeClassifier.classify(request.eye_features.model_dump())
+        brow = BrowClassifier.classify(request.brow_features.model_dump())
+
+        pillars = PillarJustifier.justify_all(
+            {
+                "face_shape": face["shape"],
+                "undertone": "Neutral",
+                "nose": nose["label"],
+                "nose_id": nose["label_id"],
+            }
+        )
+
+        shape = face["shape"]
+        summary = (
+            f"Bentuk wajah Anda terklasifikasi {shape} ({face['label_indonesian']}) "
+            f"berdasarkan rasio antropometrik terkalibrasi iris 11,7 mm. Kombinasi "
+            f"hidung {nose['label']}, mata {eye['label']}, dan alis {brow['label']} "
+            f"menjadi dasar personalisasi siluet frame, warna material, dan ergonomi bridge."
+        )
+        tips = [
+            face["styling_advice"],
+            pillars[0]["application"],
+            pillars[2]["application"],
+        ]
+
+        return {
+            "face_shape": face,
+            "nose": nose,
+            "eye": eye,
+            "brow": brow,
+            "measurements": request.measurements_cm,
+            "pillars": pillars,
+            "narrative": {"summary": summary, "tips": tips},
+            "meta": {"engine_version": FaceAnalyzer.ENGINE_VERSION, "source": "engine"},
+        }
