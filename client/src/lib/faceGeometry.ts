@@ -342,3 +342,127 @@ export function collectQualityIssues(q: QualitySignals): string[] {
     issues.push("Wajah terlalu kecil dalam frame — perbesar (zoom) foto.");
   return issues;
 }
+
+/* ------------------------------------------------------------------ */
+/* Strict oval gate + LAB kulit + fitur gender (direktif 2026-08-23)   */
+/* ------------------------------------------------------------------ */
+
+export interface GuideOval {
+  cx: number;
+  cy: number;
+  rx: number;
+  ry: number;
+}
+
+/** Kontainment ellipse pemandu: true bila KEEMPAT landmark wajah inti masuk oval.
+ *  Koordinat oval & landmark pada ruang normalisasi video TIDAK di-mirror
+ *  (samakan transformasi sebelum memanggil). */
+export function ovalFit(
+  lm: Landmark[],
+  oval: GuideOval
+): { inside: boolean; faceW: number; faceH: number } {
+  const pts = [lm[10], lm[152], lm[234], lm[454]]; // dahi, dagu, pipi kiri, pipi kanan
+  const inside = pts.every((p) => {
+    const nx = (p.x - oval.cx) / oval.rx;
+    const ny = (p.y - oval.cy) / oval.ry;
+    return nx * nx + ny * ny <= 1.0;
+  });
+  const faceW = Math.hypot(lm[234].x - lm[454].x, lm[234].y - lm[454].y);
+  const faceH = Math.hypot(lm[10].x - lm[152].x, lm[10].y - lm[152].y);
+  return { inside, faceW, faceH };
+}
+
+/** sRGB [0-255] → CIELAB D65 — portabel client, formula identik
+ *  skin_analyzer.py / pipeline/common.py (satu sumber kebenaran formula). */
+export function rgbToLab(
+  r: number,
+  g: number,
+  b: number
+): { l: number; a: number; b: number } {
+  const lin = (c: number): number => {
+    const s = Math.min(1, Math.max(0, c / 255));
+    return s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  };
+  const R = lin(r), G = lin(g), B = lin(b);
+  const X = 0.4124564 * R + 0.3575761 * G + 0.1804375 * B;
+  const Y = 0.2126729 * R + 0.7151522 * G + 0.072175 * B;
+  const Z = 0.0193339 * R + 0.119192 * G + 0.9503041 * B;
+  const eps = 216 / 24389, kappa = 24389 / 27;
+  const f = (t: number): number => (t > eps ? Math.cbrt(t) : (kappa * t + 16) / 116);
+  const fx = f(X / 0.95047), fy = f(Y), fz = f(Z / 1.08883);
+  return {
+    l: 116 * fy - 16,
+    a: 500 * (fx - fy),
+    b: 200 * (fy - fz),
+  };
+}
+
+export interface GenderFeatures {
+  jaw_to_cheek: number;
+  brow_to_eye: number;
+  lip_to_face_width: number;
+  face_aspect: number;
+}
+
+/** Fitur dimorfisme seksual untuk GenderEstimator server (rule engine). */
+export function computeGenderFeatures(lm: Landmark[]): GenderFeatures {
+  const cheek = dist2(lm[234], lm[454]);
+  const jaw = dist2(lm[172], lm[397]);
+  const browR = lm[105]; // puncak alis kanan
+  const eyeR = lm[159]; // kelopak atas mata kanan
+  const lipW = dist2(lm[61], lm[291]); // sudut bibir kiri-kanan
+  const faceH = dist2(lm[10], lm[152]);
+  return {
+    jaw_to_cheek: round4(jaw / Math.max(1e-6, cheek)),
+    brow_to_eye: round4(Math.abs(browR.y - eyeR.y) / Math.max(1e-6, cheek)),
+    lip_to_face_width: round4(lipW / Math.max(1e-6, cheek)),
+    face_aspect: round4(cheek / Math.max(1e-6, faceH)),
+  };
+}
+
+/**
+ * Rata-rata LAB patch kulit dahi+pipi dari frame video (per-frame, murah).
+ * Satu-satunya fungsi non-purni di file ini (membaca piksel canvas) — hasilnya
+ * berupa ANGKA yang dikirim ke server; gambar wajah tetap tidak pernah keluar
+ * perangkat (UU PDP No. 27/2022).
+ */
+export function sampleSkinLab(
+  video: HTMLVideoElement,
+  lm: Landmark[]
+): { l: number; a: number; b: number } | null {
+  if (!video.videoWidth || !video.videoHeight) return null;
+  const canvas = document.createElement("canvas");
+  const W = video.videoWidth, H = video.videoHeight;
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return null;
+  ctx.drawImage(video, 0, 0, W, H);
+
+  const r = Math.round(Math.max(4, W * 0.02)); // radius patch ~2% lebar frame
+  const centers = [
+    { x: lm[10].x * W, y: (lm[10].y + 0.06) * H }, // dahi (sedikit di bawah garis rambut)
+    { x: lm[234].x * W, y: lm[234].y * H }, // pipi kiri
+    { x: lm[454].x * W, y: lm[454].y * H }, // pipi kanan
+  ];
+  let sl = 0, sa = 0, sb = 0, n = 0;
+  for (const c of centers) {
+    const x0 = Math.max(0, Math.round(c.x - r));
+    const x1 = Math.min(W, Math.round(c.x + r));
+    const y0 = Math.max(0, Math.round(c.y - r));
+    const y1 = Math.min(H, Math.round(c.y + r));
+    if (x1 <= x0 || y1 <= y0) continue;
+    const data = ctx.getImageData(x0, y0, x1 - x0, y1 - y0).data;
+    for (let i = 0; i < data.length; i += 4) {
+      const lab = rgbToLab(data[i], data[i + 1], data[i + 2]);
+      sl += lab.l; sa += lab.a; sb += lab.b; n++;
+    }
+  }
+  if (n === 0) return null;
+  return {
+    l: Math.round((sl / n) * 100) / 100,
+    a: Math.round((sa / n) * 100) / 100,
+    b: Math.round((sb / n) * 100) / 100,
+  };
+}
+
