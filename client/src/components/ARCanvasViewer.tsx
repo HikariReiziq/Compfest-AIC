@@ -3,6 +3,83 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+
+/**
+ * Cari bidang brim topi: ketinggian Y dengan penampang mendatar TERLEBAR.
+ *
+ * Inilah lubang tempat kepala masuk, dan satu-satunya titik jangkar yang masuk
+ * akal untuk topi. Versi sebelumnya menjangkarkan dasar bounding box, yang
+ * untuk topi bertepi lebar berarti ujung tepi yang menjuntai — sehingga
+ * seluruh badan topi melayang di atas dahi.
+ *
+ * Diukur dari mesh, bukan dari angka manual, karena letak brim sangat berbeda
+ * antar model: audit katalog memberi rentang 0,013 (cowboy hat) sampai 0,636
+ * (propeller hat) satuan ternormalisasi dari dasar. Konstanta tunggal apa pun
+ * pasti salah untuk sebagian besar aset.
+ */
+function findBrimPlaneY(object: THREE.Object3D): number | null {
+  const box = new THREE.Box3().setFromObject(object);
+  const lo = box.min.y;
+  const span = box.max.y - lo;
+  if (!(span > 0)) return null;
+
+  const SLICES = 24;
+  const minX = new Float64Array(SLICES).fill(Infinity);
+  const maxX = new Float64Array(SLICES).fill(-Infinity);
+  const minZ = new Float64Array(SLICES).fill(Infinity);
+  const maxZ = new Float64Array(SLICES).fill(-Infinity);
+  const counts = new Uint32Array(SLICES);
+  const v = new THREE.Vector3();
+
+  object.updateWorldMatrix(true, true);
+  object.traverse((child) => {
+    const mesh = child as THREE.Mesh;
+    if (!mesh.isMesh || !mesh.geometry) return;
+    const pos = mesh.geometry.getAttribute("position");
+    if (!pos) return;
+    // Sampling jarang sudah cukup: yang dicari letak brim, bukan bentuk presisi.
+    const step = Math.max(1, Math.floor(pos.count / 4000));
+    for (let i = 0; i < pos.count; i += step) {
+      v.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld);
+      let k = Math.floor(((v.y - lo) / span) * SLICES);
+      if (k < 0) k = 0;
+      else if (k >= SLICES) k = SLICES - 1;
+      if (v.x < minX[k]) minX[k] = v.x;
+      if (v.x > maxX[k]) maxX[k] = v.x;
+      if (v.z < minZ[k]) minZ[k] = v.z;
+      if (v.z > maxZ[k]) maxZ[k] = v.z;
+      counts[k]++;
+    }
+  });
+
+  let bestWidth = -1;
+  let bestSlice = -1;
+  for (let k = 0; k < SLICES; k++) {
+    if (counts[k] < 20) continue; // irisan terlalu jarang, statistiknya tidak dipercaya
+    const w = Math.max(maxX[k] - minX[k], maxZ[k] - minZ[k]);
+    if (w > bestWidth) {
+      bestWidth = w;
+      bestSlice = k;
+    }
+  }
+  if (bestSlice < 0) return null;
+  return lo + (span * (bestSlice + 0.5)) / SLICES;
+}
+
+/** Lebar topi setelah normalisasi, kira-kira selebar kepala di ruang scene. */
+const HAT_TARGET_WIDTH = 1.35;
+
+/**
+ * Seberapa jauh bidang brim duduk di bawah landmark dahi (10), sebagai pecahan
+ * lebar kepala.
+ *
+ * Kini nilainya kecil dan bermakna sempit: landmark 10 ada di batas dahi,
+ * sedangkan brim topi biasanya bertumpu sedikit di bawahnya. Sebelumnya angka
+ * ini besar (0,35) karena harus menebus jangkar yang salah — dasar bounding
+ * box, bukan bidang brim. Setelah jangkarnya benar, koreksi yang tersisa jauh
+ * lebih kecil dan tidak lagi berbeda-beda per model.
+ */
+const HAT_BRIM_BELOW_BROW = 0.08;
 import {
   Sparkles,
   Move3d,
@@ -237,10 +314,17 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
             const result = landmarker.detectForVideo(video, performance.now());
             if (result && result.faceLandmarks && result.faceLandmarks.length > 0) {
               setIsTrackingFace(true);
+              modelGroup.visible = true;
               applyLandmarksTo3DModel(result.faceLandmarks[0], modelGroup);
             } else {
+              // Wajah hilang dari deteksi (keluar frame, terpotong tepi atas,
+              // cahaya kurang). Dulu model malah dihanyutkan ke tengah layar,
+              // sehingga tampak menempel diam menutupi wajah — persis yang
+              // dilaporkan sebagai "kaku, tidak mengikuti pergerakan".
+              // Menyembunyikannya jauh lebih jujur: yang hilang pelacakannya,
+              // bukan modelnya yang salah tempat.
               setIsTrackingFace(false);
-              modelGroup.position.lerp(new THREE.Vector3(0, 0.2, 0), 0.05);
+              modelGroup.visible = false;
             }
           } catch {
             // Frame skip
@@ -249,6 +333,9 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
       } else if (viewMode === "studio") {
         setIsTrackingFace(false);
         if (modelGroup) {
+          // Mode studio tidak bergantung pelacakan wajah; pastikan model
+          // kembali terlihat setelah sesi AR yang kehilangan wajah.
+          modelGroup.visible = true;
           modelGroup.rotation.y += 0.015;
           modelGroup.position.lerp(new THREE.Vector3(0, 0, 0), 0.08);
           modelGroup.scale.lerp(new THREE.Vector3(1.2, 1.2, 1.2), 0.08);
@@ -314,21 +401,30 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
         (gltf) => {
           const model = gltf.scene;
 
-          // 1. Check raw dimensions to correct Sketchfab coordinate system
-          const initialBox = new THREE.Box3().setFromObject(model);
-          const rawSize = initialBox.getSize(new THREE.Vector3());
-
-          // If height is larger than depth (lying flat / vertical in Blender), rotate upright
-          if (!isHat && rawSize.y > rawSize.z * 1.3) {
-            model.rotation.x = -Math.PI / 2;
-          }
-
-          // Apply manifest rotation correction if specified
-          if (modelConfig?.rotation_correction) {
-            const [rx, ry, rz] = modelConfig.rotation_correction;
-            model.rotation.x += rx;
-            model.rotation.y += ry;
-            model.rotation.z += rz;
+          // 1. Orientasi model dari manifest — hasil audit geometri, bukan tebakan.
+          //
+          // Ini sudah dicoba dua kali sebagai heuristik bounding box (aturan
+          // lama y>z, lalu aturan sumbu-terpanjang), dan keduanya salah arah:
+          // kacamata sungguhan memang kira-kira sedalam lebarnya saat gagang
+          // terbuka, jadi urutan panjang sumbu tidak menentukan arah hadap.
+          // Audit vertex per model (scripts/audit_glb_orientation.py)
+          // membuktikan 5 dari 7 kacamata katalog sudah benar dari sananya dan
+          // justru dirusak heuristik; dua sisanya menghadap sumbu lain dan
+          // dipulihkan lewat rotation_correction di manifest.
+          //
+          // Aturannya sekarang: entri manifest dipakai apa adanya — nol
+          // berarti "terverifikasi benar", bukan "tidak tahu". Berkas yang
+          // tidak ada di manifest dibiarkan pada orientasi aslinya, karena
+          // konvensi glTF (Y-up, menghadap +Z) memang yang paling umum, lalu
+          // dicatat supaya ketahuan butuh kalibrasi.
+          const manifestRotation = modelConfig?.rotation_correction as
+            | [number, number, number]
+            | undefined;
+          if (manifestRotation) {
+            const [rx, ry, rz] = manifestRotation;
+            model.rotation.set(rx, ry, rz);
+          } else if (modelConfig == null) {
+            console.info(`GLB tanpa kalibrasi manifest, orientasi asli dipakai: ${filename}`);
           }
 
           // 2. Wrap in wrapper group to ensure clean normalized transforms
@@ -339,7 +435,11 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           const center = boxAfter.getCenter(new THREE.Vector3());
           const sizeAfter = boxAfter.getSize(new THREE.Vector3());
 
-          // Center X and Y, but align Z/Y anchor so glasses temples extend backward into -Z (ears) and hats rest on forehead
+          // Center X and Y, but align Z/Y anchor so glasses temples extend backward into -Z (ears) and hats rest on forehead.
+          //
+          // Nilai-nilai di bawah berada dalam SATUAN MENTAH model, karena boxAfter
+          // diukur saat wrapper masih berskala 1. Karena itu normalisasi di bawah
+          // WAJIB dipasang pada wrapper, bukan pada model.
           if (!isHat) {
             model.position.x -= center.x;
             model.position.y -= center.y;
@@ -348,24 +448,56 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           } else {
             model.position.x -= center.x;
             model.position.z -= center.z;
-            // Align bottom crown opening to Y = 0 so it rests naturally on the head
-            model.position.y -= boxAfter.min.y;
+            // Jangkar topi = bidang brim (lubang kepala), diukur dari mesh.
+            // Bila mesh terlalu jarang untuk disimpulkan, jatuh ke dasar bbox
+            // seperti perilaku lama — buruk, tapi tidak menghentikan render.
+            const brimY = findBrimPlaneY(wrapper);
+            model.position.y -= brimY ?? boxAfter.min.y;
           }
 
-          // Apply manifest pivot offset to fine-tune exact anchor point
-          if (modelConfig?.pivot_offset) {
-            const [ox, oy, oz] = modelConfig.pivot_offset;
-            model.position.x += ox;
-            model.position.y += oy;
-            model.position.z += oz;
-          }
-
-          // Normalize model width (sizeAfter.x) to ~1.45 standard units
+          // Normalize model width (sizeAfter.x) to ~1.45 standard units.
+          //
+          // Skala dipasang di wrapper, bukan di model. Sebabnya: `position` sebuah
+          // objek hidup di ruang koordinat induknya dan TIDAK ikut terskalakan oleh
+          // `scale` objek itu sendiri. Kalau model yang diskalakan, seluruh
+          // penempatan di atas meleset sebesar center * (s - 1). Katalog ini berisi
+          // GLB dengan satuan author yang berbeda-beda (lebar mentah 0,18 sampai
+          // 34,89 alias rentang 189x), sehingga s berkisar 0,04 sampai 7,88 dan
+          // galatnya sanggup melempar model puluhan unit keluar layar.
+          // Dipasang di wrapper, model.position ikut terskalakan bersama geometri.
           const targetWidth = sizeAfter.x > 0 ? sizeAfter.x : 1.0;
-          const baseNormScale = (isHat ? 1.35 : 1.45) / targetWidth;
+          const baseNormScale = (isHat ? HAT_TARGET_WIDTH : 1.45) / targetWidth;
           const customScaleFactor = modelConfig?.scale_factor || 1.0;
           const normalizeScale = baseNormScale * customScaleFactor;
-          model.scale.multiplyScalar(normalizeScale);
+          wrapper.scale.setScalar(normalizeScale);
+
+          // Apply manifest pivot offset to fine-tune exact anchor point.
+          //
+          // Nilainya memang berada di ruang ternormalisasi, dan itu sudah benar
+          // sejak versi sebelumnya: `position` tidak ikut terskalakan oleh
+          // `scale` objeknya sendiri, sehingga offset selalu mendarat 1:1 di
+          // ruang induk. Yang dipindahkan ke wrapper hanyalah tempatnya, supaya
+          // ia tidak lagi bercampur dengan penempatan titik jangkar yang justru
+          // HARUS ikut terskalakan.
+          const pivot = modelConfig?.pivot_offset ?? [0, 0, 0];
+
+          // Topi: turunkan agar mahkotanya menelan kepala.
+          //
+          // Titik jangkar topi adalah landmark dahi (10), dan penempatan di atas
+          // menaruh DASAR bounding box tepat di titik itu. Akibatnya seluruh
+          // tinggi topi — rata-rata 0,94 dan sampai 1,66 satuan ternormalisasi,
+          // sementara lebar kepala hanya 1,35 — melayang di atas dahi tanpa
+          // sedikit pun bersinggungan dengan kepala.
+          //
+          // Topi sungguhan tidak bertumpu di atas kepala; lubang mahkotanya
+          // berada di sekitar pelipis, yaitu DI BAWAH garis dahi. Karena itu
+          // topi diturunkan sebesar pecahan dari lebar kepala. Dinyatakan
+          // relatif terhadap lebar kepala, bukan terhadap tinggi topi, supaya
+          // topi jangkung seperti witch_hat tidak ikut terbenam lebih dalam
+          // hanya karena kerucutnya panjang.
+          const hatSink = isHat ? HAT_BRIM_BELOW_BROW * HAT_TARGET_WIDTH : 0;
+
+          wrapper.position.set(pivot[0], pivot[1] - hatSink, pivot[2]);
 
           // 3. Apply Ultra-Realistic PBR Materials
           const hexColor = activeItem.hex_colour || "#1e293b";
@@ -422,7 +554,6 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           });
 
           group.add(wrapper);
-          const filename = modelPath.split("/").pop();
           setModelSource(`3D GLB (${filename})`);
         },
         undefined,
@@ -509,7 +640,13 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const halfW = halfH * (cw / ch);
 
     const worldX = ndcX * halfW;
-    const worldY = ndcY * halfH + (isHat ? 0.32 : -0.01) + offsetY * 0.012;
+    // Dulu baris ini menambahkan +0.32 khusus topi. Itu keliru secara struktural:
+    // nilainya dalam satuan dunia dan TETAP, sementara ukuran topi mengikuti
+    // jarak wajah ke kamera. Akibatnya angkat vertikal hanya pas pada satu
+    // jarak tertentu, lalu makin melenceng saat pengguna maju atau mundur.
+    // Penempatan vertikal topi kini seluruhnya ditangani di ruang ternormalisasi
+    // (lihat hatSink), yang ikut terskalakan bersama kepala.
+    const worldY = ndcY * halfH + (isHat ? 0 : -0.01) + offsetY * 0.012;
     const worldZ = (nasion.z || 0) * -1.8;
 
     // Screen Positions of Both Eyes for Angle & Scale
@@ -581,10 +718,19 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               muted
             />
 
-            {isTrackingFace && (
+            {/* Keadaan pelacakan ditampilkan dua-duanya. Sebelumnya hanya lencana
+                hijau yang ada, sehingga saat pelacakan putus layar tidak
+                mengatakan apa pun dan model yang tertinggal di tengah tampak
+                seperti salah posisi, bukan seperti pelacakan yang hilang. */}
+            {isTrackingFace ? (
               <div className="absolute top-4 left-4 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono z-30">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
                 <span>AR 3D GLB HEAD TRACKING (60 FPS)</span>
+              </div>
+            ) : (
+              <div className="absolute top-4 left-4 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-mono z-30">
+                <span className="w-2 h-2 rounded-full bg-amber-400" />
+                <span>WAJAH TIDAK TERDETEKSI — MUNDUR SEDIKIT & MASUKKAN SELURUH KEPALA</span>
               </div>
             )}
           </div>
