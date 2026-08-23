@@ -1,0 +1,68 @@
+# Override pengembangan — dipakai bersama docker-compose.yml, bukan menggantikannya.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+#
+# Bedanya dengan compose produksi ada pada satu hal: kode TIDAK ikut dibekukan ke
+# dalam image, melainkan di-bind-mount dari direktori kerja. Konsekuensinya
+# perubahan di editor langsung dibaca proses di dalam container, dan `docker
+# compose build` hanya perlu diulang saat dependency berubah — bukan tiap kali
+# satu baris kode disunting.
+#
+# Compose menggabungkan (bukan menimpa) daftar `volumes` antar berkas. Mount
+# read-only pada ai_engine/data dan ai_engine/models/weights dari berkas dasar
+# tetap berlaku dan bersarang di dalam mount ./ai_engine di bawah. Itu memang
+# diinginkan: kode boleh disunting, data acuan tidak.
+
+services:
+  server:
+    environment:
+      - ENVIRONMENT=development
+      # Tetap false. Mode mock menyembunyikan kegagalan jalur analisis asli,
+      # dan itu justru yang perlu terlihat saat debugging.
+      - MOCK_MODE=false
+      - PYTHONDONTWRITEBYTECODE=1
+      # Log Python tidak ditahan buffer, sehingga `docker compose logs -f`
+      # menampilkan traceback pada saat kejadian, bukan setelah proses keluar.
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./server:/app/server
+      - ./ai_engine:/app/ai_engine
+    # --reload-dir dibatasi ke dua direktori sumber. Tanpa itu watcher juga
+    # memindai site-packages dan mulai memakan CPU tanpa alasan.
+    command:
+      - uvicorn
+      - server.app.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --reload
+      - --reload-dir
+      - /app/server
+      - --reload-dir
+      - /app/ai_engine
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      target: dev
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+      - WATCHPACK_POLLING=true
+    volumes:
+      - ./client:/app
+      # Dua volume anonim di bawah menutupi direktori dari host. node_modules
+      # milik container adalah hasil `npm ci` di dalam image; membiarkannya
+      # tertimpa salinan host membuat container bergantung pada apa yang
+      # kebetulan terpasang di mesin pengembang. .next dipisah karena cache
+      # build produksi di host akan bentrok dengan dev server.
+      - /app/node_modules
+      - /app/.next
+    command: ["npm", "run", "dev"]
+    # Menunggu healthcheck server membuat start-up lambat tanpa manfaat di dev:
+    # Next.js sanggup hidup lebih dulu, dan backend yang belum siap hanya
+    # membuat request pertama gagal lalu berhasil setelah di-refresh.
+    depends_on:
+      - server
