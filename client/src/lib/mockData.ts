@@ -50,6 +50,18 @@ export interface FaceMeasurements {
   calibration: "iris" | "ratio_only";
 }
 
+/** Ukuran antropometrik tubuh terkalibrasi tinggi badan (cm). */
+export interface BodyMeasurements {
+  shoulder_width_cm: number | null;
+  waist_width_cm: number | null;
+  hip_width_cm: number | null;
+  torso_length_cm: number | null;
+  leg_length_cm: number | null;
+  total_height_cm: number | null;
+  body_proportion: string;
+  calibration: "height_input" | "ratio_only";
+}
+
 export interface UserPersonalProfile {
   monk_tone: MonkSkinTone;
   undertone: UndertoneProfile;
@@ -60,6 +72,7 @@ export interface UserPersonalProfile {
   eye_shape?: string;
   brow_shape?: string;
   face_measurements?: FaceMeasurements;
+  body_measurements?: BodyMeasurements;
   face_analysis_meta?: {
     confidence: number;
     source: string; // "engine" | "mock" | "ratios_fallback"
@@ -75,7 +88,7 @@ export interface RecommendationItem {
   id: string;
   name: string;
   category: "Accessories" | "Apparel";
-  subcategory: "glasses" | "hats" | "shirts" | "jackets";
+  subcategory: "glasses" | "hats" | "shirts";
   base_colour: string;
   hex_colour: string;
   usage: string;

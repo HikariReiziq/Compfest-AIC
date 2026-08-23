@@ -9,7 +9,8 @@ import { Upload, AlertCircle, ImageIcon } from "lucide-react";
 /* ------------------------------------------------------------------ */
 
 const MAX_BYTES = 8 * 1024 * 1024;
-const MIN_DIM = 200;
+const MIN_SHORT_SIDE = 100;
+const MIN_LONG_SIDE = 200;
 
 type SniffedFormat = "png" | "jpeg";
 
@@ -71,8 +72,10 @@ export default function PhotoUpload({ onPhotoLoaded }: PhotoUploadProps) {
           return;
         }
         const img = await decodeImage(dataUrl);
-        if (img.naturalWidth < MIN_DIM || img.naturalHeight < MIN_DIM) {
-          setError(`Resolusi minimal ${MIN_DIM}×${MIN_DIM} piksel agar analisis akurat.`);
+        const shortSide = Math.min(img.naturalWidth, img.naturalHeight);
+        const longSide = Math.max(img.naturalWidth, img.naturalHeight);
+        if (shortSide < MIN_SHORT_SIDE || longSide < MIN_LONG_SIDE) {
+          setError(`Resolusi foto terlalu kecil (${img.naturalWidth}×${img.naturalHeight}). Minimal sisi panjang ${MIN_LONG_SIDE}px.`);
           return;
         }
         onPhotoLoaded(dataUrl, img.naturalWidth, img.naturalHeight);

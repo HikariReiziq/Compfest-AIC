@@ -331,12 +331,11 @@
 3. **SSOT Diperbarui**: MEMORY.md (ADR-013 s.d. ADR-018 + UVP + arsitektur), PRD.md (spesifikasi overhaul + alur dual-mode + dataset tabel g + mermaid), Proposal.md (metodologi analisis multi-dimensi + kalibrasi iris).
 4. **Implementation Plan 4 Fase** disusun di `docs/plans/2026-08-23-face-analysis-overhaul.md`.
 
-### E. Status Progres Terkini di Branch `feat/ai-questionnaire-accessories-v2`:
-1. **✅ SUDAH SELESAI (Completed & Tested)**:
-   - **Fase 1 (Dual-Mode Face Scan & Repositioning)**: `faceGeometry.ts` (kalibrasi iris 11,7 mm $\rightarrow$ cm), `PhotoUpload.tsx` (drag-drop upload PNG/JPG/JPEG $\le$ 8MB), `RepositionTool.tsx` (kanvas interaktif drag/pan, zoom, rotate), dan `CameraScan.tsx` (tab dual-mode Webcam Live vs Upload Foto).
-   - **Fase 2 (Backend Multi-Dimensional Vision AI)**: `schemas.py`, `face_analyzer.py` (6 bentuk wajah + Diamond override, 5 tipe hidung, 4 bentuk mata, 3 bentuk alis, 3 pilar ilmiah *PillarJustifier*), endpoint `POST /api/v1/analyze/landmarks`, dan preset mock `indonesian_multi_dim`.
-   - **Verifikasi Kualitas**: 41/41 unit test pytest LULUS 100% (HIJAU), Next.js Client Build LULUS 4/4 halaman tanpa error.
-2. **⏳ BELUM SELESAI (Pending / Antrean Pengerjaan Berikutnya)**:
-   - **Fase 3 (Face Analysis Report Card)**: Pembuatan komponen `FaceReportCard.tsx` (tampilan visual laporan analisis wajah beranotasi garis cm + badge 5 dimensi + 3 kartu pilar + injeksi otomatis profil ke prompt kuesioner Gemini) dan integrasi transisi step `REPORT` di `page.tsx`.
-   - **Fase 4 (Aset 3D GLB & Three.js Head Occluder)**: Pembuatan skrip `scripts/download_3d_assets.py` (unduh bundel `.glb` CC0) dan upgrade `ARCanvasViewer.tsx` dengan Three.js `GLTFLoader` + *Head Occluder Mesh* (`colorWrite: false, depthWrite: true`).
-   - **Modul Rekan Tim**: Integrasi AI Body Shape Analysis untuk kategori pakaian/baju tubuh (Tahap 2), kuesioner busana badan, dan katalog pakaian 3D.
+3. **✅ SUDAH SELESAI (Modul Analisis Tubuh Penuh & Busana — Full-Body Styling Engine)**:
+   - **Fase 1 (Dual-Mode Body Scan & Reposisi Interaktif)**: `bodyGeometry.ts` (ekstraksi 33 landmark Pose + kalibrasi tinggi cm), `BodyRepositionTool.tsx` (kanvas reposisi foto seluruh badan), `BodyScan.tsx` (tab dual-mode Webcam Live + Upload Foto badan), dan `CategorySelector.tsx` (membuka kunci kartu Pakaian/Busana).
+   - **Fase 2 (Backend Multi-Dimensional Body Shape Analyzer)**: `body_analyzer.py` (5 bentuk tubuh ANSUR II/ISO 7250: Hourglass, Pear, Inverted Triangle, Rectangle, Apple; rasio torso-kaki; `PillarJustifierBody` 3 pilar ilmiah busana), `schemas.py`, endpoint `POST /api/v1/analyze/body-landmarks`.
+   - **Fase 3 (Body Analysis Report Card & State Machine)**: `BodyReportCard.tsx` (foto tubuh beranotasi garis sentimeter SVG, grid 5 dimensi, 3 pilar ilmiah, narasi personal, tombol CTA) dan integrasi alur di `page.tsx`.
+   - **Fase 4 (Kuesioner Gemini Pakaian)**: Perluasan prompt `gemini_service.py` untuk busana tubuh (occasion, fit style, kenyamanan bahan).
+   - **Fase 5 (Studio Try-On Busana Interaktif)**: `BodyOutfitViewer.tsx` (Overlay tubuh realistis + Manekin 3D Three.js Turntable 360° + komposisi 3-Piece Baju + Celana + Sepatu).
+   - **Verifikasi Kualitas**: 52/52 unit test pytest LULUS 100% (HIJAU), Next.js Client Build LULUS 4/4 halaman tanpa error.
+

@@ -3,6 +3,9 @@
 import React, { useState } from "react";
 import { HeaderNavbar } from "../components/HeaderNavbar";
 import { CameraScan } from "../components/CameraScan";
+import { BodyScan } from "../components/BodyScan";
+import { BodyReportCard } from "../components/BodyReportCard";
+import { BodyOutfitViewer } from "../components/BodyOutfitViewer";
 import { CategorySelector } from "../components/CategorySelector";
 import { TargetedQuiz } from "../components/TargetedQuiz";
 import { ProcessingLoadingScreen } from "../components/ProcessingLoadingScreen";
@@ -10,22 +13,23 @@ import { ARCanvasViewer } from "../components/ARCanvasViewer";
 import { SwitchControls } from "../components/SwitchControls";
 import { ProductDetailModal } from "../components/ProductDetailModal";
 import { UserPersonalProfile, RecommendationItem, MOCK_PRESETS } from "../lib/mockData";
-import { fetchTop4Recommendations } from "../lib/api";
+import { fetchTop4Recommendations, BodyLandmarkAnalysisResult, analyzeBodyLandmarks } from "../lib/api";
 import { RotateCcw, Sparkles, Camera, Undo2, ArrowLeft } from "lucide-react";
 
 export default function Home() {
-  // Step Sequence: CATEGORY -> SCAN -> QUIZ -> PROCESSING -> TRYON
-  const [currentStep, setCurrentStep] = useState<"CATEGORY" | "SCAN" | "QUIZ" | "PROCESSING" | "TRYON">("CATEGORY");
+  // Step Sequence: CATEGORY -> SCAN -> REPORT -> QUIZ -> PROCESSING -> TRYON
+  const [currentStep, setCurrentStep] = useState<"CATEGORY" | "SCAN" | "REPORT" | "QUIZ" | "PROCESSING" | "TRYON">("CATEGORY");
   
   // User Profiling Data
   const [userProfile, setUserProfile] = useState<UserPersonalProfile | null>(null);
+  const [bodyAnalysisReport, setBodyAnalysisReport] = useState<BodyLandmarkAnalysisResult | null>(null);
 
   // Media stream from camera scan (reused seamlessly for AR try-on)
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
 
   // Selected Category / Subcategory (Default: accessories -> glasses)
   const [selectedDomain, setSelectedDomain] = useState<"accessories" | "apparel">("accessories");
-  const [selectedSubcategory, setSelectedSubcategory] = useState<"glasses" | "hats" | "shirts" | "jackets">("glasses");
+  const [selectedSubcategory, setSelectedSubcategory] = useState<"glasses" | "hats" | "shirts">("glasses");
 
   // Telemetry processing state
   const [collectedAnswers, setCollectedAnswers] = useState<Record<string, string>>({});
@@ -39,21 +43,88 @@ export default function Home() {
   // Modal State
   const [isDetailModalOpen, setIsDetailModalOpen] = useState<boolean>(false);
 
-  // STEP 1: Category Selected -> Move to Face Scan
+  // STEP 1: Category Selected -> Move to Scan
   const handleCategorySelected = (
     domain: "accessories" | "apparel",
-    subcat: "glasses" | "hats" | "shirts" | "jackets"
+    subcat: "glasses" | "hats" | "shirts"
   ) => {
     setSelectedDomain(domain);
     setSelectedSubcategory(subcat);
     setCurrentStep("SCAN");
   };
 
-  // STEP 2: Face Scan Complete -> Move to Targeted Quiz
-  const handleScanComplete = (profile: UserPersonalProfile, stream?: MediaStream) => {
+  // STEP 2: Scan Complete -> Move to Report Card or Quiz
+  const handleScanComplete = (profile: UserPersonalProfile, streamOrPayload?: any) => {
     setUserProfile(profile);
-    if (stream) setMediaStream(stream);
-    setCurrentStep("QUIZ");
+
+    if (streamOrPayload instanceof MediaStream) {
+      setMediaStream(streamOrPayload);
+      setCurrentStep("QUIZ");
+    } else if (streamOrPayload && streamOrPayload.body_ratios) {
+      // Body payload from BodyScan
+      void analyzeBodyLandmarks(streamOrPayload).then((res) => {
+        setBodyAnalysisReport(res);
+        setCurrentStep("REPORT");
+      });
+    } else if (selectedDomain === "apparel") {
+      // Fallback for apparel mock scan
+      const fallbackReport: BodyLandmarkAnalysisResult = {
+        body_shape: {
+          shape: profile.body_shape.shape,
+          label_indonesian: `${profile.body_shape.shape} (Proporsional)`,
+          confidence: profile.body_shape.confidence,
+          method: "ansur_ii_rule_engine",
+          ratios: profile.body_shape.ratios,
+          topwear_recommendations: profile.body_shape.silhouette_recommendations,
+          bottomwear_recommendations: ["Straight-Leg Trousers", "High-Waist Chinos"],
+          footwear_recommendations: ["Clean Minimalist Loafers", "Retro Sneakers"],
+          styling_advice: profile.body_shape.styling_advice,
+        },
+        measurements_cm: {
+          shoulder_width_cm: 42.5,
+          waist_width_cm: 32.0,
+          hip_width_cm: 38.5,
+          torso_length_cm: 48.0,
+          leg_length_cm: 82.0,
+          total_height_cm: 165.0,
+          body_proportion: "1.1 : 0.85 : 1.0",
+          calibration: "height_input",
+        },
+        pillars: [
+          {
+            pillar: "upper_silhouette",
+            title: "Pilar 1: Siluet Atasan (Upper Body Balance)",
+            title_id: "Siluet Atasan & Baju",
+            recommendation: "Fitted / Tailored Top",
+            reason: "Menyeimbangkan garis bahu dan dada secara proporsional.",
+            scientific_basis: "Prinsip Garis Anatomis (ISO 7250).",
+          },
+          {
+            pillar: "lower_inseam",
+            title: "Pilar 2: Proporsi Garis Jatuh Celana (Lower Inseam Line)",
+            title_id: "Potongan & Garis Jatuh Celana",
+            recommendation: "Straight-Leg / Wide-Leg Pants",
+            reason: "Memberikan garis jatuh kaki yang jenjang dan rapi.",
+            scientific_basis: "Prinsip Proporsi Golden Ratio (Inseam Elongation).",
+          },
+          {
+            pillar: "footwear_balance",
+            title: "Pilar 3: Keseimbangan Alas Kaki (Footwear Grounding)",
+            title_id: "Keseimbangan Siluet Sepatu",
+            recommendation: "Chunky Loafers / Derby Shoes",
+            reason: "Memberikan tumpuan visual yang kokoh dan seimbang.",
+            scientific_basis: "Prinsip Visual Grounding Equilibrium.",
+          },
+        ],
+        narrative: {
+          summary: `Bentuk tubuh teranalisis sebagai ${profile.body_shape.shape} dengan proporsi seimbang.`,
+        },
+      };
+      setBodyAnalysisReport(fallbackReport);
+      setCurrentStep("REPORT");
+    } else {
+      setCurrentStep("QUIZ");
+    }
   };
 
   // STEP 3: Quiz Submitted -> Move to Processing Telemetry Screen
@@ -105,6 +176,7 @@ export default function Home() {
       setMediaStream(null);
     }
     setUserProfile(null);
+    setBodyAnalysisReport(null);
     setCollectedAnswers({});
     setCollectedQuestionsMap({});
     setCurrentStep("CATEGORY");
@@ -134,25 +206,51 @@ export default function Home() {
       <HeaderNavbar
         currentStep={currentStep}
         onReset={handleResetFlow}
+        onStepClick={(step) => {
+          if (step === "CATEGORY") handleResetFlow();
+          else if (step === "SCAN") setCurrentStep("SCAN");
+          else if (step === "QUIZ" && userProfile) setCurrentStep("QUIZ");
+          else if (step === "TRYON" && recommendations.length > 0) setCurrentStep("TRYON");
+        }}
+        canNavigateToQuiz={Boolean(userProfile)}
+        canNavigateToTryon={recommendations.length > 0}
       />
 
       {/* Main Container */}
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 flex-1 flex flex-col justify-center">
         
-        {/* STEP 1: CATEGORY SELECTION (Focus Accessories: Glasses & Hats) */}
+        {/* STEP 1: CATEGORY SELECTION */}
         {currentStep === "CATEGORY" && (
           <CategorySelector
             onSelectCategory={handleCategorySelected}
           />
         )}
 
-        {/* STEP 2: FACE / PERSONAL PROFILING SCAN */}
+        {/* STEP 2: PERSONAL PROFILING SCAN (FACE vs BODY) */}
         {currentStep === "SCAN" && (
-          <CameraScan
-            subcategory={selectedSubcategory}
-            onScanComplete={handleScanComplete}
-            onBack={() => setCurrentStep("CATEGORY")}
-            overrideProfile={userProfile}
+          selectedDomain === "apparel" ? (
+            <BodyScan
+              onScanComplete={handleScanComplete}
+              onBack={() => setCurrentStep("CATEGORY")}
+              overrideProfile={userProfile || undefined}
+            />
+          ) : (
+            <CameraScan
+              subcategory={selectedSubcategory}
+              onScanComplete={handleScanComplete}
+              onBack={() => setCurrentStep("CATEGORY")}
+              overrideProfile={userProfile || undefined}
+            />
+          )
+        )}
+
+        {/* STEP 2.5: BODY REPORT CARD (For Apparel Domain) */}
+        {currentStep === "REPORT" && bodyAnalysisReport && (
+          <BodyReportCard
+            report={bodyAnalysisReport}
+            snapshotDataUrl={userProfile?.scan_snapshot_dataurl}
+            onProceedToQuiz={() => setCurrentStep("QUIZ")}
+            onBack={() => setCurrentStep("SCAN")}
           />
         )}
 
@@ -162,7 +260,7 @@ export default function Home() {
             subcategory={selectedSubcategory}
             userProfile={userProfileDict}
             onSubmitQuiz={handleQuizSubmit}
-            onBack={() => setCurrentStep("SCAN")}
+            onBack={() => setCurrentStep(selectedDomain === "apparel" ? "REPORT" : "SCAN")}
             isLoading={isLoadingRecommendations}
           />
         )}
@@ -178,21 +276,30 @@ export default function Home() {
           />
         )}
 
-        {/* STEP 4: 3D AR TRY-ON & SWITCH NAVIGATION STUDIO */}
+        {/* STEP 4: VIRTUAL TRY-ON & SWITCH NAVIGATION STUDIO */}
         {currentStep === "TRYON" && activeItem && (
           <div className="w-full max-w-6xl mx-auto space-y-6 animate-fadeIn">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3">
               <div>
                 <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono">
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>TAHAP 4: VALIDASI VISUAL AR & SWITCH NAVIGATION</span>
+                  <span>TAHAP 4: VALIDASI VISUAL TRY-ON & SWITCH NAVIGATION</span>
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-extrabold text-white mt-1">
-                  Studio AR & Rekomendasi Top-4 ({selectedSubcategory.toUpperCase()})
+                  Studio Try-On & Rekomendasi Top-4 ({selectedSubcategory.toUpperCase()})
                 </h2>
               </div>
 
               <div className="flex flex-wrap items-center gap-2.5">
+                <button
+                  onClick={() => setCurrentStep("QUIZ")}
+                  className="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-300 bg-surface-50 hover:bg-slate-800 hover:text-white border border-white/10 flex items-center space-x-1.5 transition-colors cursor-pointer"
+                  title="Kembali ke Kuesioner"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Ubah Kuesioner</span>
+                </button>
+
                 <button
                   onClick={() => {
                     if (mediaStream) {
@@ -201,10 +308,10 @@ export default function Home() {
                     }
                     setCurrentStep("SCAN");
                   }}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-rose-600 to-indigo-600 hover:from-rose-500 hover:to-indigo-500 shadow-md shadow-rose-600/20 border border-white/10 flex items-center space-x-1.5 transition-all"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-md shadow-blue-600/20 border border-white/10 flex items-center space-x-1.5 transition-all cursor-pointer"
                 >
                   <Camera className="w-3.5 h-3.5" />
-                  <span>Scan Ulang Wajah</span>
+                  <span>Scan Ulang {selectedDomain === "apparel" ? "Tubuh" : "Wajah"}</span>
                 </button>
 
                 <button
@@ -215,22 +322,31 @@ export default function Home() {
                     }
                     setCurrentStep("CATEGORY");
                   }}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-300 bg-surface-50 hover:bg-slate-800 border border-white/10 flex items-center space-x-1.5 transition-colors"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-300 bg-surface-50 hover:bg-slate-800 hover:text-white border border-white/10 flex items-center space-x-1.5 transition-colors cursor-pointer"
                 >
                   <Undo2 className="w-3.5 h-3.5" />
-                  <span>Ganti Aksesoris</span>
+                  <span>Ganti Kategori</span>
                 </button>
               </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-              {/* Left Column: 3D AR WebGL Canvas */}
-              <div className="lg:col-span-7 h-[420px] sm:h-[500px]">
-                <ARCanvasViewer
-                  activeItem={activeItem}
-                  subcategory={selectedSubcategory}
-                  mediaStream={mediaStream}
-                />
+              {/* Left Column: Try-On Canvas (BodyOutfitViewer vs ARCanvasViewer) */}
+              <div className="lg:col-span-7 h-[460px] sm:h-[540px]">
+                {selectedDomain === "apparel" ? (
+                  <BodyOutfitViewer
+                    activeItem={activeItem}
+                    subcategory={selectedSubcategory}
+                    mediaStream={mediaStream}
+                    userSnapshotUrl={userProfile?.scan_snapshot_dataurl}
+                  />
+                ) : (
+                  <ARCanvasViewer
+                    activeItem={activeItem}
+                    subcategory={selectedSubcategory}
+                    mediaStream={mediaStream}
+                  />
+                )}
               </div>
 
               {/* Right Column: Switch Controls */}

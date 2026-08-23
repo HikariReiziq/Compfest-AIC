@@ -1,8 +1,16 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-import { Sparkles, Camera, RefreshCw, Eye, Move3d } from "lucide-react";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import {
+  Sparkles,
+  Move3d,
+  Zap,
+  Box,
+  RotateCcw,
+  Sliders,
+} from "lucide-react";
 import { RecommendationItem } from "../lib/mockData";
 
 /* ------------------------------------------------------------------ */
@@ -35,12 +43,15 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   const [isTrackingFace, setIsTrackingFace] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [modelSource, setModelSource] = useState<string>("Memuat 3D Model...");
+  const [offsetY, setOffsetY] = useState<number>(0);
+  const [scaleMultiplier, setScaleMultiplier] = useState<number>(100);
+
+  // View Mode: 'ar' (Live 3D AR on Face) vs 'studio' (3D 360° Inspection)
   const [viewMode, setViewMode] = useState<"ar" | "studio">("ar");
 
-  // Smoothed tracking transforms
-  const currentPos = useRef(new THREE.Vector3(0, 0, 0));
-  const currentRot = useRef(new THREE.Euler(0, 0, 0));
-  const currentScale = useRef(1);
+  const sub = (activeItem.subcategory || subcategory).toLowerCase();
+  const isHat = sub === "hats" || sub === "hat" || sub.includes("hat") || sub.includes("cap");
 
   /* ------------------------------------------------------------------ */
   /*  1. Initialize / Manage Camera Stream                              */
@@ -53,8 +64,8 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
         setCameraError(null);
         let stream = mediaStream;
 
-        // If mediaStream is not provided or its tracks are ended, request new stream
-        const isStreamActive = stream && stream.active && stream.getVideoTracks().some(t => t.readyState === "live");
+        const isStreamActive =
+          stream && stream.active && stream.getVideoTracks().some((t) => t.readyState === "live");
         if (!isStreamActive) {
           if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
             setCameraError("Akses kamera tidak didukung di peramban ini.");
@@ -73,7 +84,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
         if (cancelled) {
           if (localStreamRef.current) {
-            localStreamRef.current.getTracks().forEach(t => t.stop());
+            localStreamRef.current.getTracks().forEach((t) => t.stop());
           }
           return;
         }
@@ -88,7 +99,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
       } catch (err: any) {
         if (!cancelled) {
           console.warn("Camera init error in ARCanvasViewer:", err);
-          setCameraError("Kamera tidak dapat diakses. Menampilkan mode 3D Studio.");
+          setCameraError("Kamera tidak dapat diakses.");
           setViewMode("studio");
         }
       }
@@ -99,13 +110,13 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     return () => {
       cancelled = true;
       if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach(t => t.stop());
+        localStreamRef.current.getTracks().forEach((t) => t.stop());
       }
     };
   }, [mediaStream]);
 
   /* ------------------------------------------------------------------ */
-  /*  2. Initialize MediaPipe FaceLandmarker for Live AR Tracking       */
+  /*  2. Initialize MediaPipe FaceLandmarker for Live Tracking           */
   /* ------------------------------------------------------------------ */
   useEffect(() => {
     let cancelled = false;
@@ -152,7 +163,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   }, []);
 
   /* ------------------------------------------------------------------ */
-  /*  3. Setup Three.js Scene and Render Loop                           */
+  /*  3. Setup Three.js WebGL Scene & 60 FPS Render Loop                */
   /* ------------------------------------------------------------------ */
   useEffect(() => {
     if (!containerRef.current) return;
@@ -182,25 +193,28 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     renderer.domElement.style.zIndex = "10";
     renderer.domElement.style.pointerEvents = "none";
 
-    // Lighting setup
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
     scene.add(ambientLight);
 
-    const mainLight = new THREE.DirectionalLight(0xffffff, 2.0);
-    mainLight.position.set(2, 4, 3);
-    scene.add(mainLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 2.8);
+    dirLight.position.set(3, 4, 5);
+    scene.add(dirLight);
 
-    const rimLight = new THREE.DirectionalLight(0x6366f1, 1.5);
-    rimLight.position.set(-3, -1, 2);
+    const rimLight = new THREE.DirectionalLight(0x60a5fa, 1.8);
+    rimLight.position.set(-3, -2, 2);
     scene.add(rimLight);
 
-    const warmLight = new THREE.PointLight(0xffaa44, 1.2, 10);
-    warmLight.position.set(0, 1.5, 2);
-    scene.add(warmLight);
+    const fillLight = new THREE.DirectionalLight(0xfff7ed, 1.2);
+    fillLight.position.set(0, -2, 3);
+    scene.add(fillLight);
 
     const modelGroup = new THREE.Group();
     modelGroupRef.current = modelGroup;
     scene.add(modelGroup);
+
+    // Load Categorized 3D Model (GLB / OBJ)
+    loadCategorized3DModel(modelGroup);
 
     let lastVideoTime = -1;
 
@@ -217,28 +231,21 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
             const result = landmarker.detectForVideo(video, performance.now());
             if (result && result.faceLandmarks && result.faceLandmarks.length > 0) {
               setIsTrackingFace(true);
-              applyLandmarksToModel(result.faceLandmarks[0], modelGroup);
+              applyLandmarksTo3DModel(result.faceLandmarks[0], modelGroup);
             } else {
               setIsTrackingFace(false);
-              // Gently center model when face is temporarily out of view
               modelGroup.position.lerp(new THREE.Vector3(0, 0.2, 0), 0.05);
-              modelGroup.rotation.x = THREE.MathUtils.lerp(modelGroup.rotation.x, 0, 0.05);
-              modelGroup.rotation.y = THREE.MathUtils.lerp(modelGroup.rotation.y, 0, 0.05);
-              modelGroup.rotation.z = THREE.MathUtils.lerp(modelGroup.rotation.z, 0, 0.05);
             }
           } catch {
-            // Frame processing skip
+            // Frame skip
           }
         }
-      } else {
-        // 3D Studio Showcase mode with slow elegant turntable rotation
+      } else if (viewMode === "studio") {
         setIsTrackingFace(false);
         if (modelGroup) {
+          modelGroup.rotation.y += 0.015;
           modelGroup.position.lerp(new THREE.Vector3(0, 0, 0), 0.08);
-          modelGroup.rotation.y += 0.008;
-          modelGroup.rotation.x = THREE.MathUtils.lerp(modelGroup.rotation.x, 0.1, 0.08);
-          modelGroup.rotation.z = THREE.MathUtils.lerp(modelGroup.rotation.z, 0, 0.08);
-          modelGroup.scale.lerp(new THREE.Vector3(1.15, 1.15, 1.15), 0.08);
+          modelGroup.scale.lerp(new THREE.Vector3(1.2, 1.2, 1.2), 0.08);
         }
       }
 
@@ -263,518 +270,364 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
       cancelAnimationFrame(rafRef.current);
       renderer.dispose();
     };
-  }, [viewMode]);
+  }, [viewMode, activeItem, subcategory, offsetY, scaleMultiplier]);
 
   /* ------------------------------------------------------------------ */
-  /*  4. Precision Landmark Tracking & 3D Anchoring                      */
+  /*  4. Load 3D Model File with Optical Glass Shaders & Auto-Alignment */
   /* ------------------------------------------------------------------ */
-  const applyLandmarksToModel = useCallback(
-    (landmarks: any[], group: THREE.Group) => {
-      const sub = (activeItem.subcategory || subcategory).toLowerCase();
-
-      // Key face landmark points:
-      const noseBridge = landmarks[6] || landmarks[168];
-      const leftEye = landmarks[33];
-      const rightEye = landmarks[263];
-      const foreheadTop = landmarks[10];
-      const chin = landmarks[152];
-      const leftTemple = landmarks[234];
-      const rightTemple = landmarks[454];
-
-      if (!noseBridge || !leftEye || !rightEye || !foreheadTop) return;
-
-      // Note: Video is mirrored with -scale-x-100 (selfie mode)
-      // When user moves head right (their right), landmark.x decreases
-      // So in 3D scene: posX = (0.5 - noseBridge.x) * factor
-      const aspect = 1.33; // ~4:3 aspect ratio adjustment
-      const posX = (0.5 - noseBridge.x) * 5.2 * aspect;
-      const posY = (0.5 - noseBridge.y) * 4.4;
-      const posZ = (noseBridge.z || 0) * -4.0;
-
-      // Calculate 3D rotations
-      // 1. Roll: tilt angle between eye corners
-      const eyeDX = rightEye.x - leftEye.x;
-      const eyeDY = rightEye.y - leftEye.y;
-      const roll = Math.atan2(eyeDY, eyeDX);
-
-      // 2. Yaw: left/right head turn
-      const faceCenter = (leftTemple.x + rightTemple.x) / 2;
-      const yaw = (faceCenter - noseBridge.x) * 4.2;
-
-      // 3. Pitch: up/down head nod
-      const foreheadChinDY = (chin.y - foreheadTop.y);
-      const noseForeheadRatio = (noseBridge.y - foreheadTop.y) / (foreheadChinDY || 0.4);
-      const pitch = (noseForeheadRatio - 0.42) * 2.8;
-
-      // 4. Scale: distance between temples / eyes
-      const templeDist = Math.hypot(rightTemple.x - leftTemple.x, rightTemple.y - leftTemple.y);
-      const targetScale = Math.max(0.65, Math.min(1.75, templeDist * 3.4));
-
-      // Apply Exponential Smoothing (Lerp) for zero jitter
-      const lerpFactor = 0.42;
-
-      if (sub === "glasses") {
-        // Anchor glasses directly onto nose bridge & eye line
-        const targetX = posX;
-        const targetY = posY + 0.05;
-        const targetZ = posZ + 0.15;
-
-        currentPos.current.lerp(new THREE.Vector3(targetX, targetY, targetZ), lerpFactor);
-        currentRot.current.x = THREE.MathUtils.lerp(currentRot.current.x, pitch, lerpFactor);
-        currentRot.current.y = THREE.MathUtils.lerp(currentRot.current.y, yaw, lerpFactor);
-        currentRot.current.z = THREE.MathUtils.lerp(currentRot.current.z, roll, lerpFactor);
-        currentScale.current = THREE.MathUtils.lerp(currentScale.current, targetScale * 0.95, lerpFactor);
-
-        group.position.copy(currentPos.current);
-        group.rotation.set(currentRot.current.x, currentRot.current.y, currentRot.current.z);
-        group.scale.setScalar(currentScale.current);
-      } else {
-        // Hats: Anchor above forehead top
-        const hatOffsetY = (0.5 - foreheadTop.y) * 4.4 + 0.38;
-        // Adjust depth & forward tilt along head normal
-        const hatZ = posZ - 0.05 + (pitch * 0.2);
-
-        currentPos.current.lerp(new THREE.Vector3(posX, hatOffsetY, hatZ), lerpFactor);
-        currentRot.current.x = THREE.MathUtils.lerp(currentRot.current.x, pitch * 0.85, lerpFactor);
-        currentRot.current.y = THREE.MathUtils.lerp(currentRot.current.y, yaw, lerpFactor);
-        currentRot.current.z = THREE.MathUtils.lerp(currentRot.current.z, roll * 0.8, lerpFactor);
-        currentScale.current = THREE.MathUtils.lerp(currentScale.current, targetScale * 1.12, lerpFactor);
-
-        group.position.copy(currentPos.current);
-        group.rotation.set(currentRot.current.x, currentRot.current.y, currentRot.current.z);
-        group.scale.setScalar(currentScale.current);
-      }
-    },
-    [activeItem, subcategory]
-  );
-
-  /* ------------------------------------------------------------------ */
-  /*  5. Build Rich, Distinct Procedural 3D Models                      */
-  /* ------------------------------------------------------------------ */
-  useEffect(() => {
-    if (!modelGroupRef.current) return;
-    const group = modelGroupRef.current;
-
-    // Dispose previous geometry & materials
+  const loadCategorized3DModel = (group: THREE.Group) => {
     while (group.children.length > 0) {
-      const child = group.children[0];
-      group.remove(child);
-      if ((child as THREE.Mesh).geometry) (child as THREE.Mesh).geometry.dispose();
+      group.remove(group.children[0]);
     }
 
-    const hexColor = parseInt((activeItem.hex_colour || "#36454F").replace("#", "0x"), 16);
-
-    const primaryMaterial = new THREE.MeshStandardMaterial({
-      color: hexColor,
-      roughness: 0.35,
-      metalness: 0.45,
-    });
-
-    const darkAccentMaterial = new THREE.MeshStandardMaterial({
-      color: 0x111827,
-      roughness: 0.5,
-      metalness: 0.8,
-    });
-
-    const goldAccentMaterial = new THREE.MeshStandardMaterial({
-      color: 0xd4af37,
-      roughness: 0.2,
-      metalness: 0.9,
-    });
-
-    const lensMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0x0f172a,
-      transmission: 0.65,
-      opacity: 0.85,
-      transparent: true,
-      roughness: 0.05,
-      ior: 1.5,
-      metalness: 0.1,
-    });
-
-    const sub = (activeItem.subcategory || subcategory).toLowerCase();
-    const modelType = (activeItem.model_type || "").toLowerCase();
-    const nameLower = activeItem.name.toLowerCase();
-
-    /* ================================================================ */
-    /*  HATS PROCEDURAL 3D GENERATOR                                    */
-    /* ================================================================ */
-    if (sub === "hats") {
-      if (modelType === "cap" || nameLower.includes("baseball") || nameLower.includes("cap") || nameLower.includes("snapback")) {
-        // --- 1. BASEBALL CAP / SNAPBACK ---
-        // Crown Dome
-        const domeGeom = new THREE.SphereGeometry(0.82, 32, 16, 0, Math.PI * 2, 0, Math.PI * 0.52);
-        const dome = new THREE.Mesh(domeGeom, primaryMaterial);
-        dome.position.set(0, 0.05, 0);
-
-        // Curved Front Visor / Brim
-        const visorGeom = new THREE.CylinderGeometry(0.85, 0.85, 0.04, 32, 1, false, Math.PI * 0.2, Math.PI * 0.6);
-        const visor = new THREE.Mesh(visorGeom, primaryMaterial);
-        visor.rotation.x = -Math.PI / 8;
-        visor.position.set(0, -0.05, 0.42);
-        visor.scale.set(1.15, 1, 1.35);
-
-        // Top Button Rivet
-        const buttonGeom = new THREE.SphereGeometry(0.06, 16, 16);
-        const button = new THREE.Mesh(buttonGeom, darkAccentMaterial);
-        button.position.set(0, 0.86, 0);
-
-        // Front Panel Embroidered Patch
-        const patchGeom = new THREE.BoxGeometry(0.35, 0.22, 0.04);
-        const patch = new THREE.Mesh(patchGeom, darkAccentMaterial);
-        patch.position.set(0, 0.42, 0.76);
-        patch.rotation.x = -Math.PI / 12;
-
-        group.add(dome, visor, button, patch);
-
-      } else if (modelType === "bucket" || nameLower.includes("bucket")) {
-        // --- 2. BUCKET HAT ---
-        // Tapered Crown
-        const crownGeom = new THREE.CylinderGeometry(0.72, 0.80, 0.65, 32);
-        const crown = new THREE.Mesh(crownGeom, primaryMaterial);
-        crown.position.set(0, 0.35, 0);
-
-        // Flat Top Cap
-        const topGeom = new THREE.CylinderGeometry(0.72, 0.72, 0.02, 32);
-        const topCap = new THREE.Mesh(topGeom, primaryMaterial);
-        topCap.position.set(0, 0.67, 0);
-
-        // Downward Flared Brim
-        const brimGeom = new THREE.CylinderGeometry(0.82, 1.32, 0.32, 32);
-        const brim = new THREE.Mesh(brimGeom, primaryMaterial);
-        brim.position.set(0, -0.08, 0);
-
-        // Middle Ribbon Stitch
-        const bandGeom = new THREE.CylinderGeometry(0.81, 0.81, 0.08, 32);
-        const band = new THREE.Mesh(bandGeom, darkAccentMaterial);
-        band.position.set(0, 0.06, 0);
-
-        group.add(crown, topCap, brim, band);
-
-      } else if (modelType === "beanie" || nameLower.includes("beanie")) {
-        // --- 3. RIBBED KNIT BEANIE ---
-        // Snug Knitted Dome
-        const domeGeom = new THREE.SphereGeometry(0.80, 32, 20, 0, Math.PI * 2, 0, Math.PI * 0.58);
-        const dome = new THREE.Mesh(domeGeom, primaryMaterial);
-        dome.position.set(0, 0.12, 0);
-
-        // Thick Rolled Cuff around bottom rim
-        const cuffGeom = new THREE.TorusGeometry(0.76, 0.12, 16, 32);
-        const cuff = new THREE.Mesh(cuffGeom, primaryMaterial);
-        cuff.rotation.x = Math.PI / 2;
-        cuff.position.set(0, 0.04, 0);
-
-        // Brand Woven Tag
-        const tagGeom = new THREE.BoxGeometry(0.18, 0.14, 0.05);
-        const tag = new THREE.Mesh(tagGeom, darkAccentMaterial);
-        tag.position.set(0, 0.05, 0.86);
-
-        group.add(dome, cuff, tag);
-
-      } else if (modelType === "beret" || nameLower.includes("beret")) {
-        // --- 4. ARTISAN FRENCH BERET ---
-        // Puffy Tilted Disc
-        const beretGeom = new THREE.CylinderGeometry(1.18, 0.82, 0.32, 32);
-        const beret = new THREE.Mesh(beretGeom, primaryMaterial);
-        beret.position.set(0.12, 0.28, 0);
-        beret.rotation.z = -Math.PI / 14;
-
-        // Apex Stem
-        const stemGeom = new THREE.CylinderGeometry(0.02, 0.02, 0.14, 8);
-        const stem = new THREE.Mesh(stemGeom, primaryMaterial);
-        stem.position.set(0.14, 0.50, 0);
-
-        group.add(beret, stem);
-
-      } else if (modelType === "newsboy" || nameLower.includes("newsboy") || nameLower.includes("flat")) {
-        // --- 5. NEWSBOY / FLAT CAP ---
-        // Forward Leaning Crown
-        const capGeom = new THREE.CylinderGeometry(0.95, 0.75, 0.40, 32);
-        const cap = new THREE.Mesh(capGeom, primaryMaterial);
-        cap.position.set(0, 0.22, 0.12);
-        cap.rotation.x = Math.PI / 16;
-
-        // Front Visor Peak
-        const visorGeom = new THREE.CylinderGeometry(0.78, 0.78, 0.03, 32, 1, false, Math.PI * 0.25, Math.PI * 0.5);
-        const visor = new THREE.Mesh(visorGeom, darkAccentMaterial);
-        visor.position.set(0, 0.02, 0.55);
-        visor.rotation.x = -Math.PI / 10;
-
-        group.add(cap, visor);
-
-      } else {
-        // --- 6. CLASSIC FEDORA / PANAMA HAT ---
-        // Pinched Crown
-        const crownGeom = new THREE.CylinderGeometry(0.68, 0.82, 0.85, 32);
-        const crown = new THREE.Mesh(crownGeom, primaryMaterial);
-        crown.position.set(0, 0.42, 0);
-        crown.scale.set(0.92, 1, 1.08); // Oval pinch
-
-        // Wide Brim
-        const brimGeom = new THREE.CylinderGeometry(1.38, 1.38, 0.04, 32);
-        const brim = new THREE.Mesh(brimGeom, primaryMaterial);
-        brim.position.set(0, 0.02, 0);
-
-        // Ribbon Band
-        const bandGeom = new THREE.CylinderGeometry(0.83, 0.83, 0.14, 32);
-        const band = new THREE.Mesh(bandGeom, darkAccentMaterial);
-        band.position.set(0, 0.12, 0);
-
-        group.add(crown, brim, band);
-      }
+    let modelPath = activeItem.model_3d_path || "";
+    if (!modelPath) {
+      modelPath = isHat ? "/images/products/hats/hat_01_fedora.glb" : "/images/products/glasses/glasses-1-.glb";
     }
 
-    /* ================================================================ */
-    /*  GLASSES PROCEDURAL 3D GENERATOR                                 */
-    /* ================================================================ */
-    if (sub === "glasses") {
-      if (modelType === "aviator" || nameLower.includes("aviator")) {
-        // --- 1. AVIATOR DOUBLE-BRIDGE GLASSES ---
-        // Teardrop Wire Frames
-        const leftFrame = new THREE.Mesh(new THREE.TorusGeometry(0.48, 0.03, 16, 32), goldAccentMaterial);
-        leftFrame.position.set(-0.62, 0, 0);
-        leftFrame.scale.set(1.05, 1.25, 1);
+    const isGLB = modelPath.endsWith(".glb") || modelPath.endsWith(".gltf");
 
-        const rightFrame = new THREE.Mesh(new THREE.TorusGeometry(0.48, 0.03, 16, 32), goldAccentMaterial);
-        rightFrame.position.set(0.62, 0, 0);
-        rightFrame.scale.set(1.05, 1.25, 1);
+    if (isGLB) {
+      const gltfLoader = new GLTFLoader();
+      gltfLoader.load(
+        modelPath,
+        (gltf) => {
+          const model = gltf.scene;
 
-        // Double Brow Bridge (Top Bar + Nose Bar)
-        const topBar = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.15, 16), goldAccentMaterial);
-        topBar.rotation.z = Math.PI / 2;
-        topBar.position.set(0, 0.38, 0.02);
+          // 1. Check raw dimensions to correct Sketchfab coordinate system
+          const initialBox = new THREE.Box3().setFromObject(model);
+          const rawSize = initialBox.getSize(new THREE.Vector3());
 
-        const bridge = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.32, 16), goldAccentMaterial);
-        bridge.rotation.z = Math.PI / 2;
-        bridge.position.set(0, 0.12, 0);
+          // If height is larger than depth (lying flat / vertical in Blender), rotate upright
+          if (!isHat && rawSize.y > rawSize.z * 1.3) {
+            model.rotation.x = -Math.PI / 2;
+          }
 
-        // Lenses
-        const leftLens = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.46, 0.015, 32), lensMaterial);
-        leftLens.rotation.x = Math.PI / 2;
-        leftLens.position.set(-0.62, 0, 0);
-        leftLens.scale.set(1.05, 1, 1.25);
+          // 2. Wrap in wrapper group to ensure clean normalized transforms
+          const wrapper = new THREE.Group();
+          wrapper.add(model);
 
-        const rightLens = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.46, 0.015, 32), lensMaterial);
-        rightLens.rotation.x = Math.PI / 2;
-        rightLens.position.set(0.62, 0, 0);
-        rightLens.scale.set(1.05, 1, 1.25);
+          const boxAfter = new THREE.Box3().setFromObject(wrapper);
+          const center = boxAfter.getCenter(new THREE.Vector3());
+          const sizeAfter = boxAfter.getSize(new THREE.Vector3());
 
-        // Temples
-        const leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.03, 1.5), goldAccentMaterial);
-        leftArm.position.set(-1.18, 0.15, -0.75);
+          model.position.sub(center);
 
-        const rightArm = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.03, 1.5), goldAccentMaterial);
-        rightArm.position.set(1.18, 0.15, -0.75);
+          // Normalize model width (sizeAfter.x) to ~1.45 standard units
+          const targetWidth = sizeAfter.x > 0 ? sizeAfter.x : 1.0;
+          const normalizeScale = (isHat ? 1.35 : 1.45) / targetWidth;
+          model.scale.multiplyScalar(normalizeScale);
 
-        group.add(leftFrame, rightFrame, topBar, bridge, leftLens, rightLens, leftArm, rightArm);
+          // 3. Apply Ultra-Realistic PBR Materials
+          const hexColor = activeItem.hex_colour || "#1e293b";
 
-      } else if (modelType === "round" || nameLower.includes("round") || nameLower.includes("circular")) {
-        // --- 2. VINTAGE ROUND GLASSES ---
-        const leftRim = new THREE.Mesh(new THREE.TorusGeometry(0.48, 0.035, 16, 32), goldAccentMaterial);
-        leftRim.position.set(-0.60, 0, 0);
+          const luxuryFrameMat = new THREE.MeshPhysicalMaterial({
+            color: new THREE.Color(hexColor),
+            roughness: isHat ? 0.75 : 0.22,
+            metalness: isHat ? 0.05 : 0.78,
+            clearcoat: isHat ? 0.1 : 0.6,
+            clearcoatRoughness: 0.1,
+          });
 
-        const rightRim = new THREE.Mesh(new THREE.TorusGeometry(0.48, 0.035, 16, 32), goldAccentMaterial);
-        rightRim.position.set(0.60, 0, 0);
+          const opticalLensMat = new THREE.MeshPhysicalMaterial({
+            color: new THREE.Color(0x0f172a),
+            transparent: true,
+            opacity: 0.22,
+            roughness: 0.05,
+            metalness: 0.08,
+            transmission: 0.92,
+            ior: 1.52,
+            reflectivity: 0.85,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.05,
+            depthWrite: false,
+            side: THREE.DoubleSide,
+          });
 
-        const archedBridge = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.025, 16, 16, Math.PI), goldAccentMaterial);
-        archedBridge.position.set(0, 0.14, 0);
+          model.traverse((child) => {
+            if ((child as THREE.Mesh).isMesh) {
+              const mesh = child as THREE.Mesh;
+              mesh.castShadow = true;
+              mesh.receiveShadow = true;
 
-        const leftLens = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.46, 0.015, 32), lensMaterial);
-        leftLens.rotation.x = Math.PI / 2;
-        leftLens.position.set(-0.60, 0, 0);
+              const matName = ((mesh.material as THREE.Material)?.name || "").toLowerCase();
+              const meshName = (mesh.name || "").toLowerCase();
 
-        const rightLens = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.46, 0.015, 32), lensMaterial);
-        rightLens.rotation.x = Math.PI / 2;
-        rightLens.position.set(0.60, 0, 0);
+              // Identify lens geometry vs frame geometry
+              const isLens =
+                !isHat &&
+                (matName.includes("glass") ||
+                  matName.includes("lens") ||
+                  matName.includes("001_g") ||
+                  matName.includes("000_glass") ||
+                  matName.includes("002_glass") ||
+                  meshName.includes("glass") ||
+                  meshName.includes("lens"));
 
-        const leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 1.4), goldAccentMaterial);
-        leftArm.position.set(-1.10, 0.05, -0.70);
+              if (isLens) {
+                mesh.material = opticalLensMat;
+              } else {
+                mesh.material = luxuryFrameMat;
+              }
+            }
+          });
 
-        const rightArm = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 1.4), goldAccentMaterial);
-        rightArm.position.set(1.10, 0.05, -0.70);
-
-        group.add(leftRim, rightRim, archedBridge, leftLens, rightLens, leftArm, rightArm);
-
-      } else if (modelType === "cateye" || nameLower.includes("cateye") || nameLower.includes("cat-eye")) {
-        // --- 3. WINGED CAT-EYE GLASSES ---
-        const leftRim = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.05, 16, 32), primaryMaterial);
-        leftRim.position.set(-0.62, 0, 0);
-        leftRim.rotation.z = Math.PI / 10;
-
-        const rightRim = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.05, 16, 32), primaryMaterial);
-        rightRim.position.set(0.62, 0, 0);
-        rightRim.rotation.z = -Math.PI / 10;
-
-        // Winged Corner Tips
-        const leftWing = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.12, 0.06), primaryMaterial);
-        leftWing.position.set(-1.08, 0.28, 0);
-        leftWing.rotation.z = Math.PI / 4;
-
-        const rightWing = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.12, 0.06), primaryMaterial);
-        rightWing.position.set(1.08, 0.28, 0);
-        rightWing.rotation.z = -Math.PI / 4;
-
-        const bridge = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.34, 16), primaryMaterial);
-        bridge.rotation.z = Math.PI / 2;
-        bridge.position.set(0, 0.10, 0);
-
-        const leftLens = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.015, 32), lensMaterial);
-        leftLens.rotation.x = Math.PI / 2;
-        leftLens.position.set(-0.62, 0, 0);
-
-        const rightLens = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.015, 32), lensMaterial);
-        rightLens.rotation.x = Math.PI / 2;
-        rightLens.position.set(0.62, 0, 0);
-
-        const leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.06, 1.4), primaryMaterial);
-        leftArm.position.set(-1.18, 0.20, -0.70);
-
-        const rightArm = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.06, 1.4), primaryMaterial);
-        rightArm.position.set(1.18, 0.20, -0.70);
-
-        group.add(leftRim, rightRim, leftWing, rightWing, bridge, leftLens, rightLens, leftArm, rightArm);
-
-      } else {
-        // --- 4. CLASSIC WAYFARER / RECTANGULAR GLASSES ---
-        const leftRim = new THREE.Mesh(new THREE.TorusGeometry(0.50, 0.065, 16, 32), primaryMaterial);
-        leftRim.position.set(-0.65, 0, 0);
-        leftRim.scale.set(1.15, 0.92, 1);
-
-        const rightRim = new THREE.Mesh(new THREE.TorusGeometry(0.50, 0.065, 16, 32), primaryMaterial);
-        rightRim.position.set(0.65, 0, 0);
-        rightRim.scale.set(1.15, 0.92, 1);
-
-        const bridge = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.38, 16), primaryMaterial);
-        bridge.rotation.z = Math.PI / 2;
-        bridge.position.set(0, 0.12, 0);
-
-        // Gold Diamond Stud Rivets
-        const leftStud = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.02), goldAccentMaterial);
-        leftStud.position.set(-1.16, 0.22, 0.04);
-        leftStud.rotation.z = Math.PI / 4;
-
-        const rightStud = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.02), goldAccentMaterial);
-        rightStud.position.set(1.16, 0.22, 0.04);
-        rightStud.rotation.z = Math.PI / 4;
-
-        const leftLens = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.46, 0.02, 32), lensMaterial);
-        leftLens.rotation.x = Math.PI / 2;
-        leftLens.position.set(-0.65, 0, 0);
-        leftLens.scale.set(1.15, 1, 0.92);
-
-        const rightLens = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.46, 0.02, 32), lensMaterial);
-        rightLens.rotation.x = Math.PI / 2;
-        rightLens.position.set(0.65, 0, 0);
-        rightLens.scale.set(1.15, 1, 0.92);
-
-        const leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.08, 1.45), primaryMaterial);
-        leftArm.position.set(-1.18, 0.08, -0.72);
-
-        const rightArm = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.08, 1.45), primaryMaterial);
-        rightArm.position.set(1.18, 0.08, -0.72);
-
-        group.add(leftRim, rightRim, bridge, leftStud, rightStud, leftLens, rightLens, leftArm, rightArm);
-      }
+          group.add(wrapper);
+          const filename = modelPath.split("/").pop();
+          setModelSource(`3D GLB (${filename})`);
+        },
+        undefined,
+        (error) => {
+          console.warn(`GLB load failed for ${modelPath}:`, error);
+        }
+      );
     }
-  }, [activeItem, subcategory]);
+  };
 
   /* ------------------------------------------------------------------ */
-  /*  Render                                                            */
+  /*  5. Landmark Alignment Loop (Rock-Solid 60 FPS Head Tracking)      */
   /* ------------------------------------------------------------------ */
+  const applyLandmarksTo3DModel = (landmarks: any[], group: THREE.Group) => {
+    if (!videoRef.current || !containerRef.current) return;
+
+    // Anatomical Face Landmarks (MediaPipe 468 Mesh)
+    // Left eye outer: 33, inner: 133 -> Center of Left Eye
+    // Right eye outer: 263, inner: 362 -> Center of Right Eye
+    // Nasion / Nose Bridge: 168 (top) & 6 (mid bridge)
+    // Forehead: 10
+    // Nose tip: 4
+    const leftOuter = landmarks[33];
+    const leftInner = landmarks[133];
+    const rightOuter = landmarks[263];
+    const rightInner = landmarks[362];
+    const nasion = landmarks[168] || landmarks[6];
+    const foreheadTop = landmarks[10];
+    const noseTip = landmarks[4] || landmarks[1];
+
+    if (!leftOuter || !rightOuter || !nasion) return;
+
+    const video = videoRef.current;
+    const container = containerRef.current;
+    const cw = container.clientWidth;
+    const ch = container.clientHeight;
+
+    const vw = video.videoWidth || 1280;
+    const vh = video.videoHeight || 720;
+    const videoAspect = vw / vh;
+    const containerAspect = cw / ch;
+
+    let renderedWidth = cw;
+    let renderedHeight = ch;
+    let offsetX = 0;
+    let offsetYPixel = 0;
+
+    if (containerAspect > videoAspect) {
+      renderedHeight = ch;
+      renderedWidth = ch * videoAspect;
+      offsetX = (cw - renderedWidth) / 2;
+    } else {
+      renderedWidth = cw;
+      renderedHeight = cw / videoAspect;
+      offsetYPixel = (ch - renderedHeight) / 2;
+    }
+
+    // Accurate Eye Pupil Centers (Normal Video Frame Coordinates, 0 to 1)
+    const eyeLX = leftInner ? (leftOuter.x + leftInner.x) / 2 : leftOuter.x;
+    const eyeLY = leftInner ? (leftOuter.y + leftInner.y) / 2 : leftOuter.y;
+    const eyeRX = rightInner ? (rightOuter.x + rightInner.x) / 2 : rightOuter.x;
+    const eyeRY = rightInner ? (rightOuter.y + rightInner.y) / 2 : rightOuter.y;
+
+    // Midpoint between eye centers
+    const midEyeX = (eyeLX + eyeRX) / 2;
+    const midEyeY = (eyeLY + eyeRY) / 2;
+
+    // Anchor: Nasion + MidEye blend for glasses, Forehead for hats
+    const anchorX = isHat ? (foreheadTop ? foreheadTop.x : midEyeX) : (midEyeX * 0.4 + nasion.x * 0.6);
+    const anchorY = isHat ? (foreheadTop ? foreheadTop.y : midEyeY) : (midEyeY * 0.4 + nasion.y * 0.6);
+
+    // Screen Pixel Coordinates (Mirrored Video Feed -X)
+    const screenX = offsetX + (1 - anchorX) * renderedWidth;
+    const screenY = offsetYPixel + anchorY * renderedHeight;
+
+    // Convert Screen Pixels to Three.js NDC (-1 to +1)
+    const ndcX = (screenX / cw) * 2 - 1;
+    const ndcY = 1 - (screenY / ch) * 2;
+
+    // Camera Frustum Dimensions at Z = 0
+    const halfH = Math.tan((45 * Math.PI) / 360) * 4.2;
+    const halfW = halfH * (cw / ch);
+
+    const worldX = ndcX * halfW;
+    const worldY = ndcY * halfH + (isHat ? 0.38 : -0.02) + offsetY * 0.012;
+
+    // Screen Positions of Both Eyes for Angle & Scale
+    const screenLX = offsetX + (1 - eyeLX) * renderedWidth;
+    const screenLY = offsetYPixel + eyeLY * renderedHeight;
+    const screenRX = offsetX + (1 - eyeRX) * renderedWidth;
+    const screenRY = offsetYPixel + eyeRY * renderedHeight;
+
+    // Mirrored delta: On mirrored screen, subject's right eye is on the Left (screenRX < screenLX)
+    // Left-to-Right vector on screen: (screenLX - screenRX, screenLY - screenRY)
+    const deltaX = screenLX - screenRX;
+    const deltaY = screenLY - screenRY;
+    const pixelDist = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+    // 1. Stable Roll (Tilt angle around Z)
+    // When head tilts right, deltaY changes
+    const rollAngle = Math.atan2(deltaY, deltaX);
+    const safeRoll = THREE.MathUtils.clamp(rollAngle, -0.65, 0.65);
+
+    // 2. Stable Yaw (Left/Right turn)
+    const screenBridgeX = offsetX + (1 - nasion.x) * renderedWidth;
+    const dLeft = Math.abs(screenLX - screenBridgeX);
+    const dRight = Math.abs(screenBridgeX - screenRX);
+    const yawVal = (dLeft - dRight) / (dLeft + dRight + 0.001);
+    const safeYaw = THREE.MathUtils.clamp(yawVal * 0.7, -0.45, 0.45);
+
+    // 3. Stable Pitch (Up/Down tilt)
+    let safePitch = 0;
+    if (noseTip) {
+      const tipY = offsetYPixel + noseTip.y * renderedHeight;
+      const bridgeY = offsetYPixel + nasion.y * renderedHeight;
+      const noseLength = tipY - bridgeY;
+      const expectedLength = pixelDist * 0.42;
+      const pitchRatio = (noseLength - expectedLength) / (expectedLength + 0.001);
+      safePitch = THREE.MathUtils.clamp(pitchRatio * 0.55, -0.25, 0.25);
+    }
+
+    // World Space Scale (Glasses width is ~1.55x the Inter-Pupillary Distance)
+    const worldInterPupil = (pixelDist / cw) * (2 * halfW);
+    const baseScale = isHat ? worldInterPupil * 1.95 : worldInterPupil * 1.55;
+    const finalScale = baseScale * (scaleMultiplier / 100);
+
+    // 60 FPS Smooth Interpolation
+    group.position.x = THREE.MathUtils.lerp(group.position.x, worldX, 0.5);
+    group.position.y = THREE.MathUtils.lerp(group.position.y, worldY, 0.5);
+    group.position.z = THREE.MathUtils.lerp(group.position.z, 0.05, 0.5);
+
+    group.rotation.z = THREE.MathUtils.lerp(group.rotation.z, safeRoll, 0.5);
+    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw, 0.4);
+    group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, safePitch, 0.4);
+
+    group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.5);
+  };;
+
   return (
-    <div className="relative w-full h-full rounded-2xl overflow-hidden bg-slate-950 border border-white/10 shadow-2xl flex items-center justify-center">
-      {/* Background Live Webcam Feed */}
-      {viewMode === "ar" && (
-        <video
-          ref={videoRef}
-          className="absolute inset-0 w-full h-full object-cover -scale-x-100 rounded-2xl z-0"
-          autoPlay
-          playsInline
-          muted
-        />
-      )}
+    <div className="w-full h-full flex flex-col space-y-4">
+      {/* 3D AR & Studio Viewport */}
+      <div className="relative w-full h-[520px] sm:h-[580px] rounded-3xl overflow-hidden bg-slate-950 border border-white/10 shadow-2xl flex items-center justify-center">
+        {/* 3D WebGL Canvas Layer Overlay */}
+        <div ref={containerRef} className="absolute inset-0 w-full h-full z-10 pointer-events-none" />
 
-      {/* 3D WebGL Canvas Layer Overlay */}
-      <div ref={containerRef} className="absolute inset-0 w-full h-full z-10 pointer-events-none" />
+        {/* Mode 1: Live Video AR Feed */}
+        {viewMode === "ar" ? (
+          <div className="relative w-full h-full flex items-center justify-center bg-black overflow-hidden select-none">
+            <video
+              ref={videoRef}
+              className="w-full h-full object-contain -scale-x-100"
+              autoPlay
+              playsInline
+              muted
+            />
 
-      {/* Top Floating Status Bar */}
-      <div className="absolute top-3 left-3 right-3 z-20 flex items-center justify-between gap-2 pointer-events-auto">
-        <div className="flex items-center space-x-2 bg-slate-900/85 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 shadow-lg text-xs font-mono">
-          {viewMode === "ar" ? (
-            isTrackingFace ? (
-              <>
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                </span>
-                <span className="text-emerald-400 font-semibold">AR Live Tracking Aktif</span>
-              </>
-            ) : cameraReady ? (
-              <>
-                <span className="h-2.5 w-2.5 rounded-full bg-amber-400 animate-pulse"></span>
-                <span className="text-amber-300">Posisikan Kepala di Depan Kamera</span>
-              </>
-            ) : cameraError ? (
-              <>
-                <span className="h-2.5 w-2.5 rounded-full bg-rose-400"></span>
-                <span className="text-rose-300">{cameraError}</span>
-              </>
-            ) : (
-              <>
-                <RefreshCw className="w-3 h-3 text-indigo-400 animate-spin" />
-                <span className="text-slate-300">Menghubungkan Kamera AR...</span>
-              </>
-            )
-          ) : (
-            <>
-              <Move3d className="w-3.5 h-3.5 text-indigo-400" />
-              <span className="text-indigo-300">Mode 3D Studio 360° Inspection</span>
-            </>
-          )}
-        </div>
+            {isTrackingFace && (
+              <div className="absolute top-4 left-4 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono z-30">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                <span>AR 3D GLB HEAD TRACKING (60 FPS)</span>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Mode 2: 3D Studio 360 Turntable */
+          <div className="relative w-full h-full flex items-center justify-center bg-gradient-to-b from-surface-200/50 via-surface-100/40 to-slate-950">
+            <div className="absolute bottom-6 w-72 h-72 rounded-full bg-indigo-500/10 border border-indigo-500/20 blur-sm pointer-events-none" />
+            <div className="absolute top-4 left-4 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10px] font-mono z-20">
+              <Sparkles className="w-3 h-3 text-indigo-400" />
+              <span>STUDIO 3D INSPECTION 360°</span>
+            </div>
+          </div>
+        )}
 
-        {/* View Mode Toggle: AR vs 3D Studio */}
-        <div className="flex items-center bg-slate-900/85 backdrop-blur-md p-0.5 rounded-xl border border-white/10 shadow-lg text-xs">
+        {/* Top Floating Action Pill: Mode Selector */}
+        <div className="absolute top-4 right-4 z-30 flex items-center space-x-1.5 bg-slate-900/90 backdrop-blur-md p-1 rounded-2xl border border-white/15 shadow-2xl">
           <button
             onClick={() => setViewMode("ar")}
-            className={`px-2.5 py-1 rounded-lg font-semibold flex items-center space-x-1 transition-all ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all ${
               viewMode === "ar"
-                ? "bg-indigo-600 text-white shadow-sm"
+                ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20"
                 : "text-slate-400 hover:text-white"
             }`}
           >
-            <Camera className="w-3 h-3" />
-            <span>AR Live</span>
+            <Zap className="w-3.5 h-3.5 text-amber-300" />
+            <span>Pasang ke Wajah (AR 3D)</span>
           </button>
           <button
             onClick={() => setViewMode("studio")}
-            className={`px-2.5 py-1 rounded-lg font-semibold flex items-center space-x-1 transition-all ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all ${
               viewMode === "studio"
-                ? "bg-indigo-600 text-white shadow-sm"
+                ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md shadow-purple-500/20"
                 : "text-slate-400 hover:text-white"
             }`}
           >
-            <Eye className="w-3 h-3" />
-            <span>3D Studio</span>
+            <Move3d className="w-3.5 h-3.5" />
+            <span>Putar 360°</span>
           </button>
+        </div>
+
+        {/* Bottom Floating Info Badge */}
+        <div className="absolute bottom-4 left-4 z-20 hidden sm:flex items-center space-x-2.5 px-3.5 py-1.5 rounded-2xl bg-slate-900/85 backdrop-blur-md border border-white/10 text-xs shadow-lg">
+          <Box className="w-3.5 h-3.5 text-blue-400" />
+          <span className="font-semibold text-white">{activeItem.name}</span>
+          <span className="text-emerald-400 text-[11px] font-mono font-bold">
+            [{modelSource}]
+          </span>
         </div>
       </div>
 
-      {/* Bottom Floating Hint Overlay */}
-      <div className="absolute bottom-3 left-3 right-3 z-20 flex justify-between items-center pointer-events-none">
-        <div className="bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 text-[11px] text-slate-300 flex items-center space-x-1.5 shadow-md">
-          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-          <span>
-            {viewMode === "ar"
-              ? "Gerakkan kepala Anda (geleng, angguk, miring) untuk menguji presisi penempatan AR."
-              : "Menampilkan preview 3D interaktif 360° dari sudut pandang studio."}
-          </span>
+      {/* AR Fine-Tuning Micro-Controls */}
+      <div className="glass-panel p-4 rounded-3xl border border-white/10 bg-surface-100/60 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center space-x-3 text-xs">
+          <Sliders className="w-4 h-4 text-indigo-400" />
+          <span className="font-semibold text-slate-300">Penyesuaian Posisi Kacamata:</span>
+          <div className="flex items-center space-x-1.5">
+            <button
+              onClick={() => setOffsetY((prev) => prev + 1)}
+              className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 font-bold text-xs"
+              title="Geser Naik"
+            >
+              ▲ Naik
+            </button>
+            <button
+              onClick={() => setOffsetY((prev) => prev - 1)}
+              className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 font-bold text-xs"
+              title="Geser Turun"
+            >
+              ▼ Turun
+            </button>
+            <button
+              onClick={() => setOffsetY(0)}
+              className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-white/10"
+              title="Reset Posisi"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
 
-        <div className="hidden sm:flex items-center space-x-1 bg-slate-900/80 backdrop-blur-md px-2.5 py-1.5 rounded-xl border border-white/10 text-[11px] text-slate-400">
-          <span className="font-mono">{activeItem.name}</span>
+        <div className="flex items-center space-x-3 text-xs">
+          <span className="text-slate-400 font-mono">Skala Ukuran: <strong className="text-blue-400">{scaleMultiplier}%</strong></span>
+          <input
+            type="range"
+            min={70}
+            max={130}
+            value={scaleMultiplier}
+            onChange={(e) => setScaleMultiplier(Number(e.target.value))}
+            className="w-28 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
+          />
         </div>
       </div>
     </div>
   );
 };
+
+export default ARCanvasViewer;

@@ -32,7 +32,7 @@ export interface DynamicQuestion {
 }
 
 interface TargetedQuizProps {
-  subcategory: "glasses" | "hats" | "shirts" | "jackets";
+  subcategory: "glasses" | "hats" | "shirts";
   userProfile: Record<string, any>;
   onSubmitQuiz: (
     answers: Record<string, string>,
@@ -178,10 +178,14 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
       <div className="text-center space-y-2">
         <button
           onClick={onBack}
-          className="inline-flex items-center space-x-1.5 text-xs text-slate-400 hover:text-white transition-colors mb-2"
+          className="inline-flex items-center space-x-1.5 text-xs text-slate-400 hover:text-white transition-colors mb-2 cursor-pointer font-mono"
         >
-          <ChevronLeft className="w-4 h-4" />
-          <span>Kembali ke Pemindaian Wajah</span>
+          <ChevronLeft className="w-4 h-4 text-indigo-400" />
+          <span>
+            {subcategory === "shirts"
+              ? "Kembali ke Laporan Analisis Tubuh"
+              : "Kembali ke Pemindaian Wajah"}
+          </span>
         </button>
 
         <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-mono">

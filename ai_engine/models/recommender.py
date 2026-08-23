@@ -139,7 +139,11 @@ class StyleRecommender:
     def _load_catalog(self, file_path: str) -> List[Dict[str, Any]]:
         if os.path.exists(file_path):
             with open(file_path, "r", encoding="utf-8") as f:
-                return json.load(f).get("items", [])
+                data = json.load(f)
+                if isinstance(data, dict):
+                    return data.get("items", [])
+                elif isinstance(data, list):
+                    return data
         return []
 
     def recommend(
@@ -149,7 +153,7 @@ class StyleRecommender:
         quiz_answers: Dict[str, Any],
     ) -> CuratedRecommendationResult:
         """
-        Calculates compatibility scores and curates the Top-4 Style Archetypes.
+        Calculates compatibility scores and curates the Top-4 Style Archetypes based on user AI scan & quiz.
         """
         # Normalize subcategory
         subcat = subcategory.lower().strip()
@@ -157,92 +161,143 @@ class StyleRecommender:
             subcat = "glasses"
         elif subcat in ["topi", "hats", "headwear"]:
             subcat = "hats"
-        elif subcat in ["baju", "kaos", "kemeja", "shirts", "tshirt"]:
+        elif subcat in ["baju", "kaos", "kemeja", "shirts", "tshirt", "apparel"]:
             subcat = "shirts"
-        elif subcat in ["jaket", "outerwear", "jackets", "blazer"]:
-            subcat = "jackets"
         else:
             subcat = "glasses"
 
         # 1. Filter catalog items by subcategory
-        candidate_items = [item for item in self.catalog if item.get("subcategory") == subcat]
+        candidate_items = [
+            item for item in self.catalog
+            if item.get("category") == subcat or item.get("subcategory") == subcat
+        ]
         if not candidate_items:
             candidate_items = self.catalog[:4]
 
-        # Extract profile attributes
-        undertone = user_profile.get("undertone", "Warm")
-        face_shape = user_profile.get("face_shape", "Oval")
-        body_shape = user_profile.get("body_shape", "Hourglass")
-        mst_code = user_profile.get("monk_tone", "MST-06")
+        # Helper to unpack profile values whether string or nested dict
+        def extract_profile_str(val: Any, subkey: str = "", default: str = "") -> str:
+            if isinstance(val, dict):
+                if subkey and subkey in val:
+                    return str(val[subkey])
+                for k in ["undertone", "shape", "code", "index", "hex", "label", "value"]:
+                    if k in val:
+                        return str(val[k])
+                return default
+            return str(val) if val is not None else default
 
-        # Extract quiz attributes (both standard and deep batch questions)
-        quiz_occasion = quiz_answers.get("occasion", "Casual")
-        quiz_fit = quiz_answers.get("fit_preference", "Regular Fit")
-        quiz_color = quiz_answers.get("color_mood", "Earth Tone")
-        quiz_brand_style = quiz_answers.get("brand_style", "")
-        quiz_comfort = quiz_answers.get("comfort_priority", "")
-        quiz_budget = quiz_answers.get("budget_range", "")
+        # Extract profile attributes
+        undertone = extract_profile_str(user_profile.get("undertone"), "undertone", "Warm")
+        face_shape = extract_profile_str(user_profile.get("face_shape"), "shape", "Oval")
+        body_shape = extract_profile_str(user_profile.get("body_shape"), "shape", "Hourglass")
+        mst_code = extract_profile_str(user_profile.get("monk_tone"), "code", "MST-06")
+
+        # Extract quiz attributes
+        quiz_occasion = str(quiz_answers.get("occasion", "Casual"))
+        quiz_fit = str(quiz_answers.get("fit_preference", "Regular Fit"))
+        quiz_color = str(quiz_answers.get("color_mood", "Earth Tone"))
+        quiz_brand_style = str(quiz_answers.get("brand_style", ""))
+        quiz_comfort = str(quiz_answers.get("comfort_priority", ""))
+        quiz_budget = str(quiz_answers.get("budget_range", ""))
 
         scored_items = []
         for item in candidate_items:
-            # A. Color Score (0-100)
-            color_score = 75.0
-            base_col = item.get("baseColour", "")
-            if undertone == "Warm" and base_col in ["Terracotta", "Mustard Yellow", "Olive Green", "Warm Beige", "Gold"]:
-                color_score = 98.0
-            elif undertone == "Cool" and base_col in ["Navy Blue", "Charcoal Grey", "Emerald Green", "Burgundy / Berry"]:
-                color_score = 98.0
-            elif undertone == "Olive" and base_col in ["Olive Green", "Deep Teal", "Terracotta", "Burgundy / Berry"]:
-                color_score = 98.0
-            elif undertone == "Neutral":
-                color_score = 92.0
+            base_col = item.get("baseColour") or item.get("colour") or "Black"
+            model_type = item.get("modelType") or subcat
 
-            # Color mood bonus
-            if "earth" in quiz_color.lower() and base_col in ["Terracotta", "Mustard Yellow", "Olive Green", "Warm Beige"]:
-                color_score = min(100.0, color_score + 2.0)
-            elif "jewel" in quiz_color.lower() and base_col in ["Navy Blue", "Emerald Green", "Burgundy / Berry"]:
-                color_score = min(100.0, color_score + 2.0)
-            elif "neutral" in quiz_color.lower() and base_col in ["Charcoal Grey", "Warm Beige"]:
-                color_score = min(100.0, color_score + 2.0)
+            # ----------------------------------------------------
+            # A. Color Harmony Score (0 - 100)
+            # ----------------------------------------------------
+            color_score = 80.0
+            u_low = undertone.lower()
+            b_low = base_col.lower()
 
-            # B. Shape Score (0-100)
-            shape_score = 75.0
-            if item.get("category") == "Accessories":
-                if face_shape in item.get("flatteringFaceShapes", []):
-                    shape_score = 96.0
+            if "warm" in u_low:
+                if any(c in b_low for c in ["gold", "terracotta", "warm beige", "mustard", "olive", "straw", "crimson", "sand", "brown"]):
+                    color_score = 98.5
+                elif any(c in b_low for c in ["black", "white", "grey"]):
+                    color_score = 92.0
+                else:
+                    color_score = 82.0
+            elif "cool" in u_low:
+                if any(c in b_low for c in ["silver", "navy", "charcoal", "sky blue", "blue", "emerald", "berry", "burgundy"]):
+                    color_score = 98.5
+                elif any(c in b_low for c in ["black", "white", "grey"]):
+                    color_score = 94.0
+                else:
+                    color_score = 80.0
+            elif "olive" in u_low:
+                if any(c in b_low for c in ["olive", "deep teal", "terracotta", "burgundy", "charcoal", "navy"]):
+                    color_score = 97.5
+                else:
+                    color_score = 88.0
+            else:  # Neutral
+                color_score = 94.0
+
+            # Color Mood bonus
+            cm_low = quiz_color.lower()
+            if "earth" in cm_low and any(c in b_low for c in ["terracotta", "mustard", "olive", "warm beige", "sand", "straw"]):
+                color_score = min(100.0, color_score + 3.0)
+            elif "jewel" in cm_low and any(c in b_low for c in ["navy", "emerald", "gold", "crimson", "burgundy"]):
+                color_score = min(100.0, color_score + 3.0)
+            elif "monochrome" in cm_low and any(c in b_low for c in ["black", "white", "grey", "charcoal", "silver"]):
+                color_score = min(100.0, color_score + 3.0)
+
+            # ----------------------------------------------------
+            # B. Shape & Silhouette Harmony Score (0 - 100)
+            # ----------------------------------------------------
+            shape_score = 82.0
+            if subcat in ["glasses", "hats"]:
+                flattering_faces = [f.lower() for f in item.get("flatteringFaceShapes", [])]
+                if face_shape.lower() in flattering_faces:
+                    shape_score = 97.0
+                elif face_shape.lower() == "oval":
+                    shape_score = 95.0  # Oval is versatile
+                elif face_shape.lower() == "round" and model_type in ["wayfarer", "geometric", "browline", "cap", "snapback"]:
+                    shape_score = 94.0
+                elif face_shape.lower() == "square" and model_type in ["aviator", "round", "straw", "beanie"]:
+                    shape_score = 94.0
+                elif face_shape.lower() == "heart" and model_type in ["aviator", "browline", "straw", "cap"]:
+                    shape_score = 93.0
+                else:
+                    shape_score = 84.0
             else:
-                if body_shape in item.get("flatteringBodyShapes", []):
-                    shape_score = 96.0
+                # Shirts / Apparel
+                flattering_bodies = [b.lower() for b in item.get("flatteringBodyShapes", [])]
+                if body_shape.lower() in flattering_bodies:
+                    shape_score = 97.0
+                elif body_shape.lower() == "hourglass":
+                    shape_score = 95.0
+                elif body_shape.lower() == "rectangle" and model_type in ["hoodie", "tshirt", "oversized"]:
+                    shape_score = 94.0
+                elif body_shape.lower() == "inverted triangle" and model_type in ["jersey", "tshirt", "tanktop"]:
+                    shape_score = 94.0
+                elif body_shape.lower() == "pear" and model_type in ["hoodie", "longsleeve"]:
+                    shape_score = 93.0
+                else:
+                    shape_score = 85.0
 
-            # C. Occasion & Quiz Fit Score (0-100)
-            quiz_score = 75.0
-            if item.get("usage", "").lower() == quiz_occasion.lower():
+            # ----------------------------------------------------
+            # C. Occasion, Fit & Personality Score (0 - 100)
+            # ----------------------------------------------------
+            quiz_score = 80.0
+            item_usage = item.get("usage", "Casual").lower()
+            if item_usage == quiz_occasion.lower():
                 quiz_score += 12.0
+            elif "casual" in quiz_occasion.lower() and item_usage in ["casual", "streetwear"]:
+                quiz_score += 8.0
 
             style_tags = [t.lower() for t in item.get("styleTags", [])]
             if any(tag in quiz_fit.lower() for tag in style_tags):
                 quiz_score += 5.0
 
-            # Deep personalization bonuses
             if quiz_brand_style:
-                if any(quiz_brand_style.lower() in t for t in style_tags) or quiz_brand_style.lower() in item.get("description", "").lower():
+                if any(quiz_brand_style.lower() in t for t in style_tags):
                     quiz_score += 4.0
 
-            if quiz_comfort:
-                if "comfort" in quiz_comfort.lower() and any(t in ["relaxed", "casual", "utility"] for t in style_tags):
-                    quiz_score += 3.0
-                elif "style" in quiz_comfort.lower() and any(t in ["tailored", "sharp", "structured"] for t in style_tags):
-                    quiz_score += 3.0
+            if quiz_comfort and "comfort" in quiz_comfort.lower() and model_type in ["tshirt", "hoodie", "beanie"]:
+                quiz_score += 3.0
 
-            if quiz_budget:
-                price_str = item.get("priceIdr", "0")
-                price_num = int("".join([c for c in price_str if c.isdigit()]) or "0")
-                if "budget" in quiz_budget.lower() and price_num <= 250000:
-                    quiz_score += 3.0
-                elif "premium" in quiz_budget.lower() and price_num >= 350000:
-                    quiz_score += 3.0
-
-            # Combined Score
+            # Weighted Total
             total_score = (0.40 * color_score) + (0.35 * shape_score) + (0.25 * min(100.0, quiz_score))
 
             scored_items.append({
@@ -252,10 +307,10 @@ class StyleRecommender:
                 "shape_score": shape_score,
             })
 
-        # Sort by highest score first
+        # Sort by total score descending
         scored_items.sort(key=lambda x: x["total_score"], reverse=True)
 
-        # 4 Curated Archetypes with distinct models
+        # 4 Curated Archetypes
         archetypes = [
             ("perfect_match", "Pilihan 1: The Perfect Match (#1 Best Fit)"),
             ("safe_classic", "Pilihan 2: Safe Classic (Pilihan Serbaguna)"),
@@ -263,7 +318,7 @@ class StyleRecommender:
             ("modern_trendy", "Pilihan 4: Modern Silhouette (Varian Kekinian)"),
         ]
 
-        # Pick 4 distinct models if possible
+        # Select 4 distinct model types if available
         selected_entries = []
         used_model_types = set()
 
@@ -275,7 +330,6 @@ class StyleRecommender:
             if len(selected_entries) == 4:
                 break
 
-        # Fallback if less than 4 unique models
         if len(selected_entries) < 4:
             for entry in scored_items:
                 if entry not in selected_entries:
@@ -289,50 +343,55 @@ class StyleRecommender:
             item_data = entry["item"]
             arch_key, arch_title = archetypes[idx]
 
-            fit_text = f" ({quiz_fit})" if quiz_fit else ""
-            brand_text = f" bernuansa {quiz_brand_style}" if quiz_brand_style else ""
+            base_col = item_data.get("baseColour") or "Black"
+            hex_col = item_data.get("hex_colour") or "#111827"
+            item_name = item_data.get("name") or "Fashion Item"
+            item_usage = item_data.get("usage") or "Casual"
+            item_price = item_data.get("priceIdr") or "Rp299.000"
+            model_p = item_data.get("model_3d_path") or ""
+            prev_p = item_data.get("preview_image_url") or ""
 
             if idx == 0:
                 reason = (
-                    f"Rekomendasi terbaik skor {entry['total_score']:.1f}%. Disesuaikan untuk momen {quiz_occasion}"
-                    f"{brand_text}, warna {item_data['baseColour']} menyatu selaras dengan rona {undertone} kulit Anda "
-                    f"dan siluet {item_data['name']} dirancang khusus untuk proporsi wajah {face_shape}."
+                    f"Rekomendasi terbaik skor {entry['total_score']:.1f}%. Disesuaikan untuk kebutuhan {quiz_occasion}, "
+                    f"rona {base_col} berpadu harmonis dengan undertone {undertone} kulit Anda "
+                    f"dan siluet {item_name} menyeimbangkan proporsi {face_shape if subcat != 'shirts' else body_shape}."
                 )
             elif idx == 1:
                 reason = (
-                    f"Opsi klasik serbaguna untuk kebutuhan {quiz_occasion} dengan warna netral {item_data['baseColour']} "
-                    f"yang aman dan elegan dipadupadankan."
+                    f"Pilihan klasik serbaguna bernuansa {base_col} yang aman dipadukan untuk aktivitas {item_usage} "
+                    f"tanpa mendominasi fitur alami tubuh Anda."
                 )
             elif idx == 2:
                 reason = (
-                    f"Pilihan percaya diri dengan aksen warna kontras {item_data['baseColour']} untuk nuansa {quiz_color} "
-                    f"yang mempertegas karakter personal tanpa bertabrakan dengan undertone Anda."
+                    f"Pilihan percaya diri dengan aksen warna {base_col} ({quiz_color}) yang mempertegas karakter visual "
+                    f"dan memberikan kontras elegan pada rona kulit Anda."
                 )
             else:
                 reason = (
-                    f"Potongan modern berkarakter kekinian{fit_text} yang dirancang untuk menjaga kenyamanan "
-                    f"dan estetika visual wajah {face_shape} Anda."
+                    f"Varian siluet kontemporer {item_name} yang memberikan aksen modern dan proporsi dinamis "
+                    f"untuk tampilan harian yang stylish."
                 )
 
             rec_item = RecommendationItem(
                 rank=idx + 1,
                 archetype=arch_key,
                 archetype_title=arch_title,
-                item_id=item_data["id"],
-                name=item_data["name"],
-                category=item_data["category"],
-                subcategory=item_data["subcategory"],
-                base_colour=item_data["baseColour"],
-                hex_colour=item_data.get("hexColour", "#111827"),
-                usage=item_data["usage"],
-                model_3d_path=item_data.get("model3dPath", ""),
-                preview_image_url=item_data.get("previewImageUrl", ""),
-                price_idr=item_data.get("priceIdr", "Rp299.000"),
+                item_id=item_data.get("id", f"item-{idx}"),
+                name=item_name,
+                category=item_data.get("category", "Accessories"),
+                subcategory=item_data.get("subcategory", subcat),
+                base_colour=base_col,
+                hex_colour=hex_col,
+                usage=item_usage,
+                model_3d_path=model_p,
+                preview_image_url=prev_p,
+                price_idr=item_price,
                 compatibility_score=entry["total_score"],
                 color_match_score=entry["color_score"],
                 shape_match_score=entry["shape_score"],
                 stylist_reason=reason,
-                model_type=item_data.get("modelType"),
+                model_type=item_data.get("modelType") or item_data.get("subcategory"),
             )
             curated_items.append(rec_item)
 
@@ -343,10 +402,8 @@ class StyleRecommender:
             "undertone": undertone,
             "face_shape": face_shape,
             "body_shape": body_shape,
-            "target_occasion": quiz_occasion,
-            "target_color_mood": quiz_color,
-            "target_fit": quiz_fit,
-            "compatibility_guarantee": f"{primary_item.compatibility_score}%" if primary_item else "95%",
+            "quiz_answers": quiz_answers,
+            "total_candidates": len(candidate_items),
         }
 
         return CuratedRecommendationResult(

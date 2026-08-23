@@ -46,8 +46,16 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-5 items-center">
           <div className="sm:col-span-5 aspect-square rounded-2xl overflow-hidden border border-white/10 bg-surface-50">
             <img
-              src={item.preview_image_url}
+              src={
+                item.preview_image_url && !item.preview_image_url.endsWith(".obj")
+                  ? item.preview_image_url
+                  : `/images/products/preview/${item.id}.svg`
+              }
               alt={item.name}
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = `/images/products/preview/${item.id}.svg`;
+              }}
               className="w-full h-full object-cover"
             />
           </div>

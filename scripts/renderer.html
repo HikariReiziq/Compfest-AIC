@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GLB 3D-to-2D Studio Snapshot Renderer</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #09090b;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    #render-canvas {
+      width: 512px;
+      height: 512px;
+      border-radius: 20px;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.9);
+      background: radial-gradient(circle at center, #1e293b 0%, #09090b 100%);
+    }
+    #status {
+      margin-top: 20px;
+      font-size: 16px;
+      font-weight: 600;
+      color: #38bdf8;
+    }
+    #counter {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #94a3b8;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+</head>
+<body>
+  <canvas id="render-canvas" width="512" height="512"></canvas>
+  <div id="status">Menginisialisasi 3D Studio Renderer...</div>
+  <div id="counter">Mempersiapkan dataset...</div>
+
+  <script>
+    const canvas = document.getElementById('render-canvas');
+    const statusEl = document.getElementById('status');
+    const counterEl = document.getElementById('counter');
+
+    // Three.js Scene Setup
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+    const renderer = new THREE.WebGLRenderer({
+      canvas,
+      antialias: true,
+      alpha: true,
+      preserveDrawingBuffer: true
+    });
+    renderer.setSize(512, 512);
+    renderer.setPixelRatio(1.5);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.4;
+    renderer.outputEncoding = THREE.sRGBEncoding;
+
+    // 3-Point Studio Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.3);
+    scene.add(ambientLight);
+
+    const keyLight = new THREE.DirectionalLight(0xffffff, 2.5);
+    keyLight.position.set(5, 6, 6);
+    scene.add(keyLight);
+
+    const fillLight = new THREE.DirectionalLight(0x93c5fd, 1.5);
+    fillLight.position.set(-5, 3, 5);
+    scene.add(fillLight);
+
+    const rimLight = new THREE.DirectionalLight(0xfde047, 1.8);
+    rimLight.position.set(0, -5, -5);
+    scene.add(rimLight);
+
+    const gltfLoader = new THREE.GLTFLoader();
+
+    function renderItem(item) {
+      return new Promise((resolve) => {
+        // Clear previous meshes
+        const toRemove = [];
+        scene.children.forEach(child => {
+          if (child.isGroup || child.isMesh) toRemove.push(child);
+        });
+        toRemove.forEach(c => scene.remove(c));
+
+        const modelUrl = item.model_3d_path;
+
+        gltfLoader.load(
+          modelUrl,
+          (gltf) => {
+            const model = gltf.scene;
+
+            model.traverse((child) => {
+              if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+                if (!child.material || (!child.material.map && !child.material.color)) {
+                  child.material = new THREE.MeshStandardMaterial({
+                    color: item.hex_colour || 0xcccccc,
+                    roughness: 0.35,
+                    metalness: 0.2
+                  });
+                }
+              }
+            });
+
+            // Center and scale model
+            const box = new THREE.Box3().setFromObject(model);
+            const size = new THREE.Vector3();
+            box.getSize(size);
+            const center = new THREE.Vector3();
+            box.getCenter(center);
+
+            model.position.x -= center.x;
+            model.position.y -= center.y;
+            model.position.z -= center.z;
+
+            const maxDim = Math.max(size.x, size.y, size.z) || 1;
+            const targetDim = 1.8;
+            const scale = targetDim / maxDim;
+            model.scale.set(scale, scale, scale);
+
+            // Optimal 3D Showcase Angle
+            if (item.subcategory === 'glasses') {
+              model.rotation.set(0.12, 0.42, 0);
+              camera.position.set(0, 0.15, 3.1);
+            } else if (item.subcategory === 'hats') {
+              model.rotation.set(0.22, 0.48, 0);
+              camera.position.set(0, 0.35, 3.3);
+            } else {
+              // Shirts
+              model.rotation.set(0.06, 0.28, 0);
+              camera.position.set(0, 0.05, 3.4);
+            }
+
+            camera.lookAt(0, 0, 0);
+            scene.add(model);
+
+            renderer.render(scene, camera);
+
+            // Export to 2D PNG
+            const dataUrl = canvas.toDataURL('image/png');
+            const targetFilename = `${item.id}.png`;
+
+            fetch(`/save-image?filename=${targetFilename}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain' },
+              body: dataUrl
+            })
+            .then(res => res.json())
+            .then(() => resolve())
+            .catch(() => resolve());
+          },
+          undefined,
+          () => resolve() // Continue on error
+        );
+      });
+    }
+
+    async function autoStart() {
+      try {
+        const res = await fetch('/catalog.json');
+        const data = await res.json();
+        const items = data.items || [];
+        
+        statusEl.textContent = `Memulai rendering 2D dari ${items.length} Model 3D GLB Asli...`;
+
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          statusEl.textContent = `Rendering (${i + 1}/${items.length}): ${item.name}`;
+          counterEl.textContent = `ID: ${item.id} | Subcategory: ${item.subcategory}`;
+          await renderItem(item);
+        }
+
+        statusEl.textContent = `✅ SUKSES! Seluruh ${items.length} Snapshot 2D Selesai Dirender!`;
+        statusEl.style.color = '#10b981';
+        counterEl.textContent = 'Semua file 2D tersimpan di client/public/images/products/preview/';
+        window.allDone = true;
+      } catch (e) {
+        statusEl.textContent = `Error: ${e.message}`;
+        statusEl.style.color = '#ef4444';
+      }
+    }
+
+    window.addEventListener('load', autoStart);
+  </script>
+</body>
+</html>

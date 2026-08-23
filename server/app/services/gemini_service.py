@@ -39,7 +39,25 @@ def _build_tailored_prompt(
     monk_tone = user_profile.get("monk_tone", "MST-06")
 
     subcategory_id = subcategory.lower()
-    item_label = "kacamata (eyewear)" if "glass" in subcategory_id else "topi (headwear)" if "hat" in subcategory_id else subcategory_id
+    if "glass" in subcategory_id:
+        item_label = "kacamata (eyewear)"
+    elif "hat" in subcategory_id:
+        item_label = "topi (headwear)"
+    elif "shirt" in subcategory_id or "apparel" in category.lower():
+        item_label = "setelan pakaian lengkap (atasan baju, bawahan celana, dan sepatu)"
+    elif "jacket" in subcategory_id:
+        item_label = "jaket & outerwear luaran"
+    else:
+        item_label = subcategory_id
+
+    # Detailed body shape context instructions
+    body_context_map = {
+        "Hourglass": "Pengguna memiliki bentuk tubuh Jam Pasir dengan lebar bahu dan pinggul seimbang serta pinggang ramping. Pertanyaan harus menanyakan preferensi penonjolan siluet pinggang (fitted/wrap) vs relaxed layering.",
+        "Pear": "Pengguna memiliki bentuk tubuh Pir dengan pinggul lebih dominan dibanding bahu. Pertanyaan harus menanyakan preferensi penambahan volume/struktur pundak atasan vs bawahan bergaris jatuh lurus (A-line/wide-leg).",
+        "Inverted Triangle": "Pengguna memiliki bentuk tubuh Segitiga Terbalik dengan bahu bidang atletis dan pinggul ramping. Pertanyaan harus menanyakan preferensi kerah V-neck merampingkan vs celana berksen volume (cargo/wide-leg).",
+        "Rectangle": "Pengguna memiliki bentuk tubuh Persegi Panjang dengan proporsi lurus sejajar. Pertanyaan harus menanyakan teknik layering, atasan berikat pinggang (belted), dan celana lipit berpinggang tinggi.",
+        "Apple": "Pengguna memiliki bentuk tubuh Apel dengan torso tengah lebih dominan. Pertanyaan harus menanyakan potongan flowy/empire waist yang anggun dan celana straight-leg.",
+    }
 
     # Detailed biometric context instructions
     face_context_map = {
@@ -57,6 +75,7 @@ def _build_tailored_prompt(
         "Olive": f"Kulit rona zaitun (skala {monk_tone}) membutuhkan kontras hangat-sejuk seperti bronze, deep teal, terracotta, dan vintage amber.",
     }
 
+    body_tip = body_context_map.get(body_shape, f"Sesuaikan dengan proporsi tubuh {body_shape}.")
     face_tip = face_context_map.get(face_shape, f"Sesuaikan dengan proporsi wajah {face_shape}.")
     skin_tip = skin_context_map.get(undertone, f"Sesuaikan dengan undertone {undertone}.")
 

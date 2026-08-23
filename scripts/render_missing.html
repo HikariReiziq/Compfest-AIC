@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Render Missing 9 Snapshots</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
+</head>
+<body style="background:#111; color:#fff;">
+  <canvas id="cv" width="512" height="512"></canvas>
+  <div id="log"></div>
+  <script>
+    const missing = [
+      { id: 'glass-07', model: '/images/products/glasses/glasses_07_tryon_classic.glb', sub: 'glasses', col: '#18181b' },
+      { id: 'glass-08', model: '/images/products/glasses/glasses_08_tryon_retro.glb', sub: 'glasses', col: '#D4AF37' },
+      { id: 'glass-26', model: '/images/products/glasses/glasses_26_tryon_round.glb', sub: 'glasses', col: '#36454F' },
+      { id: 'hat-06', model: '/images/products/hats/hat_06_threejs_facecap.glb', sub: 'hats', col: '#0F172A' },
+      { id: 'hat-14', model: '/images/products/hats/hat_14_dad_hat.glb', sub: 'hats', col: '#374151' },
+      { id: 'hat-20', model: '/images/products/hats/hat_20_runner_cap.glb', sub: 'hats', col: '#2563EB' },
+      { id: 'hat-26', model: '/images/products/hats/hat_26_threejs_facecap.glb', sub: 'hats', col: '#09090B' },
+      { id: 'hat-28', model: '/images/products/hats/hat_28_venice_carnival_mask.glb', sub: 'hats', col: '#D97706' },
+      { id: 'shirt-29', model: '/images/products/shirts/shirt_29_mf_longsleeve_94.glb', sub: 'shirts', col: '#1E3A8A' }
+    ];
+
+    const cv = document.getElementById('cv');
+    const log = document.getElementById('log');
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+    const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true, preserveDrawingBuffer: true });
+    renderer.setSize(512, 512);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.outputEncoding = THREE.sRGBEncoding;
+
+    scene.add(new THREE.AmbientLight(0xffffff, 1.5));
+    const dl1 = new THREE.DirectionalLight(0xffffff, 2.5);
+    dl1.position.set(4, 5, 5);
+    scene.add(dl1);
+    const dl2 = new THREE.DirectionalLight(0x93c5fd, 1.5);
+    dl2.position.set(-4, 2, 4);
+    scene.add(dl2);
+
+    const loader = new THREE.GLTFLoader();
+
+    function renderOne(item) {
+      return new Promise((resolve) => {
+        // Clear meshes
+        const toRemove = [];
+        scene.children.forEach(c => { if (c.isGroup || c.isMesh) toRemove.push(c); });
+        toRemove.forEach(c => scene.remove(c));
+
+        loader.load(item.model, (gltf) => {
+          const m = gltf.scene;
+          m.traverse(c => {
+            if (c.isMesh) {
+              c.geometry.computeVertexNormals();
+              if (!c.material || (!c.material.map && !c.material.color)) {
+                c.material = new THREE.MeshStandardMaterial({ color: item.col, roughness: 0.4, metalness: 0.2 });
+              }
+            }
+          });
+
+          const box = new THREE.Box3().setFromObject(m);
+          const sz = new THREE.Vector3(); box.getSize(sz);
+          const ctr = new THREE.Vector3(); box.getCenter(ctr);
+          m.position.sub(ctr);
+
+          const maxD = Math.max(sz.x, sz.y, sz.z) || 1;
+          const s = 1.8 / maxD;
+          m.scale.set(s, s, s);
+
+          if (item.sub === 'glasses') {
+            m.rotation.set(0.12, 0.42, 0);
+            camera.position.set(0, 0.15, 3.1);
+          } else if (item.sub === 'hats') {
+            m.rotation.set(0.22, 0.48, 0);
+            camera.position.set(0, 0.35, 3.3);
+          } else {
+            m.rotation.set(0.06, 0.28, 0);
+            camera.position.set(0, 0.05, 3.4);
+          }
+          camera.lookAt(0, 0, 0);
+          scene.add(m);
+
+          renderer.render(scene, camera);
+
+          const dataUrl = cv.toDataURL('image/png');
+          fetch(`/save-image?filename=${item.id}.png`, {
+            method: 'POST',
+            body: dataUrl
+          }).then(() => {
+            log.innerHTML += `Saved ${item.id}.png<br>`;
+            resolve();
+          }).catch(() => resolve());
+        }, undefined, (e) => {
+          log.innerHTML += `Err ${item.id}: ${e}<br>`;
+          resolve();
+        });
+      });
+    }
+
+    async function run() {
+      for (const it of missing) {
+        await renderOne(it);
+      }
+      log.innerHTML += `<b>ALL 9 FINISHED</b>`;
+      window.done = true;
+    }
+    window.addEventListener('load', run);
+  </script>
+</body>
+</html>

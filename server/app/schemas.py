@@ -299,3 +299,81 @@ class DynamicQuestionsResponse(BaseModel):
     batch: int = 1
     is_mock: bool = False
 
+
+# --- Full-Body Biometrics & Multi-Dimensional Schemas ---
+
+class BodyRatiosIn(BaseModel):
+    shoulder_to_hip_ratio: float
+    waist_to_hip_ratio: float
+    waist_to_shoulder_ratio: float
+    torso_to_leg_ratio: float
+    posture_symmetry: Optional[float] = 0.95
+
+
+class BodyMeasurementsIn(BaseModel):
+    shoulder_width_cm: Optional[float] = None
+    waist_width_cm: Optional[float] = None
+    hip_width_cm: Optional[float] = None
+    torso_length_cm: Optional[float] = None
+    leg_length_cm: Optional[float] = None
+    total_height_cm: Optional[float] = None
+    body_proportion: Optional[str] = "1.0 : 0.8 : 1.0"
+    calibration: str = "height_input"  # "height_input" | "ratio_only"
+
+
+class BodyQualityIn(BaseModel):
+    is_frontal: bool = True
+    yaw_deg: float = 0.0
+    pitch_deg: float = 0.0
+    roll_deg: float = 0.0
+    full_body_visible: bool = True
+    visibility_score: float = 1.0
+    luminance: float = 128.0
+
+
+class BodyLandmarkAnalysisRequest(BaseModel):
+    """Payload fitur turunan dari 33 landmark pose tubuh — angka saja (UU PDP)."""
+    body_ratios: BodyRatiosIn
+    measurements_cm: BodyMeasurementsIn
+    quality: Optional[BodyQualityIn] = Field(default_factory=BodyQualityIn)
+    user_height_input_cm: Optional[float] = 165.0
+
+
+
+class BodyPillarOut(BaseModel):
+    pillar: str  # "upper_silhouette" | "lower_inseam" | "footwear_balance"
+    title: str
+    title_id: str
+    recommendation: str
+    reason: str
+    scientific_basis: str
+
+
+class BodyShapeClassificationOut(BaseModel):
+    shape: str
+    label_indonesian: str
+    confidence: float
+    method: str  # "ansur_ii_rule_engine" | "random_forest"
+    ratios: Dict[str, float]
+    topwear_recommendations: List[str]
+    bottomwear_recommendations: List[str]
+    footwear_recommendations: List[str]
+    styling_advice: str
+
+
+class TorsoLegBalanceOut(BaseModel):
+    balance_type: str  # "Long Torso" | "Balanced" | "Long Legs"
+    label_indonesian: str
+    torso_to_leg_ratio: float
+    advice: str
+
+
+class BodyAnalysisResponse(BaseModel):
+    body_shape: BodyShapeClassificationOut
+    torso_leg_balance: TorsoLegBalanceOut
+    measurements_cm: BodyMeasurementsIn
+    pillars: List[BodyPillarOut]
+    narrative: NarrativeOut
+    timestamp: str
+
+

@@ -14,6 +14,7 @@ from ai_engine.models.skin_analyzer import SkinAnalyzer
 from ai_engine.models.face_classifier import FaceShapeClassifier
 from ai_engine.models.body_classifier import BodyShapeClassifier
 from ai_engine.models.face_analyzer import FaceAnalyzer
+from ai_engine.models.body_analyzer import analyze_body_landmarks_payload
 from ai_engine.models.mock_generator import MockDataGenerator
 
 from ...config import get_settings
@@ -35,6 +36,12 @@ from ...schemas import (
     MeasurementsIn,
     PillarOut,
     NarrativeOut,
+    BodyLandmarkAnalysisRequest,
+    BodyAnalysisResponse,
+    BodyShapeClassificationOut,
+    TorsoLegBalanceOut,
+    BodyPillarOut,
+    BodyMeasurementsIn,
 )
 
 router = APIRouter(prefix="/analyze", tags=["Personal Profiling Analysis"])
@@ -257,4 +264,49 @@ def analyze_landmarks(
     except Exception:
         # Graceful degradation: engine gagal → preset deterministik, demo tetap jalan
         return _landmarks_mock_response()
+
+
+@router.post("/body-landmarks", response_model=BodyAnalysisResponse)
+def analyze_body_landmarks(
+    request: BodyLandmarkAnalysisRequest,
+    x_mock_data: Optional[str] = Header(None, alias="X-Mock-Data"),
+):
+    """Multi-dimensional full-body landmark analysis.
+
+    Payload hanya berisi fitur turunan antropometri (angka) dari 33 landmark pose —
+    tidak pernah foto tubuh (kepatuhan UU PDP No. 27/2022).
+    """
+    settings = get_settings()
+    is_mock = bool(settings.MOCK_MODE or (x_mock_data and x_mock_data.lower() in ("true", "1")))
+
+    try:
+        raw_payload = request.model_dump()
+        out = analyze_body_landmarks_payload(raw_payload)
+
+        return BodyAnalysisResponse(
+            body_shape=BodyShapeClassificationOut(**out["body_shape"]),
+            torso_leg_balance=TorsoLegBalanceOut(**out["torso_leg_balance"]),
+            measurements_cm=BodyMeasurementsIn(**out["measurements_cm"]),
+            pillars=[BodyPillarOut(**p) for p in out["pillars"]],
+            narrative=NarrativeOut(**out["narrative"]),
+            timestamp=out["timestamp"],
+        )
+    except Exception as e:
+        # Graceful fallback: return deterministic Hourglass/Rectangle preset
+        from ai_engine.models.body_analyzer import BodyAnalyzer
+        fallback_analyzer = BodyAnalyzer()
+        out = fallback_analyzer.analyze(
+            body_ratios={"shoulder_to_hip_ratio": 1.0, "waist_to_hip_ratio": 0.78, "waist_to_shoulder_ratio": 0.78, "torso_to_leg_ratio": 0.85},
+            measurements_cm={"shoulder_width_cm": 42.0, "waist_width_cm": 32.8, "hip_width_cm": 38.0, "torso_length_cm": 48.0, "leg_length_cm": 82.0, "total_height_cm": 165.0, "body_proportion": "1.1 : 0.9 : 1.0", "calibration": "height_input"},
+            user_height_cm=165.0,
+        )
+        return BodyAnalysisResponse(
+            body_shape=BodyShapeClassificationOut(**out["body_shape"]),
+            torso_leg_balance=TorsoLegBalanceOut(**out["torso_leg_balance"]),
+            measurements_cm=BodyMeasurementsIn(**out["measurements_cm"]),
+            pillars=[BodyPillarOut(**p) for p in out["pillars"]],
+            narrative=NarrativeOut(**out["narrative"]),
+            timestamp=out["timestamp"],
+        )
+
 

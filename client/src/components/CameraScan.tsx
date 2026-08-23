@@ -37,7 +37,7 @@ type FaceGuideState = "NO_FACE" | "MISALIGNED" | "ALIGNED";
 interface CameraScanProps {
   onScanComplete: (profile: UserPersonalProfile, stream?: MediaStream) => void;
   overrideProfile?: UserPersonalProfile | null;
-  subcategory?: "glasses" | "hats" | "shirts" | "jackets";
+  subcategory?: "glasses" | "hats" | "shirts";
   onBack?: () => void;
 }
 

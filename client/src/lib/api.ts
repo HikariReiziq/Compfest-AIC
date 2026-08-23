@@ -68,6 +68,130 @@ export async function analyzeLandmarks(payload: Record<string, unknown>): Promis
   }
 }
 
+export interface BodyLandmarkAnalysisResult {
+  body_shape?: {
+    shape: string;
+    label_indonesian: string;
+    confidence: number;
+    method: string;
+    ratios: Record<string, number>;
+    topwear_recommendations: string[];
+    bottomwear_recommendations: string[];
+    footwear_recommendations: string[];
+    styling_advice: string;
+  };
+  torso_leg_balance?: {
+    balance_type: string;
+    label_indonesian: string;
+    torso_to_leg_ratio: number;
+    advice: string;
+  };
+  measurements_cm?: {
+    shoulder_width_cm?: number | null;
+    waist_width_cm?: number | null;
+    hip_width_cm?: number | null;
+    torso_length_cm?: number | null;
+    leg_length_cm?: number | null;
+    total_height_cm?: number | null;
+    body_proportion?: string;
+    calibration?: string;
+  };
+  pillars?: Array<{
+    pillar: string;
+    title: string;
+    title_id: string;
+    recommendation: string;
+    reason: string;
+    scientific_basis: string;
+  }>;
+  narrative?: {
+    summary: string;
+    topwear_tip?: string;
+    bottomwear_tip?: string;
+    footwear_tip?: string;
+  };
+  timestamp?: string;
+  is_mock?: boolean;
+}
+
+/**
+ * POST /api/v1/analyze/body-landmarks — analisis antropometri tubuh penuh.
+ */
+export async function analyzeBodyLandmarks(payload: Record<string, unknown>): Promise<BodyLandmarkAnalysisResult> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/analyze/body-landmarks`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`body-landmarks API ${res.status}`);
+    return await res.json();
+  } catch (error) {
+    console.warn("Body landmark analysis API unavailable, using deterministic fallback:", error);
+    const preset = MOCK_PRESETS.indonesian_warm_sawo_matang.profile;
+    return {
+      body_shape: {
+        shape: preset.body_shape.shape,
+        label_indonesian: "Hourglass (Jam Pasir)",
+        confidence: 0.94,
+        method: "ansur_ii_rule_engine",
+        ratios: preset.body_shape.ratios,
+        topwear_recommendations: ["Fitted Wrap Top", "V-Neck Shirt", "Tailored Belted Blazer"],
+        bottomwear_recommendations: ["High-Waist Wide-Leg Trousers", "Bootcut Jeans", "Straight-Leg Chinos"],
+        footwear_recommendations: ["Pointed Loafers", "Minimalist Clean Sneakers", "Classic Chelsea Boots"],
+        styling_advice: preset.body_shape.styling_advice,
+      },
+      torso_leg_balance: {
+        balance_type: "Balanced",
+        label_indonesian: "Proporsi Seimbang (Balanced)",
+        torso_to_leg_ratio: 0.85,
+        advice: "Proporsi tubuh atas dan bawah Anda sangat seimbang.",
+      },
+      measurements_cm: {
+        shoulder_width_cm: 42.0,
+        waist_width_cm: 32.5,
+        hip_width_cm: 38.0,
+        torso_length_cm: 46.0,
+        leg_length_cm: 80.0,
+        total_height_cm: 165.0,
+        body_proportion: "1.1 : 0.85 : 1.0",
+        calibration: "height_input",
+      },
+      pillars: [
+        {
+          pillar: "upper_silhouette",
+          title: "Pilar 1: Siluet Atasan (Upper Body Balance)",
+          title_id: "Siluet Atasan & Baju",
+          recommendation: "Fitted / Wrap Top",
+          reason: "Menonjolkan lekuk pinggang alami tanpa merusak simetri bahu dan pinggul.",
+          scientific_basis: "Prinsip Garis Anatomis (Anatomical Contour Alignment) — ISO 7250.",
+        },
+        {
+          pillar: "lower_inseam",
+          title: "Pilar 2: Proporsi Garis Jatuh Celana (Lower Inseam Line)",
+          title_id: "Potongan & Garis Jatuh Celana",
+          recommendation: "High-Waist Wide-Leg / Straight Pants",
+          reason: "Menaikkan titik pusat pinggang visual dan memanjangkan garis jatuh celana.",
+          scientific_basis: "Prinsip Golden Ratio Proporsi Kaki (1 : 1.618 Inseam Elongation).",
+        },
+        {
+          pillar: "footwear_balance",
+          title: "Pilar 3: Keseimbangan Alas Kaki (Footwear Grounding)",
+          title_id: "Keseimbangan Siluet Sepatu",
+          recommendation: "Pointed Loafers / Clean Retro Runner Sneakers",
+          reason: "Menjaga siluet tubuh tetap ramping dan dinamis.",
+          scientific_basis: "Prinsip Aliran Garis Siluet (Continuous Silhouette Streamlining).",
+        },
+      ],
+      narrative: {
+        summary: "Analisis antropometri menunjukkan bentuk tubuh Hourglass dengan proporsi seimbang.",
+      },
+      is_mock: true,
+    };
+  }
+}
+
+
 
 /* ------------------------------------------------------------------ */
 /*  Dynamic Questionnaire Engine                                      */
@@ -271,8 +395,8 @@ function getClientFallbackRecommendations(
         base_colour: "Gold",
         hex_colour: "#D4AF37",
         usage: "Casual",
-        model_3d_path: "/models/glasses_wayfarer.glb",
-        preview_image_url: "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=500&auto=format&fit=crop&q=80",
+        model_3d_path: "/images/products/glasses/glasses_01_khronos_pbr.glb",
+        preview_image_url: "/images/products/preview/glass-01.svg",
         price_idr: "Rp349.000",
         compatibility_score: 97.4,
         color_match_score: 98.0,
@@ -283,15 +407,15 @@ function getClientFallbackRecommendations(
         rank: 2,
         archetype: "safe_classic",
         archetype_title: "Pilihan 2: Safe Classic (Pilihan Serbaguna)",
-        id: "glass-04",
-        name: "Urban Rectangular Matte Charcoal",
+        id: "glass-02",
+        name: "Ray-Ban Aviator Pilot Edition",
         category: "Accessories",
         subcategory: "glasses",
         base_colour: "Charcoal Grey",
         hex_colour: "#36454F",
         usage: "Formal",
-        model_3d_path: "/models/glasses_rectangular.glb",
-        preview_image_url: "https://images.unsplash.com/photo-1591076482161-42ce6da69f67?w=500&auto=format&fit=crop&q=80",
+        model_3d_path: "/images/products/glasses/glasses_02_rayban.glb",
+        preview_image_url: "/images/products/preview/glass-02.svg",
         price_idr: "Rp299.000",
         compatibility_score: 91.2,
         color_match_score: 90.0,
@@ -303,14 +427,14 @@ function getClientFallbackRecommendations(
         archetype: "bold_statement",
         archetype_title: "Pilihan 3: Bold Statement (Aksen Kontras)",
         id: "glass-03",
-        name: "Retro Round Aviator Rose Gold",
+        name: "FaceFit Urban Geometric Frame",
         category: "Accessories",
         subcategory: "glasses",
         base_colour: "Terracotta",
         hex_colour: "#E2725B",
         usage: "Party",
-        model_3d_path: "/models/glasses_aviator.glb",
-        preview_image_url: "https://images.unsplash.com/photo-1577803645773-f96470509666?w=500&auto=format&fit=crop&q=80",
+        model_3d_path: "/images/products/glasses/glasses_03_facefit_geo.glb",
+        preview_image_url: "/images/products/preview/glass-03.svg",
         price_idr: "Rp399.000",
         compatibility_score: 89.5,
         color_match_score: 96.0,
@@ -321,21 +445,21 @@ function getClientFallbackRecommendations(
         rank: 4,
         archetype: "modern_trendy",
         archetype_title: "Pilihan 4: Modern Silhouette (Varian Kekinian)",
-        id: "glass-02",
-        name: "Geometric Minimalist Titanium Frame",
+        id: "glass-04",
+        name: "FaceFit Executive Browline",
         category: "Accessories",
         subcategory: "glasses",
         base_colour: "Navy Blue",
         hex_colour: "#000080",
         usage: "Formal",
-        model_3d_path: "/models/glasses_geometric.glb",
-        preview_image_url: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=500&auto=format&fit=crop&q=80",
+        model_3d_path: "/images/products/glasses/glasses_04_facefit_browline.glb",
+        preview_image_url: "/images/products/preview/glass-04.svg",
         price_idr: "Rp489.000",
         compatibility_score: 86.8,
         color_match_score: 84.0,
         shape_match_score: 90.0,
         stylist_reason: "Frame titanium geometris modern dengan sudut kontur tajam.",
-        model_type: "geometric",
+        model_type: "glasses",
       },
     ];
     return { subcategory: "glasses", primary_item_id: "glass-01", items };
@@ -347,164 +471,164 @@ function getClientFallbackRecommendations(
         rank: 1,
         archetype: "perfect_match",
         archetype_title: "Pilihan 1: The Perfect Match (#1 Best Fit)",
-        id: "hat-03",
-        name: "Structured 6-Panel Baseball Cap Terracotta",
+        id: "hat-01",
+        name: "Luffy Anime Straw Hat Heritage",
         category: "Accessories",
         subcategory: "hats",
-        base_colour: "Terracotta",
-        hex_colour: "#E2725B",
-        usage: "Sports",
-        model_3d_path: "/models/hat_cap.glb",
-        preview_image_url: "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=500&auto=format&fit=crop&q=80",
-        price_idr: "Rp169.000",
+        base_colour: "Straw Natural",
+        hex_colour: "#D97706",
+        usage: "Casual",
+        model_3d_path: "/images/products/hats/hat_01_luffy_straw.glb",
+        preview_image_url: "/images/products/preview/hat-01.svg",
+        price_idr: "Rp350.000",
         compatibility_score: 96.8,
         color_match_score: 98.0,
         shape_match_score: 95.0,
-        stylist_reason: "Skor keserasian 96.8%. Visor melengkung topi baseball menyeimbangkan kontur wajah dan warna Terracotta menyatu selaras dengan rona kulit hangat Anda.",
-        model_type: "cap",
+        stylist_reason: "Skor keserasian 96.8%. Topi jerami heritage yang memberikan siluet kepala proporsional dan santai.",
+        model_type: "hats",
       },
       {
         rank: 2,
         archetype: "safe_classic",
         archetype_title: "Pilihan 2: Safe Classic (Pilihan Serbaguna)",
-        id: "hat-04",
-        name: "Ribbed Knit Fisherman Beanie Navy Blue",
+        id: "hat-02",
+        name: "MetaFactory Gitcoin Ribbed Beanie",
         category: "Accessories",
         subcategory: "hats",
-        base_colour: "Navy Blue",
-        hex_colour: "#000080",
+        base_colour: "Charcoal Grey",
+        hex_colour: "#374151",
         usage: "Casual",
-        model_3d_path: "/models/hat_beanie.glb",
-        preview_image_url: "https://images.unsplash.com/photo-1576871337622-98d48d1cf531?w=500&auto=format&fit=crop&q=80",
-        price_idr: "Rp149.000",
+        model_3d_path: "/images/products/hats/hat_02_gitcoin_beanie.glb",
+        preview_image_url: "/images/products/preview/hat-02.svg",
+        price_idr: "Rp280.000",
         compatibility_score: 92.4,
         color_match_score: 92.0,
         shape_match_score: 93.0,
-        stylist_reason: "Beanie rajut navy serbaguna yang nyaman dan pas di kepala untuk gaya kasual harian.",
-        model_type: "beanie",
+        stylist_reason: "Beanie rajut premium yang nyaman dan fleksibel melengkapi gaya streetwear.",
+        model_type: "hats",
       },
       {
         rank: 3,
         archetype: "bold_statement",
         archetype_title: "Pilihan 3: Bold Statement (Aksen Kontras)",
-        id: "hat-02",
-        name: "Streetwear Twill Bucket Hat Olive Green",
+        id: "hat-04",
+        name: "MetaFactory Streetwear Snapback 57",
         category: "Accessories",
         subcategory: "hats",
-        base_colour: "Olive Green",
-        hex_colour: "#556B2F",
-        usage: "Casual",
-        model_3d_path: "/models/hat_bucket.glb",
-        preview_image_url: "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=500&auto=format&fit=crop&q=80",
-        price_idr: "Rp189.000",
+        base_colour: "Crimson Red",
+        hex_colour: "#991B1B",
+        usage: "Streetwear",
+        model_3d_path: "/images/products/hats/hat_04_street_snapback.glb",
+        preview_image_url: "/images/products/preview/hat-04.svg",
+        price_idr: "Rp320.000",
         compatibility_score: 89.5,
         color_match_score: 95.0,
         shape_match_score: 84.0,
-        stylist_reason: "Aksen streetwear santai dengan brim melingkar hijau zaitun bernuansa earth-tone.",
-        model_type: "bucket",
+        stylist_reason: "Snapback berstruktur tegas dengan flat brim kontemporer.",
+        model_type: "hats",
       },
       {
         rank: 4,
         archetype: "modern_trendy",
         archetype_title: "Pilihan 4: Modern Silhouette (Varian Kekinian)",
-        id: "hat-01",
-        name: "Classic Wool Felt Fedora Charcoal",
+        id: "hat-06",
+        name: "Three.js FaceCap Structured Baseball Cap",
         category: "Accessories",
         subcategory: "hats",
-        base_colour: "Charcoal Grey",
-        hex_colour: "#36454F",
-        usage: "Formal",
-        model_3d_path: "/models/hat_fedora.glb",
-        preview_image_url: "https://images.unsplash.com/photo-1514327605112-b887c0e61c0a?w=500&auto=format&fit=crop&q=80",
-        price_idr: "Rp279.000",
+        base_colour: "Midnight Black",
+        hex_colour: "#0F172A",
+        usage: "Casual",
+        model_3d_path: "/images/products/hats/hat_06_threejs_facecap.glb",
+        preview_image_url: "/images/products/preview/hat-06.svg",
+        price_idr: "Rp290.000",
         compatibility_score: 87.2,
         color_match_score: 88.0,
         shape_match_score: 86.0,
-        stylist_reason: "Fedora berstruktur dengan crown tegak berlekuk yang memberikan ilusi vertikal jenjang.",
-        model_type: "fedora",
+        stylist_reason: "Topi baseball 6-panel klasik dengan lengkungan visor aerodinamis.",
+        model_type: "hats",
       },
     ];
-    return { subcategory: "hats", primary_item_id: "hat-03", items };
+    return { subcategory: "hats", primary_item_id: "hat-01", items };
   }
 
-  // Default jackets fallback
+  // Default: Shirts (Baju)
   const items: RecommendationItem[] = [
     {
       rank: 1,
       archetype: "perfect_match",
       archetype_title: "Pilihan 1: The Perfect Match (#1 Best Fit)",
-      id: "jacket-01",
-      name: "Cyber-Minimalist Harrington Jacket Olive Drab",
+      id: "shirt-01",
+      name: "Adrian 3D Heavyweight Baked Supima Tee",
       category: "Apparel",
-      subcategory: "jackets",
-      base_colour: "Olive Green",
-      hex_colour: "#556B2F",
+      subcategory: "shirts",
+      base_colour: "Chalk White",
+      hex_colour: "#F8FAFC",
       usage: "Casual",
-      model_3d_path: "/models/jacket_harrington.glb",
-      preview_image_url: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500&auto=format&fit=crop&q=80",
-      price_idr: "Rp549.000",
-      compatibility_score: 96.8,
+      model_3d_path: "/images/products/shirts/shirt_01_adrian_baked_tee.glb",
+      preview_image_url: "/images/products/preview/shirt-01.svg",
+      price_idr: "Rp280.000",
+      compatibility_score: 97.2,
       color_match_score: 98.0,
-      shape_match_score: 95.0,
-      stylist_reason: "Warna Olive Green menyatu sempurna dengan palet kulit hangat Anda dan potongan Harrington mengikuti postur tubuh dengan luwes.",
+      shape_match_score: 96.0,
+      stylist_reason: "Kaos Supima cotton heavyweight dengan lipatan kain realistis 3D yang membungkus torso dan bahu.",
     },
     {
       rank: 2,
       archetype: "safe_classic",
       archetype_title: "Pilihan 2: Safe Classic (Pilihan Serbaguna)",
-      id: "jacket-02",
-      name: "Structured Tailored Blazer Charcoal",
+      id: "shirt-02",
+      name: "Francesco 3D Athletic Jersey Shirt",
       category: "Apparel",
-      subcategory: "jackets",
-      base_colour: "Charcoal Grey",
-      hex_colour: "#36454F",
-      usage: "Formal",
-      model_3d_path: "/models/jacket_blazer.glb",
-      preview_image_url: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=500&auto=format&fit=crop&q=80",
-      price_idr: "Rp699.000",
-      compatibility_score: 91.0,
-      color_match_score: 88.0,
+      subcategory: "shirts",
+      base_colour: "Navy Blue",
+      hex_colour: "#1E3A8A",
+      usage: "Casual",
+      model_3d_path: "/images/products/shirts/shirt_02_francesco_jersey.glb",
+      preview_image_url: "/images/products/preview/shirt-02.svg",
+      price_idr: "Rp320.000",
+      compatibility_score: 93.0,
+      color_match_score: 92.0,
       shape_match_score: 94.0,
-      stylist_reason: "Blazer terstruktur yang elegan dan fleksibel untuk berbagai acara formal.",
+      stylist_reason: "Jersey atletik modern dengan tekstur kain breathable dan proporsi bahu seimbang.",
     },
     {
       rank: 3,
       archetype: "bold_statement",
       archetype_title: "Pilihan 3: Bold Statement (Aksen Kontras)",
-      id: "jacket-03",
-      name: "Vintage Wash Distressed Denim Terracotta",
+      id: "shirt-03",
+      name: "MetaFactory 3D Boxy Streetwear Hoodie 51",
       category: "Apparel",
-      subcategory: "jackets",
-      base_colour: "Terracotta",
-      hex_colour: "#E2725B",
+      subcategory: "shirts",
+      base_colour: "Charcoal Black",
+      hex_colour: "#18181B",
       usage: "Casual",
-      model_3d_path: "/models/jacket_denim.glb",
-      preview_image_url: "https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=500&auto=format&fit=crop&q=80",
-      price_idr: "Rp489.000",
-      compatibility_score: 89.2,
-      color_match_score: 96.0,
-      shape_match_score: 82.0,
-      stylist_reason: "Aksen terracotta vintage yang memberikan pernyataan gaya tegas dan berani.",
+      model_3d_path: "/images/products/shirts/shirt_03_mf_hoodie_51.glb",
+      preview_image_url: "/images/products/preview/shirt-03.svg",
+      price_idr: "Rp590.000",
+      compatibility_score: 89.8,
+      color_match_score: 95.0,
+      shape_match_score: 85.0,
+      stylist_reason: "Hoodie boxy streetwear tebal dengan drapery kain autentik untuk gaya urban.",
     },
     {
       rank: 4,
       archetype: "modern_trendy",
       archetype_title: "Pilihan 4: Modern Silhouette (Varian Kekinian)",
-      id: "jacket-04",
-      name: "Technical Oversized Anorak Warm Beige",
+      id: "shirt-10",
+      name: "MetaFactory 3D Heritage Cotton T-Shirt 111",
       category: "Apparel",
-      subcategory: "jackets",
-      base_colour: "Warm Beige",
-      hex_colour: "#D4B996",
-      usage: "Sports",
-      model_3d_path: "/models/jacket_anorak.glb",
-      preview_image_url: "https://images.unsplash.com/photo-1544022613-e87ce7526edb?w=500&auto=format&fit=crop&q=80",
-      price_idr: "Rp459.000",
-      compatibility_score: 87.0,
-      color_match_score: 90.0,
-      shape_match_score: 84.0,
-      stylist_reason: "Outerwear teknikal berpotongan oversized modern bernuansa krem pasir.",
+      subcategory: "shirts",
+      base_colour: "Heather Grey",
+      hex_colour: "#64748B",
+      usage: "Casual",
+      model_3d_path: "/images/products/shirts/shirt_10_mf_tshirt_111.glb",
+      preview_image_url: "/images/products/preview/shirt-10.svg",
+      price_idr: "Rp310.000",
+      compatibility_score: 87.5,
+      color_match_score: 86.0,
+      shape_match_score: 91.0,
+      stylist_reason: "T-shirt heritage kasual dengan kenyamanan ekstra dan fitting torso natural.",
     },
   ];
-  return { subcategory: "jackets", primary_item_id: "jacket-01", items };
+  return { subcategory: "shirts", primary_item_id: "shirt-01", items };
 }
