@@ -98,11 +98,8 @@ AttributeError: ... object has no attribute ... (via starlette middleware errors
 ### Penyebab (Root Cause)
 Endpoint kuesioner dinamis memanggil layanan Gemini; pada lingkungan host tanpa `GEMINI_API_KEY` aktif, jalur inisialisasi klien melempar `AttributeError` alih-alih jatuh ke fallback dengan rapi. Kegagalan ini **pre-existing** (terverifikasi sebelum commit overhaul pertama) dan berada di luar scope plan overhaul wajah — tidak diubah demi disiplin scope.
 
-### Dampak & Status
-* 7 test lain hijau; seluruh test baru Fase 2 wajib hijau; test ini dicatat sebagai *known env-failure* dan bukan alasan bolehnya test baru gagal.
-* Di dalam Docker (`coba-backend-server` dengan `GEMINI_API_KEY` dari `.env`), endpoint berjalan normal.
-
-### Rencana Perbaikan (opsional, di luar scope)
-Bungkus inisialisasi klien Gemini dengan guard null-safety sehingga lingkungan tanpa API key jatuh ke `question_bank` lokal.
+### Solusi & Resolusi (FIXED in Commit `1d66f05`)
+* **Solusi**: Memperbaiki akses `settings.GEMINI_API_KEY` (huruf kapital sesuai definisi `Settings` di `config.py`) dan menambahkan guard pengecekan `if not api_key: return _generate_dynamic_fallback(...)` di `server/app/services/gemini_service.py`.
+* **Status**: **RESOLVED (41/41 test pytest LULUS 100% HIJAU)**.
 
 

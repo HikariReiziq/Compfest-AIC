@@ -322,12 +322,21 @@
 3. **Penyelarasan Skala & Offset Anchor**:
    - Melakukan kalibrasi agar beanie/cap membungkus kepala secara pas (*snug fit*) menyerupai video referensi demo.
 
-### D. Sesi 23 Agustus 2026 — Strategic Overhaul Modul Pemindaian Wajah (Sesi Perencanaan, Read-Only Kode):
+### D. Sesi 23 Agustus 2026 — Strategic Overhaul Modul Pemindaian Wajah (Sesi Perencanaan & Eksekusi Fase 1-2):
 1. **Riset & Verifikasi (standar ADR-010)**:
    - Kalibrasi iris 11,7 mm valid secara akademik (MediaPipe Iris 478 landmark; Roesler et al. 2022 ACM ICMI; AutoPtosis arXiv).
    - CelebA/CelebA-HQ = non-komersial riset (validasi lokal saja); FairFace & SCIN = CC BY 4.0; Face Shape 5K (Kaggle niten19) = 5 kelas TANPA Diamond; Roboflow eyebrow-shape = 300 img 6 kelas.
    - Tidak ada dataset terbuka kanonik untuk tipe hidung → strategi landmark-geometry rule engine.
 2. **Gerbang Brainstorming Lulus**: Understanding Lock dikonfirmasi pengguna; desain *Alternatif A* (hybrid client-extract/server-classify) disetujui; 8 keputusan D-1..D-8 tercatat (termasuk D-1: Tanpa DB → ADR-015; D-3: kalibrasi iris; D-4: Diamond rule override).
 3. **SSOT Diperbarui**: MEMORY.md (ADR-013 s.d. ADR-018 + UVP + arsitektur), PRD.md (spesifikasi overhaul + alur dual-mode + dataset tabel g + mermaid), Proposal.md (metodologi analisis multi-dimensi + kalibrasi iris).
-4. **Implementation Plan 4 Fase** disusun di `docs/plans/2026-08-23-face-analysis-overhaul.md` (Fase 1 UI Upload & Reposisi → Fase 2 Backend & Vision Engine → Fase 3 Laporan Analisis → Fase 4 Integrasi Kuesioner & 3D AR) dengan descope ladder: bila waktu habis, Fase 4 dipotong menjadi hanya injeksi prompt + manifest GLB.
-5. **Target Eksekusi**: 4 fase berurutan dalam ~2,5 hari menjelang deadline 25 Agustus 2026 23.55 WIB.
+4. **Implementation Plan 4 Fase** disusun di `docs/plans/2026-08-23-face-analysis-overhaul.md`.
+
+### E. Status Progres Terkini di Branch `feat/ai-questionnaire-accessories-v2`:
+1. **✅ SUDAH SELESAI (Completed & Tested)**:
+   - **Fase 1 (Dual-Mode Face Scan & Repositioning)**: `faceGeometry.ts` (kalibrasi iris 11,7 mm $\rightarrow$ cm), `PhotoUpload.tsx` (drag-drop upload PNG/JPG/JPEG $\le$ 8MB), `RepositionTool.tsx` (kanvas interaktif drag/pan, zoom, rotate), dan `CameraScan.tsx` (tab dual-mode Webcam Live vs Upload Foto).
+   - **Fase 2 (Backend Multi-Dimensional Vision AI)**: `schemas.py`, `face_analyzer.py` (6 bentuk wajah + Diamond override, 5 tipe hidung, 4 bentuk mata, 3 bentuk alis, 3 pilar ilmiah *PillarJustifier*), endpoint `POST /api/v1/analyze/landmarks`, dan preset mock `indonesian_multi_dim`.
+   - **Verifikasi Kualitas**: 41/41 unit test pytest LULUS 100% (HIJAU), Next.js Client Build LULUS 4/4 halaman tanpa error.
+2. **⏳ BELUM SELESAI (Pending / Antrean Pengerjaan Berikutnya)**:
+   - **Fase 3 (Face Analysis Report Card)**: Pembuatan komponen `FaceReportCard.tsx` (tampilan visual laporan analisis wajah beranotasi garis cm + badge 5 dimensi + 3 kartu pilar + injeksi otomatis profil ke prompt kuesioner Gemini) dan integrasi transisi step `REPORT` di `page.tsx`.
+   - **Fase 4 (Aset 3D GLB & Three.js Head Occluder)**: Pembuatan skrip `scripts/download_3d_assets.py` (unduh bundel `.glb` CC0) dan upgrade `ARCanvasViewer.tsx` dengan Three.js `GLTFLoader` + *Head Occluder Mesh* (`colorWrite: false, depthWrite: true`).
+   - **Modul Rekan Tim**: Integrasi AI Body Shape Analysis untuk kategori pakaian/baju tubuh (Tahap 2), kuesioner busana badan, dan katalog pakaian 3D.
