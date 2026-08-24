@@ -14,10 +14,80 @@ import {
 } from "lucide-react";
 import { RecommendationItem } from "../lib/mockData";
 
-/** Lebar topi setelah normalisasi, kira-kira selebar kepala di ruang scene. */
-const HAT_TARGET_WIDTH = 1.35;
-/** Lebar baju setelah normalisasi di ruang scene. */
-const SHIRT_TARGET_WIDTH = 1.45;
+/* ------------------------------------------------------------------ */
+/*  1. One Euro Filter (High-Precision Real-Time Jitter Reducer)      */
+/* ------------------------------------------------------------------ */
+class OneEuroFilter {
+  minCutoff: number;
+  beta: number;
+  dCutoff: number;
+  xPrev: number | null = null;
+  dxPrev: number = 0;
+  tPrev: number | null = null;
+
+  constructor(minCutoff = 1.0, beta = 0.007, dCutoff = 1.0) {
+    this.minCutoff = minCutoff;
+    this.beta = beta;
+    this.dCutoff = dCutoff;
+  }
+
+  private alpha(rate: number, cutoff: number): number {
+    const tau = 1.0 / (2 * Math.PI * cutoff);
+    const te = 1.0 / rate;
+    return 1.0 / (1.0 + tau / te);
+  }
+
+  filter(x: number, timestamp: number): number {
+    if (this.xPrev === null || this.tPrev === null) {
+      this.xPrev = x;
+      this.tPrev = timestamp;
+      this.dxPrev = 0;
+      return x;
+    }
+
+    const te = Math.max(0.001, (timestamp - this.tPrev) / 1000);
+    const rate = 1.0 / te;
+    this.tPrev = timestamp;
+
+    const dx = (x - this.xPrev) * rate;
+    const aD = this.alpha(rate, this.dCutoff);
+    const dxHat = aD * dx + (1 - aD) * this.dxPrev;
+    this.dxPrev = dxHat;
+
+    const cutoff = this.minCutoff + this.beta * Math.abs(dxHat);
+    const a = this.alpha(rate, cutoff);
+    const xHat = a * x + (1 - a) * this.xPrev;
+    this.xPrev = xHat;
+
+    return xHat;
+  }
+
+  reset() {
+    this.xPrev = null;
+    this.tPrev = null;
+    this.dxPrev = 0;
+  }
+}
+
+class Vector3EuroFilter {
+  fx = new OneEuroFilter(1.2, 0.015);
+  fy = new OneEuroFilter(1.2, 0.015);
+  fz = new OneEuroFilter(1.2, 0.015);
+
+  filter(v: THREE.Vector3, t: number): THREE.Vector3 {
+    return new THREE.Vector3(
+      this.fx.filter(v.x, t),
+      this.fy.filter(v.y, t),
+      this.fz.filter(v.z, t)
+    );
+  }
+
+  reset() {
+    this.fx.reset();
+    this.fy.reset();
+    this.fz.reset();
+  }
+}
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                             */
@@ -44,6 +114,11 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const modelGroupRef = useRef<THREE.Group | null>(null);
+  const bonesMapRef = useRef<Record<string, THREE.Bone>>({});
+  const handOccludersRef = useRef<{ left: THREE.Mesh; right: THREE.Mesh } | null>(null);
+  const posFilterRef = useRef(new Vector3EuroFilter());
+  const scaleFilterRef = useRef(new Vector3EuroFilter());
+
   const faceLandmarkerRef = useRef<any>(null);
   const poseLandmarkerRef = useRef<any>(null);
   const rafRef = useRef<number>(0);
@@ -160,10 +235,10 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           });
           if (!cancelled) faceLandmarkerRef.current = face;
         } catch (e) {
-          console.warn("FaceLandmarker init fallback:", e);
+          console.warn("FaceLandmarker GPU init fallback:", e);
         }
 
-        // Initialize PoseLandmarker for Upper-Body Clothes Tracking
+        // Initialize PoseLandmarker for Full-Body Tracking
         if (isShirt) {
           try {
             const pose = await PoseLandmarker.createFromOptions(fileset, {
@@ -242,7 +317,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     renderer.domElement.style.zIndex = "10";
     renderer.domElement.style.pointerEvents = "none";
 
-    // Lighting
+    // Studio & AR Lighting Rig
     const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
     scene.add(ambientLight);
 
@@ -262,6 +337,22 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     modelGroupRef.current = modelGroup;
     scene.add(modelGroup);
 
+    // Create Dynamic Hand/Arm Depth Occluders (Foreground Depth Occlusion)
+    const handMat = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: true });
+    const leftHandMesh = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), handMat);
+    const rightHandMesh = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), handMat);
+    leftHandMesh.renderOrder = -1;
+    rightHandMesh.renderOrder = -1;
+    leftHandMesh.visible = false;
+    rightHandMesh.visible = false;
+    scene.add(leftHandMesh);
+    scene.add(rightHandMesh);
+    handOccludersRef.current = { left: leftHandMesh, right: rightHandMesh };
+
+    // Reset temporal smoothing filters
+    posFilterRef.current.reset();
+    scaleFilterRef.current.reset();
+
     // Load Categorized 3D Model (GLB)
     loadCategorized3DModel(modelGroup);
 
@@ -273,6 +364,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
       const video = videoRef.current;
       const faceLandmarker = faceLandmarkerRef.current;
       const poseLandmarker = poseLandmarkerRef.current;
+      const now = performance.now();
 
       if (viewMode === "ar" && video && video.readyState >= 2) {
         if (video.currentTime !== lastVideoTime) {
@@ -281,15 +373,15 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
             let tracked = false;
 
             if (isShirt) {
-              // 1. Try Upper-Body Pose Tracking
+              // 1. Full-Body Pose Tracking with Skeletal Retargeting & Arm Bending
               if (poseLandmarker) {
-                const poseRes = poseLandmarker.detectForVideo(video, performance.now());
+                const poseRes = poseLandmarker.detectForVideo(video, now);
                 if (poseRes && poseRes.landmarks && poseRes.landmarks.length > 0) {
                   const lm = poseRes.landmarks[0];
                   if (lm[11] && lm[12]) {
                     setIsTrackingLive(true);
                     modelGroup.visible = true;
-                    applyPoseLandmarksTo3DShirt(lm, modelGroup);
+                    applyPoseLandmarksTo3DShirt(lm, modelGroup, now);
                     tracked = true;
                   }
                 }
@@ -297,11 +389,11 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
               // 2. Fallback to Face Landmark Chin-Anchored Neck Tracking
               if (!tracked && faceLandmarker) {
-                const faceRes = faceLandmarker.detectForVideo(video, performance.now());
+                const faceRes = faceLandmarker.detectForVideo(video, now);
                 if (faceRes && faceRes.faceLandmarks && faceRes.faceLandmarks.length > 0) {
                   setIsTrackingLive(true);
                   modelGroup.visible = true;
-                  applyFaceFallbackTo3DShirt(faceRes.faceLandmarks[0], modelGroup);
+                  applyFaceFallbackTo3DShirt(faceRes.faceLandmarks[0], modelGroup, now);
                   tracked = true;
                 }
               }
@@ -311,13 +403,13 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
                 modelGroup.visible = true;
               }
             } else {
-              // Glasses & Hats Tracking
+              // 6-DoF Face Tracking for Glasses & Hats
               if (faceLandmarker) {
-                const result = faceLandmarker.detectForVideo(video, performance.now());
+                const result = faceLandmarker.detectForVideo(video, now);
                 if (result && result.faceLandmarks && result.faceLandmarks.length > 0) {
                   setIsTrackingLive(true);
                   modelGroup.visible = true;
-                  applyLandmarksTo3DModel(result.faceLandmarks[0], modelGroup);
+                  applyLandmarksTo3DModel(result.faceLandmarks[0], modelGroup, now);
                   tracked = true;
                 }
               }
@@ -340,6 +432,10 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           const studioScale = isShirt ? 0.95 : 1.2;
           modelGroup.position.lerp(new THREE.Vector3(0, studioTargetY, 0), 0.08);
           modelGroup.scale.lerp(new THREE.Vector3(studioScale, studioScale, studioScale), 0.08);
+        }
+        if (handOccludersRef.current) {
+          handOccludersRef.current.left.visible = false;
+          handOccludersRef.current.right.visible = false;
         }
       }
 
@@ -364,7 +460,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
       cancelAnimationFrame(rafRef.current);
       renderer.dispose();
     };
-  }, [viewMode, activeItem, subcategory, offsetY, scaleMultiplier, isShirt]);
+  }, [viewMode, activeItem, subcategory, offsetY, offsetZ, scaleMultiplier, isShirt]);
 
   /* ------------------------------------------------------------------ */
   /*  4. Load 3D Model File with Optical Glass Shaders & Auto-Alignment */
@@ -373,6 +469,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     while (group.children.length > 0) {
       group.remove(group.children[0]);
     }
+    bonesMapRef.current = {};
 
     let modelPath = activeItem.model_3d_path || "";
     if (!modelPath) {
@@ -411,6 +508,23 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
             const [rx, ry, rz] = manifestRotation;
             model.rotation.set(rx, ry, rz);
           }
+
+          // Discover Skeleton Bones if present for SkinnedMesh pose retargeting
+          const detectedBones: Record<string, THREE.Bone> = {};
+          model.traverse((child) => {
+            if ((child as THREE.Bone).isBone) {
+              const bone = child as THREE.Bone;
+              const n = bone.name.toLowerCase();
+              if (n.includes("spine") || n.includes("chest") || n.includes("torso")) detectedBones["spine"] = bone;
+              if (n.includes("leftshoulder") || n.includes("shoulder_l") || n.includes("shoulder.l")) detectedBones["leftShoulder"] = bone;
+              if (n.includes("rightshoulder") || n.includes("shoulder_r") || n.includes("shoulder.r")) detectedBones["rightShoulder"] = bone;
+              if (n.includes("leftarm") || n.includes("upper_arm_l") || n.includes("arm_l") || n.includes("upperarm.l")) detectedBones["leftArm"] = bone;
+              if (n.includes("rightarm") || n.includes("upper_arm_r") || n.includes("arm_r") || n.includes("upperarm.r")) detectedBones["rightArm"] = bone;
+              if (n.includes("leftforearm") || n.includes("forearm_l") || n.includes("forearm.l")) detectedBones["leftForeArm"] = bone;
+              if (n.includes("rightforearm") || n.includes("forearm_r") || n.includes("forearm.r")) detectedBones["rightForeArm"] = bone;
+            }
+          });
+          bonesMapRef.current = detectedBones;
 
           // Wrap in wrapper group to ensure clean normalized transforms
           const wrapper = new THREE.Group();
@@ -508,6 +622,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
         undefined,
         (error) => {
           console.warn(`GLB load failed for ${modelPath}:`, error);
+          setModelSource(`Gagal memuat GLB (${filename})`);
         }
       );
     }
@@ -516,18 +631,21 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   /* ------------------------------------------------------------------ */
   /*  5. Face Landmark Alignment (Glasses & Hats)                       */
   /* ------------------------------------------------------------------ */
-  const applyLandmarksTo3DModel = (landmarks: any[], group: THREE.Group) => {
+  const applyLandmarksTo3DModel = (landmarks: any[], group: THREE.Group, timestamp: number) => {
     if (!videoRef.current || !containerRef.current) return;
 
-    const rightOuter = landmarks[33];
-    const rightInner = landmarks[133];
-    const leftOuter = landmarks[263];
-    const leftInner = landmarks[362];
+    const leftPupil = landmarks[468] || landmarks[33];
+    const rightPupil = landmarks[473] || landmarks[263];
+    const leftOuter = landmarks[33];
+    const rightOuter = landmarks[263];
     const nasion = landmarks[168] || landmarks[6];
     const foreheadTop = landmarks[10];
     const chin = landmarks[152];
 
-    if (!leftOuter || !rightOuter || !nasion) return;
+    const eyeLX = leftPupil ? leftPupil.x : leftOuter.x;
+    const eyeLY = leftPupil ? leftPupil.y : leftOuter.y;
+    const eyeRX = rightPupil ? rightPupil.x : rightOuter.x;
+    const eyeRY = rightPupil ? rightPupil.y : rightOuter.y;
 
     const video = videoRef.current;
     const container = containerRef.current;
@@ -554,16 +672,8 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
       offsetYPixel = (ch - renderedHeight) / 2;
     }
 
-    const eyeRX = rightInner ? (rightOuter.x + rightInner.x) / 2 : rightOuter.x;
-    const eyeRY = rightInner ? (rightOuter.y + rightInner.y) / 2 : rightOuter.y;
-    const eyeLX = leftInner ? (leftOuter.x + leftInner.x) / 2 : leftOuter.x;
-    const eyeLY = leftInner ? (leftOuter.y + leftInner.y) / 2 : leftOuter.y;
-
-    const midEyeX = (eyeLX + eyeRX) / 2;
-    const midEyeY = (eyeLY + eyeRY) / 2;
-
-    const anchorX = isHat ? (foreheadTop ? foreheadTop.x : midEyeX) : (midEyeX * 0.35 + nasion.x * 0.65);
-    const anchorY = isHat ? (foreheadTop ? foreheadTop.y : midEyeY) : (midEyeY * 0.35 + nasion.y * 0.65);
+    const anchorX = isHat ? (foreheadTop?.x || nasion.x) : nasion.x;
+    const anchorY = isHat ? (foreheadTop?.y || nasion.y) : nasion.y;
 
     const screenX = offsetX + (1 - anchorX) * renderedWidth;
     const screenY = offsetYPixel + anchorY * renderedHeight;
@@ -574,12 +684,14 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const halfH = Math.tan((45 * Math.PI) / 360) * 4.2;
     const halfW = halfH * (cw / ch);
 
-    const worldX = ndcX * halfW;
-    // Lower hat anchor so head & hair fully enter the hat cavity and brim rests around upper brow level
-    const worldY = isHat ? (ndcY * halfH - 0.16 + offsetY * 0.012) : (ndcY * halfH - 0.01 + offsetY * 0.012);
-    const worldZ = isHat
+    const targetWorldX = ndcX * halfW;
+    const targetWorldY = isHat ? (ndcY * halfH - 0.16 + offsetY * 0.012) : (ndcY * halfH - 0.01 + offsetY * 0.012);
+    const targetWorldZ = isHat
       ? ((foreheadTop?.z || nasion.z || 0) * -1.8 - 0.03 + offsetZ * 0.015)
       : ((nasion.z || 0) * -1.8 + offsetZ * 0.015);
+
+    // Apply Temporal Jitter Filtering (One Euro Filter)
+    const smoothPos = posFilterRef.current.filter(new THREE.Vector3(targetWorldX, targetWorldY, targetWorldZ), timestamp);
 
     const screenLeftEyeX = offsetX + (1 - eyeLX) * renderedWidth;
     const screenLeftEyeY = offsetYPixel + eyeLY * renderedHeight;
@@ -605,7 +717,6 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     if (chin && foreheadTop) {
       const vertDepth = ((foreheadTop.z || 0) - (chin.z || 0)) * 1.6;
       if (isHat) {
-        // Natural slight forward pitch (+0.04 rad ~ 2.5 deg) so the hat faces the camera straight on and crown is visible
         safePitch = 0.04 + THREE.MathUtils.clamp(-vertDepth * 0.4, -0.2, 0.2);
       } else {
         safePitch = THREE.MathUtils.clamp(vertDepth, -0.45, 0.45);
@@ -615,31 +726,30 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     }
 
     const worldInterPupil = (pixelDist / cw) * (2 * halfW);
-    // Hats require 2.85x IPD to fit the entire human skull & hair volume comfortably
-    const baseScale = isHat ? worldInterPupil * 2.85 : worldInterPupil * 2.35;
-    const finalScale = baseScale * (scaleMultiplier / 100);
+    const baseScale = isHat ? worldInterPupil * 2.85 : worldInterPupil * 1.68;
+    const targetScale = baseScale * (scaleMultiplier / 100);
+    const smoothScale = scaleFilterRef.current.filter(new THREE.Vector3(targetScale, targetScale, targetScale), timestamp);
 
-    group.position.x = THREE.MathUtils.lerp(group.position.x, worldX, 0.45);
-    group.position.y = THREE.MathUtils.lerp(group.position.y, worldY, 0.45);
-    group.position.z = THREE.MathUtils.lerp(group.position.z, worldZ, 0.45);
-
+    group.position.copy(smoothPos);
     group.rotation.z = THREE.MathUtils.lerp(group.rotation.z, safeRoll, 0.45);
     group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw, 0.45);
     group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, safePitch, 0.45);
-
-    group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.45);
+    group.scale.copy(smoothScale);
   };
 
   /* ------------------------------------------------------------------ */
-  /*  6. Pose Landmark Alignment (Upper-Body Clothes / Shirts)          */
+  /*  6. Full-Body Pose Landmark Alignment & Skeletal Retargeting       */
   /* ------------------------------------------------------------------ */
-  const applyPoseLandmarksTo3DShirt = (landmarks: any[], group: THREE.Group) => {
+  const applyPoseLandmarksTo3DShirt = (landmarks: any[], group: THREE.Group, timestamp: number) => {
     if (!videoRef.current || !containerRef.current) return;
 
-    // MediaPipe Pose Landmarks:
-    // 11: Left Shoulder, 12: Right Shoulder, 23: Left Hip, 24: Right Hip, 0: Nose
+    // MediaPipe Pose 33 Landmarks
     const leftShoulder = landmarks[11];
     const rightShoulder = landmarks[12];
+    const leftElbow = landmarks[13];
+    const rightElbow = landmarks[14];
+    const leftWrist = landmarks[15];
+    const rightWrist = landmarks[16];
     const leftHip = landmarks[23];
     const rightHip = landmarks[24];
 
@@ -670,7 +780,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
       offsetYPixel = (ch - renderedHeight) / 2;
     }
 
-    // Mirrored Video Screen Coordinates (1 - x)
+    // Screen Coordinates (Mirrored 1 - x)
     const screenLeftShoulderX = offsetX + (1 - leftShoulder.x) * renderedWidth;
     const screenLeftShoulderY = offsetYPixel + leftShoulder.y * renderedHeight;
     const screenRightShoulderX = offsetX + (1 - rightShoulder.x) * renderedWidth;
@@ -690,11 +800,13 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const halfH = Math.tan((45 * Math.PI) / 360) * 4.2;
     const halfW = halfH * (cw / ch);
 
-    const worldX = ndcX * halfW;
-    // Align neckline with collar base right at base of neck
-    const worldY = ndcY * halfH + 0.04 + offsetY * 0.012;
+    const targetWorldX = ndcX * halfW;
+    const targetWorldY = ndcY * halfH + 0.04 + offsetY * 0.012;
     const midShoulderZ = ((leftShoulder.z || 0) + (rightShoulder.z || 0)) / 2;
-    const worldZ = midShoulderZ * -2.0 - 0.02 + offsetZ * 0.015;
+    const targetWorldZ = midShoulderZ * -2.0 - 0.02 + offsetZ * 0.015;
+
+    // Apply Temporal Jitter Filtering
+    const smoothPos = posFilterRef.current.filter(new THREE.Vector3(targetWorldX, targetWorldY, targetWorldZ), timestamp);
 
     // 1. True 3D Roll: Shoulder slant
     const rollAngle = Math.atan2(dy, dx);
@@ -711,26 +823,93 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
       safePitch = THREE.MathUtils.clamp((midShoulderZ - midHipZ) * 1.5, -0.45, 0.45);
     }
 
-    // World Space Scale (Shirt fits user shoulder span accurately)
+    // Auto-Fit Non-Uniform Scaling (Shoulder Span + Torso Height)
     const worldShoulderSpan = (shoulderSpanPx / cw) * (2 * halfW);
-    const baseScale = worldShoulderSpan * 1.30;
-    const finalScale = baseScale * (scaleMultiplier / 100);
+    const baseScaleX = worldShoulderSpan * 1.30;
+    
+    let baseScaleY = baseScaleX;
+    if (leftHip && rightHip) {
+      const screenMidHipY = offsetYPixel + ((leftHip.y + rightHip.y) / 2) * renderedHeight;
+      const torsoHeightPx = Math.abs(screenMidHipY - screenMidY);
+      const worldTorsoH = (torsoHeightPx / ch) * (2 * halfH);
+      if (worldTorsoH > 0.4) {
+        baseScaleY = worldTorsoH * 1.45;
+      }
+    }
 
-    group.position.x = THREE.MathUtils.lerp(group.position.x, worldX, 0.45);
-    group.position.y = THREE.MathUtils.lerp(group.position.y, worldY, 0.45);
-    group.position.z = THREE.MathUtils.lerp(group.position.z, worldZ, 0.45);
+    const finalScaleX = baseScaleX * (scaleMultiplier / 100);
+    const finalScaleY = baseScaleY * (scaleMultiplier / 100);
+    const finalScaleZ = finalScaleX;
 
+    const smoothScale = scaleFilterRef.current.filter(new THREE.Vector3(finalScaleX, finalScaleY, finalScaleZ), timestamp);
+
+    group.position.copy(smoothPos);
     group.rotation.z = THREE.MathUtils.lerp(group.rotation.z, safeRoll, 0.45);
     group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw, 0.45);
     group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, safePitch, 0.45);
+    group.scale.copy(smoothScale);
 
-    group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.45);
+    // 4. Skeletal Retargeting for Rigged SkinnedMesh Bones (Arms & Elbow Bending)
+    const bones = bonesMapRef.current;
+    if (bones && (bones.leftArm || bones.rightArm || bones.leftForeArm || bones.rightForeArm)) {
+      if (bones.leftArm && leftElbow) {
+        const vArm = new THREE.Vector3(
+          (leftElbow.x - leftShoulder.x),
+          -(leftElbow.y - leftShoulder.y),
+          (leftElbow.z - leftShoulder.z)
+        ).normalize();
+        const qArm = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, -1, 0).normalize(), vArm);
+        bones.leftArm.quaternion.slerp(qArm, 0.35);
+      }
+      if (bones.rightArm && rightElbow) {
+        const vArm = new THREE.Vector3(
+          (rightElbow.x - rightShoulder.x),
+          -(rightElbow.y - rightShoulder.y),
+          (rightElbow.z - rightShoulder.z)
+        ).normalize();
+        const qArm = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(-1, -1, 0).normalize(), vArm);
+        bones.rightArm.quaternion.slerp(qArm, 0.35);
+      }
+    }
+
+    // 5. Dynamic Foreground Arm & Hand Occlusion (Prevents hands from being hidden behind shirt)
+    const handOcc = handOccludersRef.current;
+    if (handOcc && leftWrist && rightWrist) {
+      const isLeftHandFront = (leftWrist.z || 0) < midShoulderZ - 0.03;
+      const isRightHandFront = (rightWrist.z || 0) < midShoulderZ - 0.03;
+
+      if (isLeftHandFront) {
+        const screenLWX = offsetX + (1 - leftWrist.x) * renderedWidth;
+        const screenLWY = offsetYPixel + leftWrist.y * renderedHeight;
+        handOcc.left.position.set(
+          ((screenLWX / cw) * 2 - 1) * halfW,
+          (1 - (screenLWY / ch) * 2) * halfH,
+          (leftWrist.z || 0) * -2.0 + 0.05
+        );
+        handOcc.left.visible = true;
+      } else {
+        handOcc.left.visible = false;
+      }
+
+      if (isRightHandFront) {
+        const screenRWX = offsetX + (1 - rightWrist.x) * renderedWidth;
+        const screenRWY = offsetYPixel + rightWrist.y * renderedHeight;
+        handOcc.right.position.set(
+          ((screenRWX / cw) * 2 - 1) * halfW,
+          (1 - (screenRWY / ch) * 2) * halfH,
+          (rightWrist.z || 0) * -2.0 + 0.05
+        );
+        handOcc.right.visible = true;
+      } else {
+        handOcc.right.visible = false;
+      }
+    }
   };
 
   /* ------------------------------------------------------------------ */
   /*  7. Face Landmark Chin-Anchored Fallback for Shirts               */
   /* ------------------------------------------------------------------ */
-  const applyFaceFallbackTo3DShirt = (landmarks: any[], group: THREE.Group) => {
+  const applyFaceFallbackTo3DShirt = (landmarks: any[], group: THREE.Group, timestamp: number) => {
     if (!videoRef.current || !containerRef.current) return;
 
     const chin = landmarks[152];
@@ -788,9 +967,11 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const halfH = Math.tan((45 * Math.PI) / 360) * 4.2;
     const halfW = halfH * (cw / ch);
 
-    const worldX = ndcX * halfW;
-    const worldY = ndcY * halfH + 0.02 + offsetY * 0.012;
-    const worldZ = (chin.z || 0) * -1.8 - 0.02 + offsetZ * 0.015;
+    const targetWorldX = ndcX * halfW;
+    const targetWorldY = ndcY * halfH + 0.02 + offsetY * 0.012;
+    const targetWorldZ = (chin.z || 0) * -1.8 - 0.02 + offsetZ * 0.015;
+
+    const smoothPos = posFilterRef.current.filter(new THREE.Vector3(targetWorldX, targetWorldY, targetWorldZ), timestamp);
 
     const rollAngle = Math.atan2(dy, dx);
     const safeRoll = THREE.MathUtils.clamp(rollAngle, -0.85, 0.85);
@@ -809,15 +990,13 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const baseScale = worldShoulderSpan * 1.30;
     const finalScale = baseScale * (scaleMultiplier / 100);
 
-    group.position.x = THREE.MathUtils.lerp(group.position.x, worldX, 0.45);
-    group.position.y = THREE.MathUtils.lerp(group.position.y, worldY, 0.45);
-    group.position.z = THREE.MathUtils.lerp(group.position.z, worldZ, 0.45);
+    const smoothScale = scaleFilterRef.current.filter(new THREE.Vector3(finalScale, finalScale, finalScale), timestamp);
 
+    group.position.copy(smoothPos);
     group.rotation.z = THREE.MathUtils.lerp(group.rotation.z, safeRoll, 0.45);
     group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw, 0.45);
     group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, safePitch, 0.45);
-
-    group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.45);
+    group.scale.copy(smoothScale);
   };
 
   return (
@@ -838,183 +1017,146 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               muted
             />
 
-            {isTrackingLive ? (
-              <div className="absolute top-4 left-4 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono z-30">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                <span>
-                  {isShirt
-                    ? "AR 3D BODY POSE TRACKING (60 FPS)"
-                    : isHat
-                      ? "AR 3D GLB HEAD TRACKING (60 FPS)"
-                      : "AR 3D GLB FACE TRACKING (60 FPS)"}
-                </span>
-              </div>
-            ) : (
-              <div className="absolute top-4 left-4 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-mono z-30">
-                <span className="w-2 h-2 rounded-full bg-amber-400" />
-                <span>
-                  {isShirt
-                    ? "BADAN TIDAK TERDETEKSI — MUNDUR SEDIKIT AGAR BAHU & DADA TERLIHAT"
-                    : "WAJAH TIDAK TERDETEKSI — MUNDUR SEDIKIT & MASUKKAN SELURUH KEPALA"}
-                </span>
-              </div>
-            )}
+            {/* Tracking Status Pill Overlay */}
+            <div className="absolute top-4 left-4 z-20 flex items-center space-x-2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-xs font-medium text-slate-300">
+              <span
+                className={`w-2 h-2 rounded-full animate-pulse ${
+                  isTrackingLive ? "bg-emerald-400" : "bg-amber-400"
+                }`}
+              />
+              <span>
+                {isTrackingLive
+                  ? isShirt
+                    ? "Full-Body Skeletal Pose Tracking Aktif (60 FPS)"
+                    : "Head Pose Tracking Aktif (60 FPS)"
+                  : "Mencari Landmark Tubuh..."}
+              </span>
+            </div>
           </div>
         ) : (
-          /* Mode 2: 3D Studio 360 Turntable */
-          <div className="relative w-full h-full flex items-center justify-center bg-gradient-to-b from-surface-200/50 via-surface-100/40 to-slate-950">
-            <div className="absolute bottom-6 w-72 h-72 rounded-full bg-indigo-500/10 border border-indigo-500/20 blur-sm pointer-events-none" />
-            <div className="absolute top-4 left-4 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10px] font-mono z-20">
-              <Sparkles className="w-3 h-3 text-indigo-400" />
-              <span>STUDIO 3D INSPECTION 360°</span>
+          /* Mode 2: Studio 3D 360° Inspection Room */
+          <div className="relative w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-slate-900 via-slate-950 to-black select-none">
+            {/* Ambient Studio Lighting Backdrop Sphere */}
+            <div className="absolute w-80 h-80 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
+            <div className="absolute w-56 h-56 rounded-full bg-purple-500/10 blur-2xl pointer-events-none" />
+
+            <div className="absolute top-4 left-4 z-20 flex items-center space-x-2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-xs font-medium text-purple-300">
+              <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+              <span>Studio 3D Inspection 360°</span>
             </div>
           </div>
         )}
 
-        {/* Top Floating Action Pill: Mode Selector */}
-        <div className="absolute top-4 right-4 z-30 flex items-center space-x-1.5 bg-slate-900/90 backdrop-blur-md p-1 rounded-2xl border border-white/15 shadow-2xl">
-          <div className="relative group">
+        {/* View Mode Switching Controls Header */}
+        {!isUploadMode && (
+          <div className="absolute top-4 right-4 z-20 flex items-center p-1 rounded-2xl bg-black/70 backdrop-blur-xl border border-white/15 shadow-xl">
             <button
-              onClick={() => {
-                if (!isUploadMode) setViewMode("ar");
-              }}
-              disabled={isUploadMode}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all ${isUploadMode
-                ? "opacity-40 cursor-not-allowed text-slate-500 bg-slate-800/40"
-                : viewMode === "ar"
-                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 cursor-pointer"
-                  : "text-slate-400 hover:text-white cursor-pointer"
-                }`}
-            >
-              {isUploadMode ? (
-                <Lock className="w-3.5 h-3.5 text-slate-400" />
-              ) : (
-                <Zap className="w-3.5 h-3.5 text-amber-300" />
-              )}
-              <span>
-                {isShirt
-                  ? "Pasang ke Badan (AR 3D)"
-                  : isHat
-                    ? "Pasang ke Kepala (AR 3D)"
-                    : "Pasang ke Wajah (AR 3D)"}
-              </span>
-            </button>
-
-            {isUploadMode && (
-              <div className="absolute right-0 top-full mt-2 w-64 p-2.5 rounded-xl bg-slate-900/95 border border-amber-500/30 text-[11px] text-amber-200/90 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-40 backdrop-blur-md">
-                🔒 <strong>Mode AR Terkunci:</strong> Live AR membutuhkan pemindaian video langsung. Gunakan mode <strong>Studio 360°</strong> untuk melihat detail 3D produk.
-              </div>
-            )}
-          </div>
-
-          <button
-            onClick={() => setViewMode("studio")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer ${viewMode === "studio"
-              ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md shadow-purple-500/20"
-              : "text-slate-400 hover:text-white"
+              onClick={() => setViewMode("ar")}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                viewMode === "ar"
+                  ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/25"
+                  : "text-slate-400 hover:text-white"
               }`}
-          >
-            <Move3d className="w-3.5 h-3.5" />
-            <span>Putar 360°</span>
-          </button>
-        </div>
+            >
+              <Zap className="w-3.5 h-3.5" />
+              <span>Pasang ke Badan (AR 3D)</span>
+            </button>
+            <button
+              onClick={() => setViewMode("studio")}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                viewMode === "studio"
+                  ? "bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-lg shadow-purple-500/25"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <Move3d className="w-3.5 h-3.5" />
+              <span>Putar 360°</span>
+            </button>
+          </div>
+        )}
 
-        {/* Bottom Floating Info Badge */}
-        <div className="absolute bottom-4 left-4 z-20 hidden sm:flex items-center space-x-2.5 px-3.5 py-1.5 rounded-2xl bg-slate-900/85 backdrop-blur-md border border-white/10 text-xs shadow-lg">
+        {/* 3D Model Telemetry Badge */}
+        <div className="absolute bottom-4 left-4 z-20 flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-black/60 backdrop-blur-md border border-white/10 text-xs text-slate-300">
           <Box className="w-3.5 h-3.5 text-blue-400" />
           <span className="font-semibold text-white">{activeItem.name}</span>
-          <span className="text-emerald-400 text-[11px] font-mono font-bold">
+          <span className="text-emerald-400 font-mono text-[11px]">
             [{modelSource}]
           </span>
         </div>
       </div>
 
-      {/* AR Fine-Tuning Micro-Controls */}
-      <div className="glass-panel p-4 rounded-3xl border border-white/10 bg-surface-100/60 flex flex-wrap items-center justify-between gap-4">
-        {/* Position Controls: Atas/Bawah & Maju/Mundur */}
-        <div className="flex flex-wrap items-center gap-3 text-xs">
-          <div className="flex items-center space-x-2">
-            <Sliders className="w-4 h-4 text-indigo-400" />
-            <span className="font-semibold text-slate-300">
-              {isShirt
-                ? "Posisi Baju:"
-                : isHat
-                  ? "Posisi Topi:"
-                  : "Posisi Kacamata:"}
-            </span>
-          </div>
+      {/* Interactive Micro-Controls Panel for Perfect Fit */}
+      <div className="w-full bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-300">
+        <div className="flex items-center space-x-2">
+          <Sliders className="w-4 h-4 text-blue-400" />
+          <span className="font-medium text-white">
+            {isHat ? "Posisi Topi:" : isShirt ? "Posisi Baju:" : "Posisi Kacamata:"}
+          </span>
+        </div>
 
-          {/* Atas / Bawah */}
-          <div className="flex items-center space-x-1.5 bg-slate-900/60 p-1 rounded-2xl border border-white/5">
-            <span className="text-[11px] text-slate-400 px-1.5 font-medium">Tinggi:</span>
-            <button
-              onClick={() => setOffsetY((prev) => prev + 1)}
-              className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-white/10 font-bold text-xs transition-all cursor-pointer"
-              title="Geser Naik (Atas)"
-            >
-              ▲ Naik
-            </button>
-            <button
-              onClick={() => setOffsetY((prev) => prev - 1)}
-              className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-white/10 font-bold text-xs transition-all cursor-pointer"
-              title="Geser Turun (Bawah)"
-            >
-              ▼ Turun
-            </button>
-          </div>
+        {/* Height Controls (Y-Axis) */}
+        <div className="flex items-center space-x-1.5 bg-slate-800/80 px-2 py-1 rounded-xl border border-white/5">
+          <span className="text-slate-400 mr-1 text-[11px]">Tinggi:</span>
+          <button
+            onClick={() => setOffsetY((prev) => prev + 1)}
+            className="px-2 py-0.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium active:scale-95 transition-all text-[11px]"
+          >
+            ▲ Naik
+          </button>
+          <button
+            onClick={() => setOffsetY((prev) => prev - 1)}
+            className="px-2 py-0.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium active:scale-95 transition-all text-[11px]"
+          >
+            ▼ Turun
+          </button>
+        </div>
 
-          {/* Maju / Mundur */}
-          <div className="flex items-center space-x-1.5 bg-slate-900/60 p-1 rounded-2xl border border-white/5">
-            <span className="text-[11px] text-slate-400 px-1.5 font-medium">Maju/Mundur:</span>
-            <button
-              onClick={() => setOffsetZ((prev) => prev + 1)}
-              className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-white/10 font-bold text-xs transition-all cursor-pointer"
-              title="Geser Maju (Keluar ke Depan)"
-            >
-              ▲ Maju
-            </button>
-            <button
-              onClick={() => setOffsetZ((prev) => prev - 1)}
-              className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-white/10 font-bold text-xs transition-all cursor-pointer"
-              title="Geser Mundur (Masuk ke Dalam)"
-            >
-              ▼ Mundur
-            </button>
-          </div>
+        {/* Depth Controls (Z-Axis: Maju / Mundur) */}
+        <div className="flex items-center space-x-1.5 bg-slate-800/80 px-2 py-1 rounded-xl border border-white/5">
+          <span className="text-slate-400 mr-1 text-[11px]">Maju/Mundur:</span>
+          <button
+            onClick={() => setOffsetZ((prev) => prev + 1)}
+            className="px-2 py-0.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium active:scale-95 transition-all text-[11px]"
+          >
+            ▲ Maju
+          </button>
+          <button
+            onClick={() => setOffsetZ((prev) => prev - 1)}
+            className="px-2 py-0.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium active:scale-95 transition-all text-[11px]"
+          >
+            ▼ Mundur
+          </button>
+        </div>
 
-          {/* Reset */}
+        {/* Reset Adjustment */}
+        {(offsetY !== 0 || offsetZ !== 0 || scaleMultiplier !== 100) && (
           <button
             onClick={() => {
               setOffsetY(0);
               setOffsetZ(0);
               setScaleMultiplier(100);
             }}
-            className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-400 hover:text-white border border-white/10 transition-all flex items-center space-x-1.5 cursor-pointer"
-            title="Reset Posisi & Skala ke Default"
+            className="flex items-center space-x-1 px-2.5 py-1 rounded-xl bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30 font-medium transition-all text-[11px]"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span className="text-[11px] font-medium">Reset</span>
+            <RotateCcw className="w-3 h-3" />
+            <span>Reset</span>
           </button>
-        </div>
+        )}
 
-        {/* Scale Slider */}
-        <div className="flex items-center space-x-3 text-xs bg-slate-900/60 px-3 py-1.5 rounded-2xl border border-white/5">
-          <span className="text-slate-400 font-mono">
-            Ukuran: <strong className="text-blue-400">{scaleMultiplier}%</strong>
-          </span>
+        {/* Size / Scale Slider */}
+        <div className="flex items-center space-x-2 bg-slate-800/80 px-3 py-1 rounded-xl border border-white/5">
+          <span className="text-slate-400 text-[11px]">Ukuran: <strong className="text-white font-mono">{scaleMultiplier}%</strong></span>
           <input
             type="range"
-            min={70}
-            max={130}
+            min="60"
+            max="150"
+            step="1"
             value={scaleMultiplier}
             onChange={(e) => setScaleMultiplier(Number(e.target.value))}
-            className="w-24 sm:w-28 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
+            className="w-24 accent-blue-500 cursor-pointer h-1.5 bg-slate-700 rounded-lg"
           />
         </div>
       </div>
     </div>
   );
 };
-
-export default ARCanvasViewer;
-
