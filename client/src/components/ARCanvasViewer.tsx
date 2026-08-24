@@ -53,8 +53,29 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   const [offsetZ, setOffsetZ] = useState<number>(0);
   // Manual yaw rotation (radians) so the user can rotate the model themselves in camera AR mode
   const [rotOffset, setRotOffset] = useState<number>(0);
-  const dragStateRef = useRef<{ startX: number; startRot: number } | null>(null);
   const [scaleMultiplier, setScaleMultiplier] = useState<number>(100);
+
+  const rotOffsetRef = useRef<number>(0);
+  const offsetYRef = useRef<number>(0);
+  const offsetZRef = useRef<number>(0);
+  const scaleMultiplierRef = useRef<number>(100);
+  const dragStateRef = useRef<{ startX: number; startRot: number } | null>(null);
+
+  useEffect(() => {
+    rotOffsetRef.current = rotOffset;
+  }, [rotOffset]);
+
+  useEffect(() => {
+    offsetYRef.current = offsetY;
+  }, [offsetY]);
+
+  useEffect(() => {
+    offsetZRef.current = offsetZ;
+  }, [offsetZ]);
+
+  useEffect(() => {
+    scaleMultiplierRef.current = scaleMultiplier;
+  }, [scaleMultiplier]);
 
   const isUploadMode = inputMode === "upload";
 
@@ -370,7 +391,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
       cancelAnimationFrame(rafRef.current);
       renderer.dispose();
     };
-  }, [viewMode, activeItem, subcategory, offsetY, scaleMultiplier, isShirt]);
+  }, [viewMode, activeItem, subcategory, isShirt]);
 
   /* ------------------------------------------------------------------ */
   /*  4. Load 3D Model File with Optical Glass Shaders & Auto-Alignment */
@@ -555,10 +576,10 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
     const worldX = ndcX * halfW;
     // Lower hat anchor so head & hair fully enter the hat cavity and brim rests around upper brow level
-    const worldY = isHat ? (ndcY * halfH - 0.16 + offsetY * 0.012) : (ndcY * halfH - 0.01 + offsetY * 0.012);
+    const worldY = isHat ? (ndcY * halfH - 0.16 + offsetYRef.current * 0.012) : (ndcY * halfH - 0.01 + offsetYRef.current * 0.012);
     const worldZ = isHat
-      ? ((foreheadTop?.z || nasion.z || 0) * -1.8 - 0.03 + offsetZ * 0.015)
-      : ((nasion.z || 0) * -1.8 + offsetZ * 0.015);
+      ? ((foreheadTop?.z || nasion.z || 0) * -1.8 - 0.03 + offsetZRef.current * 0.015)
+      : ((nasion.z || 0) * -1.8 + offsetZRef.current * 0.015);
 
     const screenLeftEyeX = offsetX + (1 - eyeLX) * renderedWidth;
     const screenLeftEyeY = offsetYPixel + eyeLY * renderedHeight;
@@ -598,14 +619,14 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const worldInterPupil = (pixelDist / cw) * (2 * halfW);
     // Hats require 2.85x IPD to fit the entire human skull & hair volume comfortably
     const baseScale = isHat ? worldInterPupil * 2.85 : worldInterPupil * 2.35;
-    const finalScale = baseScale * (scaleMultiplier / 100);
+    const finalScale = baseScale * (scaleMultiplierRef.current / 100);
 
     group.position.x = THREE.MathUtils.lerp(group.position.x, worldX, 0.45);
     group.position.y = THREE.MathUtils.lerp(group.position.y, worldY, 0.45);
     group.position.z = THREE.MathUtils.lerp(group.position.z, worldZ, 0.45);
 
     group.rotation.z = THREE.MathUtils.lerp(group.rotation.z, safeRoll, 0.45);
-    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw + rotOffset, 0.45);
+    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw + rotOffsetRef.current, 0.45);
     group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, safePitch, 0.45);
 
     group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.45);
@@ -693,18 +714,18 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     // World Space Scale (Shirt fits user shoulder span accurately)
     const worldShoulderSpan = (shoulderSpanPx / cw) * (2 * halfW);
     const baseScale = worldShoulderSpan * 1.30;
-    const finalScale = baseScale * (scaleMultiplier / 100);
+    const finalScale = baseScale * (scaleMultiplierRef.current / 100);
 
     // Shirt model is now fully centered (like glasses & hats): drop its center
     // to mid-torso, half a shirt-height below the shoulder/neck anchor line.
-    const worldY = ndcY * halfH - 0.55 * finalScale + offsetY * 0.012;
+    const worldY = ndcY * halfH - 0.55 * finalScale + offsetYRef.current * 0.012;
 
     group.position.x = THREE.MathUtils.lerp(group.position.x, worldX, 0.45);
     group.position.y = THREE.MathUtils.lerp(group.position.y, worldY, 0.45);
     group.position.z = THREE.MathUtils.lerp(group.position.z, worldZ, 0.45);
 
     group.rotation.z = THREE.MathUtils.lerp(group.rotation.z, safeRoll, 0.45);
-    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw + rotOffset, 0.45);
+    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw + rotOffsetRef.current, 0.45);
     group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, safePitch, 0.45);
 
     group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.45);
@@ -772,8 +793,8 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const halfW = halfH * (cw / ch);
 
     const worldX = ndcX * halfW;
-    const worldY = ndcY * halfH + 0.02 + offsetY * 0.012;
-    const worldZ = (chin.z || 0) * -1.8 - 0.02 + offsetZ * 0.015;
+    const worldY = ndcY * halfH + 0.02 + offsetYRef.current * 0.012;
+    const worldZ = (chin.z || 0) * -1.8 - 0.02 + offsetZRef.current * 0.015;
 
     const rollAngle = Math.atan2(dy, dx);
     const safeRoll = THREE.MathUtils.clamp(rollAngle, -0.85, 0.85);
@@ -790,14 +811,14 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const worldFaceWidth = (faceWidthPx / cw) * (2 * halfW);
     const worldShoulderSpan = worldFaceWidth * 2.2;
     const baseScale = worldShoulderSpan * 1.30;
-    const finalScale = baseScale * (scaleMultiplier / 100);
+    const finalScale = baseScale * (scaleMultiplierRef.current / 100);
 
     group.position.x = THREE.MathUtils.lerp(group.position.x, worldX, 0.45);
     group.position.y = THREE.MathUtils.lerp(group.position.y, worldY, 0.45);
     group.position.z = THREE.MathUtils.lerp(group.position.z, worldZ, 0.45);
 
     group.rotation.z = THREE.MathUtils.lerp(group.rotation.z, safeRoll, 0.45);
-    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw + rotOffset, 0.45);
+    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw + rotOffsetRef.current, 0.45);
     group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, safePitch, 0.45);
 
     group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.45);
@@ -815,13 +836,15 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           <div
             className="relative w-full h-full flex items-center justify-center bg-black overflow-hidden select-none cursor-grab active:cursor-grabbing touch-none"
             onPointerDown={(e) => {
-              dragStateRef.current = { startX: e.clientX, startRot: rotOffset };
+              dragStateRef.current = { startX: e.clientX, startRot: rotOffsetRef.current };
               (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
             }}
             onPointerMove={(e) => {
               const ds = dragStateRef.current;
               if (!ds) return;
-              setRotOffset(ds.startRot + (e.clientX - ds.startX) * 0.01);
+              const newRot = ds.startRot + (e.clientX - ds.startX) * 0.012;
+              rotOffsetRef.current = newRot;
+              setRotOffset(newRot);
             }}
             onPointerUp={() => { dragStateRef.current = null; }}
             onPointerLeave={() => { dragStateRef.current = null; }}
@@ -942,14 +965,26 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           <div className="flex items-center space-x-1.5 bg-slate-900/60 p-1 rounded-2xl border border-white/5">
             <span className="text-[11px] text-slate-400 px-1.5 font-medium">Tinggi:</span>
             <button
-              onClick={() => setOffsetY((prev) => prev + 1)}
+              onClick={() => {
+                setOffsetY((prev) => {
+                  const next = prev + 1;
+                  offsetYRef.current = next;
+                  return next;
+                });
+              }}
               className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-white/10 font-bold text-xs transition-all cursor-pointer"
               title="Geser Naik (Atas)"
             >
               ▲ Naik
             </button>
             <button
-              onClick={() => setOffsetY((prev) => prev - 1)}
+              onClick={() => {
+                setOffsetY((prev) => {
+                  const next = prev - 1;
+                  offsetYRef.current = next;
+                  return next;
+                });
+              }}
               className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-white/10 font-bold text-xs transition-all cursor-pointer"
               title="Geser Turun (Bawah)"
             >
@@ -969,9 +1004,13 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           <button
             onClick={() => {
               setOffsetY(0);
+              offsetYRef.current = 0;
               setOffsetZ(0);
+              offsetZRef.current = 0;
               setRotOffset(0);
+              rotOffsetRef.current = 0;
               setScaleMultiplier(100);
+              scaleMultiplierRef.current = 100;
             }}
             className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-400 hover:text-white border border-white/10 transition-all flex items-center space-x-1.5 cursor-pointer"
             title="Reset Posisi & Skala ke Default"
@@ -991,7 +1030,11 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
             min={70}
             max={130}
             value={scaleMultiplier}
-            onChange={(e) => setScaleMultiplier(Number(e.target.value))}
+            onChange={(e) => {
+              const val = Number(e.target.value);
+              scaleMultiplierRef.current = val;
+              setScaleMultiplier(val);
+            }}
             className="w-24 sm:w-28 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
           />
         </div>
