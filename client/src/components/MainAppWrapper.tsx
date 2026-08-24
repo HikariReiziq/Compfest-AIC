@@ -252,8 +252,8 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
         />
       )}
 
-      {/* Main Container */}
-      <div className="relative z-10 w-full px-6 sm:px-10 lg:px-14 pt-24 pb-12 flex-1 flex flex-col justify-start">
+      {/* Main Container — jarak atas lega dari floating navbar */}
+      <div className="relative z-10 w-full px-6 sm:px-10 lg:px-14 pt-32 sm:pt-36 lg:pt-40 pb-12 flex-1 flex flex-col justify-start">
         {/* STEP 1: CATEGORY SELECTION */}
         {currentStep === 'CATEGORY' && (
           <CategorySelector onSelectCategory={handleCategorySelected} />
