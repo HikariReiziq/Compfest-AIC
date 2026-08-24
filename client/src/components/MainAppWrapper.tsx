@@ -403,6 +403,7 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
                 <SwitchControls
                   items={recommendations}
                   currentIndex={currentRecIndex}
+                  userProfile={userProfile}
                   onSelectIndex={(idx) => setCurrentRecIndex(idx)}
                   onPrev={handlePrevItem}
                   onNext={handleNextItem}
