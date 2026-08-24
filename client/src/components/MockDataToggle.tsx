@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { UserCheck, Sliders } from "lucide-react";
+import { UserCheck, Sliders, Camera } from "lucide-react";
 import { MOCK_PRESETS, UserPersonalProfile } from "../lib/mockData";
 
 interface MockDataToggleProps {
@@ -27,13 +27,14 @@ export const MockDataToggle: React.FC<MockDataToggleProps> = ({
         <div className="flex flex-wrap items-center gap-1.5">
           <button
             onClick={onUseLiveCamera}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
               activePresetKey === null
                 ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
                 : "bg-surface-50 text-slate-300 hover:bg-surface-50/80 border border-white/5"
             }`}
           >
-            📷 Live Kamera
+            <Camera className="w-3.5 h-3.5" />
+            <span>Live Kamera</span>
           </button>
 
           {Object.entries(MOCK_PRESETS).map(([key, data]) => {

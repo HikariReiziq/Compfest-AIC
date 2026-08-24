@@ -10,6 +10,12 @@ import {
   RotateCcw,
   Sliders,
   Lock,
+  RotateCw,
+  Move,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import { RecommendationItem } from "../lib/mockData";
 
@@ -955,7 +961,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
             {isUploadMode && (
               <div className="absolute right-0 top-full mt-2 w-64 p-2.5 rounded-xl bg-slate-900/95 border border-amber-500/30 text-[11px] text-amber-200/90 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-40 backdrop-blur-md">
-                🔒 <strong>Mode AR Terkunci:</strong> Live AR membutuhkan pemindaian video langsung. Gunakan mode <strong>Studio 360°</strong> untuk melihat detail 3D produk.
+                <Lock className="w-3.5 h-3.5 inline mr-1 text-amber-400" /> <strong>Mode AR Terkunci:</strong> Live AR membutuhkan pemindaian video langsung. Gunakan mode <strong>Studio 360°</strong> untuk melihat detail 3D produk.
               </div>
             )}
           </div>
@@ -997,7 +1003,8 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               }`}
               title="Opsi 1: Geser di layar untuk memutar model 3D (360°)"
             >
-              <span>🔄 Opsi 1: Rotasi (Putar 360°)</span>
+              <RotateCw className="w-3.5 h-3.5" />
+              <span>Opsi 1: Rotasi (Putar 360°)</span>
             </button>
             <button
               onClick={() => setDragMode("pan")}
@@ -1008,7 +1015,8 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               }`}
               title="Opsi 2: Geser di layar ke segala arah untuk memindahkan posisi (Atas, Bawah, Kiri, Kanan)"
             >
-              <span>✋ Opsi 2: Posisi (Atas • Bawah • Kiri • Kanan)</span>
+              <Move className="w-3.5 h-3.5" />
+              <span>Opsi 2: Posisi (Atas • Bawah • Kiri • Kanan)</span>
             </button>
           </div>
 
@@ -1023,10 +1031,11 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
                   return next;
                 });
               }}
-              className="px-2 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-white/10 font-bold text-xs transition-all cursor-pointer"
+              className="px-2 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-white/10 font-bold text-xs transition-all cursor-pointer flex items-center gap-1"
               title="Geser Kiri"
             >
-              ◀ Kiri
+              <ChevronLeft className="w-3.5 h-3.5" />
+              <span>Kiri</span>
             </button>
             <button
               onClick={() => {
@@ -1036,10 +1045,11 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
                   return next;
                 });
               }}
-              className="px-2 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-white/10 font-bold text-xs transition-all cursor-pointer"
+              className="px-2 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-white/10 font-bold text-xs transition-all cursor-pointer flex items-center gap-1"
               title="Geser Kanan"
             >
-              ▶ Kanan
+              <ChevronRight className="w-3.5 h-3.5" />
+              <span>Kanan</span>
             </button>
             <button
               onClick={() => {
@@ -1049,10 +1059,11 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
                   return next;
                 });
               }}
-              className="px-2 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-white/10 font-bold text-xs transition-all cursor-pointer"
+              className="px-2 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-white/10 font-bold text-xs transition-all cursor-pointer flex items-center gap-1"
               title="Geser Naik"
             >
-              ▲ Naik
+              <ChevronUp className="w-3.5 h-3.5" />
+              <span>Naik</span>
             </button>
             <button
               onClick={() => {
@@ -1062,10 +1073,11 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
                   return next;
                 });
               }}
-              className="px-2 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-white/10 font-bold text-xs transition-all cursor-pointer"
+              className="px-2 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-white/10 font-bold text-xs transition-all cursor-pointer flex items-center gap-1"
               title="Geser Turun"
             >
-              ▼ Turun
+              <ChevronDown className="w-3.5 h-3.5" />
+              <span>Turun</span>
             </button>
           </div>
 

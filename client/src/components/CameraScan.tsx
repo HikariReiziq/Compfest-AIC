@@ -15,6 +15,7 @@ import {
   Check,
   ImagePlus,
   ShieldCheck,
+  ArrowLeft,
 } from "lucide-react";
 import { UserPersonalProfile, MOCK_PRESETS } from "../lib/mockData";
 import { analyzeLandmarks } from "../lib/api";
@@ -1091,7 +1092,8 @@ export const CameraScan: React.FC<CameraScanProps> = ({
             onClick={onBack}
             className="inline-flex items-center gap-1.5 text-xs font-mono text-[#93C5FD] hover:text-white transition-colors mb-1 cursor-pointer"
           >
-            <span>← Kembali ke Pilihan Kategori</span>
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Kembali ke Pilihan Kategori</span>
           </button>
         )}
         <div className="flex items-center justify-center">
@@ -1490,7 +1492,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                   </li>
                   <li className="flex items-start gap-3">
                     <span className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 font-mono text-xs font-bold">
-                      ✓
+                      <Check className="w-3.5 h-3.5" />
                     </span>
                     <span>
                       Pemindaian otomatis dimulai dengan{" "}
@@ -1681,7 +1683,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                           : "text-slate-400 hover:text-white"
                       }`}
                     >
-                      ♂ Pria
+                      Pria
                     </button>
                     <button
                       type="button"
@@ -1707,7 +1709,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                           : "text-slate-400 hover:text-white"
                       }`}
                     >
-                      ♀ Wanita
+                      Wanita
                     </button>
                   </div>
                 </div>

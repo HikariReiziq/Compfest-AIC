@@ -444,8 +444,9 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
                   <div className="flex items-center justify-between gap-3 flex-wrap">
                     <h3 className="font-bold text-white text-lg sm:text-xl leading-snug">{q.question}</h3>
                     {isAnswered && (
-                      <span className="text-xs font-mono text-[#93C5FD] bg-blue-500/20 border border-blue-500/30 px-3 py-1 rounded-full shrink-0">
-                        ✓ Terjawab
+                      <span className="text-xs font-mono text-[#93C5FD] bg-blue-500/20 border border-blue-500/30 px-3 py-1 rounded-full shrink-0 flex items-center gap-1">
+                        <Check className="w-3 h-3 text-[#38BDF8]" />
+                        <span>Terjawab</span>
                       </span>
                     )}
                   </div>

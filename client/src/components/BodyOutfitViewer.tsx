@@ -11,6 +11,8 @@ import {
   Box,
   ShieldCheck,
   Lock,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import { RecommendationItem } from "../lib/mockData";
 
@@ -746,17 +748,17 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
             <span className="text-[#94A3B8] font-semibold">Tinggi:</span>
             <button
               onClick={() => setOffsetY((prev) => prev + 2)}
-              className="px-2.5 py-1 rounded-full bg-[#071120] hover:bg-blue-600 text-white border border-blue-500/30 font-bold text-xs transition-colors"
+              className="px-2.5 py-1 rounded-full bg-[#071120] hover:bg-blue-600 text-white border border-blue-500/30 font-bold text-xs transition-colors flex items-center justify-center"
               title="Geser Naik"
             >
-              ▲
+              <ChevronUp className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => setOffsetY((prev) => prev - 2)}
-              className="px-2.5 py-1 rounded-full bg-[#071120] hover:bg-blue-600 text-white border border-blue-500/30 font-bold text-xs transition-colors"
+              className="px-2.5 py-1 rounded-full bg-[#071120] hover:bg-blue-600 text-white border border-blue-500/30 font-bold text-xs transition-colors flex items-center justify-center"
               title="Geser Turun"
             >
-              ▼
+              <ChevronDown className="w-3.5 h-3.5" />
             </button>
           </div>
 

@@ -249,7 +249,7 @@ export default function PreviewGenerator() {
           disabled={isProcessing}
           className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold shadow-lg disabled:opacity-50"
         >
-          {isProcessing ? "Rendering..." : "🚀 Render & Save All Previews"}
+          {isProcessing ? "Rendering..." : "Render & Save All Previews"}
         </button>
       </div>
 

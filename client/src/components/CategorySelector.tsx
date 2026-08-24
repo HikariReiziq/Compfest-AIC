@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Glasses, Crown, Shirt, ArrowRight } from 'lucide-react';
+import { Glasses, Crown, Shirt, ArrowRight, Check } from 'lucide-react';
 
 interface CategorySelectorProps {
   onSelectCategory: (
@@ -40,8 +40,9 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
               <div className="w-16 h-16 rounded-2xl bg-[#071120] border border-blue-500/20 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
                 <Glasses className="w-8 h-8 text-[#38BDF8]" />
               </div>
-              <span className="text-xs font-mono px-3.5 py-1 rounded-full bg-blue-500/20 text-[#93C5FD] border border-blue-500/30 font-bold">
-                ✓ 7 Model 3D
+              <span className="text-xs font-mono px-3 py-1 rounded-full bg-blue-500/20 text-[#93C5FD] border border-blue-500/30 font-bold flex items-center gap-1">
+                <Check className="w-3 h-3" />
+                <span>7 Model 3D</span>
               </span>
             </div>
 
@@ -75,8 +76,9 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
               <div className="w-16 h-16 rounded-2xl bg-[#071120] border border-blue-500/20 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
                 <Crown className="w-8 h-8 text-[#60A5FA] fill-current" />
               </div>
-              <span className="text-xs font-mono px-3.5 py-1 rounded-full bg-blue-500/20 text-[#93C5FD] border border-blue-500/30 font-bold">
-                ✓ 11 Model 3D
+              <span className="text-xs font-mono px-3 py-1 rounded-full bg-blue-500/20 text-[#93C5FD] border border-blue-500/30 font-bold flex items-center gap-1">
+                <Check className="w-3 h-3" />
+                <span>11 Model 3D</span>
               </span>
             </div>
 
@@ -110,8 +112,9 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
               <div className="w-16 h-16 rounded-2xl bg-[#071120] border border-blue-500/20 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
                 <Shirt className="w-8 h-8 text-[#38BDF8] fill-current" />
               </div>
-              <span className="text-xs font-mono px-3.5 py-1 rounded-full bg-blue-500/20 text-[#93C5FD] border border-blue-500/30 font-bold">
-                ✓ 19 Model 3D
+              <span className="text-xs font-mono px-3 py-1 rounded-full bg-blue-500/20 text-[#93C5FD] border border-blue-500/30 font-bold flex items-center gap-1">
+                <Check className="w-3 h-3" />
+                <span>19 Model 3D</span>
               </span>
             </div>
 

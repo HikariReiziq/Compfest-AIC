@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Check } from 'lucide-react';
 
 interface HeaderNavbarProps {
   currentStep: 'CATEGORY' | 'SCAN' | 'REPORT' | 'QUIZ' | 'PROCESSING' | 'TRYON';
@@ -108,7 +108,7 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
                   : 'text-[#475569] cursor-not-allowed opacity-60'
               }`}
             >
-              {isCompleted && <span className="text-[#FACC15]">✓</span>}
+              {isCompleted && <Check className="w-3 h-3 text-[#FACC15]" />}
               <span>{s.label}</span>
             </button>
           );
