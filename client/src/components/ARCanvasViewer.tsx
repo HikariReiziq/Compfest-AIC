@@ -58,8 +58,14 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   // Manual 360° Omnidirectional rotation (Yaw around Y, Pitch around X)
   const [rotOffsetY, setRotOffsetY] = useState<number>(0);
   const [rotOffsetX, setRotOffsetX] = useState<number>(0);
-  const [scaleMultiplier, setScaleMultiplier] = useState<number>(100);
-  const [dragMode, setDragMode] = useState<"pan" | "rotate">("pan");
+  const [scaleMultiplier, setScaleMultiplier] = useState<number>(100);  const [dragMode, setDragMode] = useState<"pan" | "rotate">("pan");
+
+  const studioYawRef = useRef<number>(0);
+  const studioPitchRef = useRef<number>(0);
+  const studioZoomRef = useRef<number>(1);
+  const isDraggingStudioRef = useRef<boolean>(false);
+  const autoRotateStudioRef = useRef<boolean>(true);
+  const [isAutoRotateStudio, setIsAutoRotateStudio] = useState<boolean>(true);
 
   const offsetXRef = useRef<number>(0);
   const offsetYRef = useRef<number>(0);
@@ -75,7 +81,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     startOffsetY: number;
     startRotX: number;
     startRotY: number;
-  } | null>(null);
+  } | null>(null);;
 
   useEffect(() => {
     offsetXRef.current = offsetX;
@@ -390,11 +396,31 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
         setIsTrackingLive(false);
         if (modelGroup) {
           modelGroup.visible = true;
-          modelGroup.rotation.y += 0.015;
-          const studioTargetY = isShirt ? 0.38 : isHat ? -0.12 : 0;
-          const studioScale = isShirt ? 0.95 : 1.2;
-          modelGroup.position.lerp(new THREE.Vector3(0, studioTargetY, 0), 0.08);
-          modelGroup.scale.lerp(new THREE.Vector3(studioScale, studioScale, studioScale), 0.08);
+
+          // Auto-rotate turntable gently when user is NOT dragging
+          if (!isDraggingStudioRef.current && autoRotateStudioRef.current) {
+            studioYawRef.current += 0.008;
+          }
+
+          modelGroup.rotation.y = studioYawRef.current + rotOffsetYRef.current;
+          modelGroup.rotation.x = studioPitchRef.current + rotOffsetXRef.current;
+          modelGroup.rotation.z = 0;
+
+          const studioTargetY = (isShirt ? 0.38 : isHat ? -0.12 : 0) + offsetYRef.current * 0.01;
+          const studioTargetX = offsetXRef.current * 0.01;
+          const baseScale =
+            (isShirt ? 0.95 : 1.25) *
+            studioZoomRef.current *
+            (scaleMultiplierRef.current / 100);
+
+          modelGroup.position.lerp(
+            new THREE.Vector3(studioTargetX, studioTargetY, 0),
+            0.1
+          );
+          modelGroup.scale.lerp(
+            new THREE.Vector3(baseScale, baseScale, baseScale),
+            0.1
+          );
         }
       }
 
@@ -1010,42 +1036,46 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           className="relative w-full max-w-[800px] mx-auto rounded-3xl border border-white/10 bg-gradient-to-b from-slate-900 via-[#0a0f1d] to-black overflow-hidden shadow-2xl flex items-center justify-center select-none animate-fadeIn cursor-grab active:cursor-grabbing touch-none"
           style={{ aspectRatio: "548 / 455" }}
           onPointerDown={(e) => {
+            isDraggingStudioRef.current = true;
+            autoRotateStudioRef.current = false;
+            setIsAutoRotateStudio(false);
             dragStateRef.current = {
               startX: e.clientX,
               startY: e.clientY,
               startOffsetX: offsetXRef.current,
               startOffsetY: offsetYRef.current,
-              startRotX: rotOffsetXRef.current,
-              startRotY: rotOffsetYRef.current,
+              startRotX: studioPitchRef.current,
+              startRotY: studioYawRef.current,
             };
-            (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+            (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
           }}
           onPointerMove={(e) => {
+            if (!isDraggingStudioRef.current || !dragStateRef.current) return;
             const ds = dragStateRef.current;
-            if (!ds) return;
-            if (dragModeRef.current === "rotate") {
-              const deltaYaw = (e.clientX - ds.startX) * 0.012;
-              const deltaPitch = (e.clientY - ds.startY) * 0.012;
-              const newRotY = ds.startRotY + deltaYaw;
-              const newRotX = ds.startRotX + deltaPitch;
-              rotOffsetYRef.current = newRotY;
-              rotOffsetXRef.current = newRotX;
-              setRotOffsetY(newRotY);
-              setRotOffsetX(newRotX);
-            } else {
-              const deltaX = (e.clientX - ds.startX) * 0.15;
-              const deltaY = -(e.clientY - ds.startY) * 0.15;
-              const newX = Number((ds.startOffsetX + deltaX).toFixed(1));
-              const newY = Number((ds.startOffsetY + deltaY).toFixed(1));
-              offsetXRef.current = newX;
-              offsetYRef.current = newY;
-              setOffsetX(newX);
-              setOffsetY(newY);
-            }
+            const deltaX = (e.clientX - ds.startX) * 0.015;
+            const deltaY = (e.clientY - ds.startY) * 0.015;
+
+            studioYawRef.current = ds.startRotY + deltaX;
+            studioPitchRef.current = Math.max(
+              -Math.PI / 2.2,
+              Math.min(Math.PI / 2.2, ds.startRotX + deltaY)
+            );
           }}
-          onPointerUp={() => { dragStateRef.current = null; }}
-          onPointerLeave={() => { dragStateRef.current = null; }}
-          onPointerCancel={() => { dragStateRef.current = null; }}
+          onPointerUp={(e) => {
+            isDraggingStudioRef.current = false;
+            dragStateRef.current = null;
+            (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
+          }}
+          onPointerCancel={() => {
+            isDraggingStudioRef.current = false;
+            dragStateRef.current = null;
+          }}
+          onWheel={(e) => {
+            e.preventDefault();
+            const delta = e.deltaY * -0.0015;
+            const nextZoom = Math.max(0.5, Math.min(2.5, studioZoomRef.current + delta));
+            studioZoomRef.current = nextZoom;
+          }}
         >
           {/* Radial Studio Spotlight */}
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(56,189,248,0.18)_0%,_transparent_75%)] pointer-events-none" />
@@ -1053,16 +1083,68 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           {/* 3D WebGL Canvas Layer Overlay */}
           <div ref={containerRef} className="absolute inset-0 w-full h-full z-10 pointer-events-none" />
 
-          {/* 360 Studio Badge */}
+          {/* Top-Left: 360 Studio Badge */}
           <div className="absolute top-4 left-4 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-blue-500/20 text-sky-300 border border-blue-500/30 text-xs font-mono z-30 shadow-lg backdrop-blur-md">
             <Box className="w-3.5 h-3.5 text-sky-400" />
             <span>STUDIO 360° INSPECTION</span>
           </div>
 
-          {/* Floating Instructions */}
+          {/* Top-Right: Quick Interactive 360 Controls */}
+          <div className="absolute top-4 right-4 z-30 flex items-center gap-1.5 bg-[#071120]/85 backdrop-blur-md p-1 rounded-full border border-white/10">
+            <button
+              type="button"
+              onClick={() => {
+                studioYawRef.current -= Math.PI / 4;
+              }}
+              className="p-1.5 rounded-full hover:bg-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer"
+              title="Putar Kiri 45°"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                studioYawRef.current += Math.PI / 4;
+              }}
+              className="p-1.5 rounded-full hover:bg-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer"
+              title="Putar Kanan 45°"
+            >
+              <RotateCw className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                studioYawRef.current = 0;
+                studioPitchRef.current = 0;
+                studioZoomRef.current = 1;
+              }}
+              className="px-2.5 py-1 rounded-full hover:bg-white/10 text-[10px] font-mono text-slate-300 hover:text-white transition-colors cursor-pointer"
+              title="Reset Tampilan Depan"
+            >
+              Depan
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const nextState = !autoRotateStudioRef.current;
+                autoRotateStudioRef.current = nextState;
+                setIsAutoRotateStudio(nextState);
+              }}
+              className={`px-2.5 py-1 rounded-full text-[10px] font-mono transition-colors cursor-pointer ${
+                isAutoRotateStudio
+                  ? "bg-blue-600 text-white font-bold shadow-sm"
+                  : "text-slate-400 hover:text-white"
+              }`}
+              title="Toggle Auto-Spin 360°"
+            >
+              {isAutoRotateStudio ? "Auto: ON" : "Auto: OFF"}
+            </button>
+          </div>
+
+          {/* Bottom Floating Instructions */}
           <div className="absolute bottom-4 right-4 z-20 hidden sm:flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#071120]/80 backdrop-blur-md border border-white/10 text-[10px] font-mono text-slate-400">
             <RotateCw className="w-3 h-3 text-sky-400" />
-            <span>Geser untuk memutar 360°</span>
+            <span>Geser layar untuk memutar 360° • Scroll untuk zoom</span>
           </div>
         </div>
       )}
