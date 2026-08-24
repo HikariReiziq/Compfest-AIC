@@ -875,7 +875,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
       else if (ratio >= 1.05 && ratio <= 1.15) detectedBodyShape = "Trapezoid (Atletis Proporsional)";
       else detectedBodyShape = "Rectangle (Persegi Panjang)";
 
-      const detectedGender = shoulderWidthCm >= 43 ? "male" : "female";
+      const detectedGender = shoulderWidthCm >= 37.5 ? "male" : "female";
 
       // Snapshot dari frame kamera live
       let snapshotUrl = "";
@@ -1148,13 +1148,13 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                 ? "relative bg-black rounded-3xl overflow-hidden border-2 border-slate-400/60 shadow-[0_0_0_1px_rgba(255,255,255,0.15),0_20px_60px_rgba(0,0,0,0.6)] flex items-center justify-center aspect-auto min-h-[480px] p-6"
                 : "relative w-full max-w-[800px] mx-auto drop-shadow-2xl"
             }
-            style={mode === "upload" ? undefined : { aspectRatio: "1720 / 1428" }}
+            style={mode === "upload" ? undefined : { aspectRatio: "548 / 455" }}
           >
             {mode === "upload" ? null : (
-              /* Bingkai kamera DSLR Canon EOS HD — hanya untuk langkah 2 mode kamera live */
+              /* Bingkai kamera DSLR Canon EOS — hanya untuk langkah 2 mode kamera live */
               <img
                 src="/images/camera-frame.png"
-                alt="Canon EOS DSLR Camera Frame"
+                alt="Canon Camera Frame"
                 aria-hidden
                 draggable={false}
                 className="absolute inset-0 w-full h-full object-contain pointer-events-none z-20 select-none drop-shadow-[0_25px_45px_rgba(0,0,0,0.65)]"
@@ -1248,10 +1248,10 @@ export const CameraScan: React.FC<CameraScanProps> = ({
               </div>
             ) : (
               <>
-              {/* Layar LCD kamera DSLR Canon HD — proporsi pas di dalam bezel layar */}
+              {/* Layar LCD kamera DSLR Canon — proporsi pas di dalam bezel layar */}
               <div
                 className="absolute z-10 overflow-hidden rounded-[3px] bg-black shadow-[inset_0_0_20px_rgba(0,0,0,0.95)]"
-                style={{ left: "16.51%", top: "42.37%", width: "45.06%", height: "36.20%" }}
+                style={{ left: "16.42%", top: "42.20%", width: "45.07%", height: "36.26%" }}
               >
               <div className="relative w-full h-full bg-black flex items-center justify-center">
             {hasCamera ? (
@@ -1346,11 +1346,23 @@ export const CameraScan: React.FC<CameraScanProps> = ({
               <div className="absolute bottom-2 left-2 w-3.5 h-3.5 border-b-2 border-l-2 border-white/60" />
               <div className="absolute bottom-2 right-2 w-3.5 h-3.5 border-b-2 border-r-2 border-white/60" />
 
-              {/* Central Countdown Indicator (hanya muncul saat 3-2-1) */}
+              {/* Central Futuristic Focus Shutter & Glowing Radial Countdown */}
               {countdown !== null && (
-                <div className="w-14 h-14 rounded-full bg-[#0B1528]/95 border-2 border-[#38BDF8] flex flex-col items-center justify-center animate-pulse backdrop-blur-md shadow-2xl z-20">
-                  <span className="text-2xl font-black text-white font-mono">{countdown}</span>
-                  <span className="text-[8px] font-mono text-[#FACC15] uppercase tracking-wider">Memindai</span>
+                <div className="relative flex items-center justify-center pointer-events-none z-30">
+                  {/* Outer pulsing ring */}
+                  <div className="absolute w-20 h-20 rounded-full border border-sky-400/40 animate-ping" />
+                  
+                  {/* Glowing Glassmorphic Dial */}
+                  <div className="relative w-16 h-16 rounded-full bg-slate-950/85 backdrop-blur-xl border-2 border-sky-400/80 shadow-[0_0_30px_rgba(56,189,248,0.6)] flex flex-col items-center justify-center">
+                    {/* Rotating focus notch */}
+                    <div className="absolute inset-0 rounded-full border-t-2 border-r-2 border-[#FACC15] animate-spin" style={{ animationDuration: "1.5s" }} />
+                    <span className="text-2xl font-black text-white font-mono drop-shadow-[0_0_12px_#38BDF8]">
+                      {countdown}
+                    </span>
+                    <span className="text-[7px] font-mono font-bold text-sky-300 uppercase tracking-widest -mt-0.5">
+                      LOCK
+                    </span>
+                  </div>
                 </div>
               )}
 
@@ -1600,64 +1612,69 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                   </span>
                 </div>
 
-                {/* 3. Gender */}
-                <div className="bg-[#0B1528] p-3.5 rounded-xl border border-white/10 space-y-1">
-                  <span className="text-[#94A3B8] font-mono text-[10px] uppercase tracking-wider block">GENDER</span>
-                  {/* Tiga nilai, bukan dua. Menuliskan ini sebagai ternary
-                      "female ? Wanita : Pria" akan menampilkan hasil yang ragu
-                      sebagai "Pria" — persis bias yang dihapus oleh deadband. */}
-                  <div className="font-bold text-white text-sm">
-                    {scannedProfile.gender?.label_id === "female"
-                      ? "Wanita"
-                      : scannedProfile.gender?.label_id === "male"
-                        ? "Pria"
-                        : "Belum Pasti"}
+                {/* 3. Gender / Jenis Kelamin */}
+                <div className="bg-[#0B1528] p-3.5 rounded-xl border border-white/10 flex items-center justify-between">
+                  <div>
+                    <span className="text-[#94A3B8] font-mono text-[10px] uppercase tracking-wider block">JENIS KELAMIN</span>
+                    <span className="font-bold text-white text-sm">
+                      {scannedProfile.gender?.label_id === "female"
+                        ? "Wanita (Female)"
+                        : "Pria (Male)"}
+                    </span>
                   </div>
-                  <p className="text-[10px] text-[#94A3B8]">
-                    {scannedProfile.gender?.label_id === "female"
-                      ? "Female"
-                      : scannedProfile.gender?.label_id === "male"
-                        ? "Male"
-                        : scannedProfile.gender?.leaning
-                          ? `Condong ${scannedProfile.gender.leaning === "female" ? "Wanita" : "Pria"} — dikonfirmasi lewat kuesioner`
-                          : "Dikonfirmasi lewat kuesioner"}
-                  </p>
-                  {/* Koreksi manual gender — override prioritas utama untuk
-                      modul rekomendasi: hasil scan hanya estimasi, kata user
-                      selalu menang. Mengubah di sini mengubah scannedProfile
-                      yang dikirim onScanComplete, sehingga downstream
-                      (rekomendasi pakaian/topi) mengikuti nilai ini. */}
-                  <div className="flex items-center gap-1.5 pt-1.5">
-                    <span className="text-[10px] text-[#64748B] font-mono">Koreksi manual:</span>
-                    {(["male", "female"] as const).map((gid) => (
-                      <button
-                        key={gid}
-                        type="button"
-                        onClick={() =>
-                          setScannedProfile((prev) =>
-                            prev
-                              ? {
-                                  ...prev,
-                                  gender: {
-                                    label: gid === "male" ? "Pria (Male)" : "Wanita (Female)",
-                                    label_id: gid,
-                                    confidence: 1.0,
-                                    method: "manual_correction",
-                                    rule: "dikonfirmasi oleh pengguna di UI",
-                                  },
-                                }
-                              : prev
-                          )
-                        }
-                        className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold border transition-colors cursor-pointer ${
-                          scannedProfile.gender?.label_id === gid
-                            ? "bg-blue-600 border-blue-400 text-white"
-                            : "bg-[#071120] border-white/15 text-[#94A3B8] hover:text-white"
-                        }`}
-                      >
-                        {gid === "male" ? "Pria" : "Wanita"}
-                      </button>
-                    ))}
+                  <div className="inline-flex rounded-xl bg-[#071120] p-1 border border-white/15 gap-1 shadow-inner">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setScannedProfile((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                gender: {
+                                  label: "Pria (Male)",
+                                  label_id: "male",
+                                  confidence: 1.0,
+                                  method: "manual_selection",
+                                  rule: "dipilih pengguna",
+                                },
+                              }
+                            : prev
+                        )
+                      }
+                      className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
+                        scannedProfile.gender?.label_id === "male"
+                          ? "bg-blue-600 border border-blue-400 text-white shadow-md"
+                          : "text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      ♂ Pria
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setScannedProfile((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                gender: {
+                                  label: "Wanita (Female)",
+                                  label_id: "female",
+                                  confidence: 1.0,
+                                  method: "manual_selection",
+                                  rule: "dipilih pengguna",
+                                },
+                              }
+                            : prev
+                        )
+                      }
+                      className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
+                        scannedProfile.gender?.label_id === "female"
+                          ? "bg-pink-600 border border-pink-400 text-white shadow-md"
+                          : "text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      ♀ Wanita
+                    </button>
                   </div>
                 </div>
               </div>

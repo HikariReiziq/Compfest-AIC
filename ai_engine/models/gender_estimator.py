@@ -70,22 +70,14 @@ class GenderEstimator:
     # Netral digeser ke 0.79 agar titik tengahnya representatif untuk populasi
     # pengguna target (kalibrasi langkah integrasi 2026-08-24).
     NEUTRAL = {
-        "jaw_to_cheek": 0.79,
-        "brow_to_eye": 0.16,
-        "lip_to_face_width": 0.42,
+        "jaw_to_cheek": 0.74,
+        "brow_to_eye": 0.165,
+        "lip_to_face_width": 0.45,
         "face_aspect": 0.75,
     }
 
     # Smile Dampening Factor.
-    #
-    # Rasio lip_to_face_width dihitung dari jarak sudut bibir (61-291)
-    # terhadap lebar pipi. Senyum lebar MERENGGANG sudut bibir ke samping,
-    # menaikkan rasio melewati 0.44 tanpa perubahan dimorfisme apa pun.
-    # Suku skor lip yang seharusnya netral itu bernilai negatif (mendorong
-    # feminin), sehingga tersenyum di depan kamera memicu salah klasifikasi
-    # "Wanita" untuk pria. Di atas ambang 0.44, kontribusi negatif suku lip
-    # diredam setengahnya agar ekspresi tidak mengubah hasil.
-    SMILE_LIP_THRESHOLD = 0.44
+    SMILE_LIP_THRESHOLD = 0.46
     SMILE_DAMPENING = 0.5
 
     # Dua dari empat rasio bersifat pose-invariant, dua lainnya tidak.

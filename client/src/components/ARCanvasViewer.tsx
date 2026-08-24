@@ -49,21 +49,31 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   const [cameraReady, setCameraReady] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [modelSource, setModelSource] = useState<string>("Memuat 3D Model...");
+  const [offsetX, setOffsetX] = useState<number>(0);
   const [offsetY, setOffsetY] = useState<number>(0);
   const [offsetZ, setOffsetZ] = useState<number>(0);
   // Manual yaw rotation (radians) so the user can rotate the model themselves in camera AR mode
   const [rotOffset, setRotOffset] = useState<number>(0);
   const [scaleMultiplier, setScaleMultiplier] = useState<number>(100);
+  const [dragMode, setDragMode] = useState<"pan" | "rotate">("pan");
 
-  const rotOffsetRef = useRef<number>(0);
+  const offsetXRef = useRef<number>(0);
   const offsetYRef = useRef<number>(0);
   const offsetZRef = useRef<number>(0);
+  const rotOffsetRef = useRef<number>(0);
   const scaleMultiplierRef = useRef<number>(100);
-  const dragStateRef = useRef<{ startX: number; startY: number; startRot: number; startOffsetY: number } | null>(null);
+  const dragModeRef = useRef<"pan" | "rotate">("pan");
+  const dragStateRef = useRef<{
+    startX: number;
+    startY: number;
+    startOffsetX: number;
+    startOffsetY: number;
+    startRot: number;
+  } | null>(null);
 
   useEffect(() => {
-    rotOffsetRef.current = rotOffset;
-  }, [rotOffset]);
+    offsetXRef.current = offsetX;
+  }, [offsetX]);
 
   useEffect(() => {
     offsetYRef.current = offsetY;
@@ -74,8 +84,16 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   }, [offsetZ]);
 
   useEffect(() => {
+    rotOffsetRef.current = rotOffset;
+  }, [rotOffset]);
+
+  useEffect(() => {
     scaleMultiplierRef.current = scaleMultiplier;
   }, [scaleMultiplier]);
+
+  useEffect(() => {
+    dragModeRef.current = dragMode;
+  }, [dragMode]);
 
   const isUploadMode = inputMode === "upload";
 
@@ -574,7 +592,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const halfH = Math.tan((45 * Math.PI) / 360) * 4.2;
     const halfW = halfH * (cw / ch);
 
-    const worldX = ndcX * halfW;
+    const worldX = ndcX * halfW + offsetXRef.current * 0.012;
     // Lower hat anchor so head & hair fully enter the hat cavity and brim rests around upper brow level
     const worldY = isHat ? (ndcY * halfH - 0.16 + offsetYRef.current * 0.012) : (ndcY * halfH - 0.01 + offsetYRef.current * 0.012);
     const worldZ = isHat
@@ -692,9 +710,9 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const halfH = Math.tan((45 * Math.PI) / 360) * 4.2;
     const halfW = halfH * (cw / ch);
 
-    const worldX = ndcX * halfW;
+    const worldX = ndcX * halfW + offsetXRef.current * 0.012;
     const midShoulderZ = ((leftShoulder.z || 0) + (rightShoulder.z || 0)) / 2;
-    const worldZ = midShoulderZ * -2.0 - 0.02 + offsetZ * 0.015;
+    const worldZ = midShoulderZ * -2.0 - 0.02 + offsetZRef.current * 0.015;
 
     // 1. True 3D Roll: Shoulder slant
     const rollAngle = Math.atan2(dy, dx);
@@ -792,7 +810,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const halfH = Math.tan((45 * Math.PI) / 360) * 4.2;
     const halfW = halfH * (cw / ch);
 
-    const worldX = ndcX * halfW;
+    const worldX = ndcX * halfW + offsetXRef.current * 0.012;
     const worldY = ndcY * halfH + 0.02 + offsetYRef.current * 0.012;
     const worldZ = (chin.z || 0) * -1.8 - 0.02 + offsetZRef.current * 0.015;
 
@@ -839,23 +857,30 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               dragStateRef.current = {
                 startX: e.clientX,
                 startY: e.clientY,
-                startRot: rotOffsetRef.current,
+                startOffsetX: offsetXRef.current,
                 startOffsetY: offsetYRef.current,
+                startRot: rotOffsetRef.current,
               };
               (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
             }}
             onPointerMove={(e) => {
               const ds = dragStateRef.current;
               if (!ds) return;
-              // Geser horizontal untuk putar 3D
-              const newRot = ds.startRot + (e.clientX - ds.startX) * 0.012;
-              rotOffsetRef.current = newRot;
-              setRotOffset(newRot);
-
-              // Geser vertikal untuk naik / turun posisi model secara langsung di layar
-              const newOffsetY = ds.startOffsetY + (ds.startY - e.clientY) * 0.08;
-              offsetYRef.current = newOffsetY;
-              setOffsetY(newOffsetY);
+              if (dragModeRef.current === "rotate") {
+                const newRot = ds.startRot + (e.clientX - ds.startX) * 0.012;
+                rotOffsetRef.current = newRot;
+                setRotOffset(newRot);
+              } else {
+                // Free 2D position pan across screen in all directions (X, Y)
+                const deltaX = (e.clientX - ds.startX) * 0.15;
+                const deltaY = -(e.clientY - ds.startY) * 0.15;
+                const newX = Number((ds.startOffsetX + deltaX).toFixed(1));
+                const newY = Number((ds.startOffsetY + deltaY).toFixed(1));
+                offsetXRef.current = newX;
+                offsetYRef.current = newY;
+                setOffsetX(newX);
+                setOffsetY(newY);
+              }
             }}
             onPointerUp={() => { dragStateRef.current = null; }}
             onPointerLeave={() => { dragStateRef.current = null; }}
@@ -959,30 +984,103 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
       {/* AR Fine-Tuning Micro-Controls */}
       <div className="glass-panel p-4 rounded-3xl border border-white/10 bg-surface-100/60 flex flex-wrap items-center justify-between gap-4">
-        {/* Position Controls: Geser Langsung di Layar & Reset */}
-        <div className="flex flex-wrap items-center gap-3 text-xs">
-          <div className="flex items-center space-x-2">
-            <Sliders className="w-4 h-4 text-indigo-400" />
-            <span className="font-semibold text-slate-300">
-              {isShirt
-                ? "Kontrol Baju:"
-                : isHat
-                  ? "Kontrol Topi:"
-                  : "Kontrol Kacamata:"}
-            </span>
+        {/* Position Controls: Atas/Bawah/Kiri/Kanan & Mode Geser vs Putar */}
+        <div className="flex flex-wrap items-center gap-2.5 text-xs">
+          {/* Mode Switcher: Geser Posisi Bebas vs Putar */}
+          <div className="inline-flex rounded-2xl bg-slate-900/80 p-1 border border-white/10 gap-1 shadow-inner">
+            <button
+              onClick={() => setDragMode("pan")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                dragMode === "pan"
+                  ? "bg-blue-600 border border-blue-400 text-white shadow-md"
+                  : "text-slate-400 hover:text-white"
+              }`}
+              title="Geser bebas di layar ke segala arah untuk memindahkan posisi 3D"
+            >
+              <span>✋ Geser Bebas</span>
+            </button>
+            <button
+              onClick={() => setDragMode("rotate")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                dragMode === "rotate"
+                  ? "bg-blue-600 border border-blue-400 text-white shadow-md"
+                  : "text-slate-400 hover:text-white"
+              }`}
+              title="Geser di layar untuk memutar model 3D"
+            >
+              <span>🔄 Putar 360°</span>
+            </button>
           </div>
 
-          {/* Panduan Interaksi Layar Langsung */}
-          <div className="flex items-center space-x-1.5 bg-slate-900/60 px-3 py-1.5 rounded-2xl border border-white/5">
-            <span className="text-[11px] text-slate-400 font-medium">Interaksi Layar:</span>
-            <span className="text-[10px] text-slate-300 font-mono">
-              Geser di layar ◀▶ Putar ({Math.round((rotOffset * 180) / Math.PI)}°) | ▲▼ Naik-Turun ({Math.round(offsetY * 10) / 10})
-            </span>
+          {/* Tombol Panahan Posisi Cepat */}
+          <div className="flex items-center space-x-1.5 bg-slate-900/60 p-1 rounded-2xl border border-white/5">
+            <span className="text-[11px] text-slate-400 px-1 font-medium">Posisi:</span>
+            <button
+              onClick={() => {
+                setOffsetX((prev) => {
+                  const next = Number((prev - 1).toFixed(1));
+                  offsetXRef.current = next;
+                  return next;
+                });
+              }}
+              className="px-2 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-white/10 font-bold text-xs transition-all cursor-pointer"
+              title="Geser Kiri"
+            >
+              ◀ Kiri
+            </button>
+            <button
+              onClick={() => {
+                setOffsetX((prev) => {
+                  const next = Number((prev + 1).toFixed(1));
+                  offsetXRef.current = next;
+                  return next;
+                });
+              }}
+              className="px-2 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-white/10 font-bold text-xs transition-all cursor-pointer"
+              title="Geser Kanan"
+            >
+              ▶ Kanan
+            </button>
+            <button
+              onClick={() => {
+                setOffsetY((prev) => {
+                  const next = Number((prev + 1).toFixed(1));
+                  offsetYRef.current = next;
+                  return next;
+                });
+              }}
+              className="px-2 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-white/10 font-bold text-xs transition-all cursor-pointer"
+              title="Geser Naik"
+            >
+              ▲ Naik
+            </button>
+            <button
+              onClick={() => {
+                setOffsetY((prev) => {
+                  const next = Number((prev - 1).toFixed(1));
+                  offsetYRef.current = next;
+                  return next;
+                });
+              }}
+              className="px-2 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-white/10 font-bold text-xs transition-all cursor-pointer"
+              title="Geser Turun"
+            >
+              ▼ Turun
+            </button>
+          </div>
+
+          {/* Indikator Status & Reset */}
+          <div className="flex items-center space-x-2 bg-slate-900/60 px-2.5 py-1 rounded-2xl border border-white/5 text-[10px] font-mono text-slate-400">
+            <span>X: <strong className="text-white">{offsetX.toFixed(1)}</strong></span>
+            <span>Y: <strong className="text-white">{offsetY.toFixed(1)}</strong></span>
+            <span>Putar: <strong className="text-white">{Math.round((rotOffset * 180) / Math.PI)}°</strong></span>
           </div>
 
           {/* Reset */}
           <button
             onClick={() => {
+              setOffsetX(0);
+              offsetXRef.current = 0;
               setOffsetY(0);
               offsetYRef.current = 0;
               setOffsetZ(0);
@@ -993,7 +1091,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               scaleMultiplierRef.current = 100;
             }}
             className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-400 hover:text-white border border-white/10 transition-all flex items-center space-x-1.5 cursor-pointer"
-            title="Reset Posisi & Skala ke Default"
+            title="Reset Posisi & Rotasi ke Default"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span className="text-[11px] font-medium">Reset</span>
