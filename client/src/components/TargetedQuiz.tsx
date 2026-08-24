@@ -130,6 +130,36 @@ interface TargetedQuizProps {
   isLoading: boolean;
 }
 
+function normalizeQuestions(rawList: DynamicQuestion[], batchNumber: number): DynamicQuestion[] {
+  const seenIds = new Set<string>();
+  return (rawList || []).map((q, idx) => {
+    let uniqueQId = q.id || `q_b${batchNumber}_${idx + 1}`;
+    if (seenIds.has(uniqueQId)) {
+      uniqueQId = `${uniqueQId}_${idx + 1}`;
+    }
+    seenIds.add(uniqueQId);
+
+    const optSeen = new Set<string>();
+    const options = (q.options || []).map((opt, optIdx) => {
+      let optId = opt.id || `opt_${idx + 1}_${optIdx + 1}`;
+      if (optSeen.has(optId)) {
+        optId = `${optId}_${optIdx + 1}`;
+      }
+      optSeen.add(optId);
+      return {
+        ...opt,
+        id: optId,
+      };
+    });
+
+    return {
+      ...q,
+      id: uniqueQId,
+      options,
+    };
+  });
+}
+
 /* ------------------------------------------------------------------ */
 /*  Component                                                         */
 /* ------------------------------------------------------------------ */
@@ -165,7 +195,8 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
           1
         );
         if (!cancelled) {
-          setQuestionsList(res.questions || []);
+          const validatedQuestions = normalizeQuestions(res.questions || [], 1);
+          setQuestionsList(validatedQuestions);
           setQuestionSource(res.source || 'gemini_api');
           setAnswers({});
         }
@@ -195,7 +226,8 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
         nextBatch
       );
       if (res.questions && res.questions.length > 0) {
-        setQuestionsList((prev) => [...prev, ...res.questions]);
+        const nextValidated = normalizeQuestions(res.questions, nextBatch);
+        setQuestionsList((prev) => [...prev, ...nextValidated]);
         setCurrentBatch(nextBatch);
       }
     } catch (err) {

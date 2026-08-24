@@ -363,6 +363,13 @@ async def generate_dynamic_questions(
                         questions = json.loads(raw_text)
                         if isinstance(questions, list) and len(questions) >= 1:
                             logger.info(f"Gemini ({model_name}) synthesized {len(questions)} tailored questions for batch {batch}")
+                            # Guarantee strictly unique question IDs and option IDs across all questions in the batch
+                            for idx, q in enumerate(questions):
+                                q["id"] = f"q_{subcategory}_b{batch}_{idx+1}"
+                                for opt_idx, opt in enumerate(q.get("options", [])):
+                                    if not opt.get("id") or opt["id"] in ["opt_1", "opt_2", "opt_3", "opt_4"]:
+                                        opt["id"] = f"opt_{idx+1}_{opt_idx+1}"
+
                             random.shuffle(questions)
                             return questions
         except Exception as err:
