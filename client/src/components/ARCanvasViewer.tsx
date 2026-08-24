@@ -81,7 +81,9 @@ const HAT_TARGET_WIDTH = 1.35;
  */
 const HAT_BRIM_BELOW_BROW = 0.08;
 import {
+  Sparkles,
   Move3d,
+  Zap,
   Box,
   RotateCcw,
   Sliders,
@@ -114,18 +116,15 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const modelGroupRef = useRef<THREE.Group | null>(null);
-  const occluderGroupRef = useRef<THREE.Group | null>(null);
   const faceLandmarkerRef = useRef<any>(null);
   const rafRef = useRef<number>(0);
   const localStreamRef = useRef<MediaStream | null>(null);
-  const lastDetectedTimeRef = useRef<number>(0);
 
   const [isTrackingFace, setIsTrackingFace] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [modelSource, setModelSource] = useState<string>("Memuat 3D Model...");
   const [offsetY, setOffsetY] = useState<number>(0);
-  const [offsetZ, setOffsetZ] = useState<number>(0);
   const [scaleMultiplier, setScaleMultiplier] = useState<number>(100);
 
   const isUploadMode = inputMode === "upload";
@@ -224,9 +223,6 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           },
           runningMode: "VIDEO",
           numFaces: 1,
-          minFaceDetectionConfidence: 0.3,
-          minFacePresenceConfidence: 0.3,
-          minTrackingConfidence: 0.3,
           outputFaceBlendshapes: false,
           outputFacialTransformationMatrixes: true,
         });
@@ -288,7 +284,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     dirLight.position.set(3, 4, 5);
     scene.add(dirLight);
 
-    const rimLight = new THREE.DirectionalLight(0xfb7185, 1.8);
+    const rimLight = new THREE.DirectionalLight(0x60a5fa, 1.8);
     rimLight.position.set(-3, -2, 2);
     scene.add(rimLight);
 
@@ -297,29 +293,8 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     scene.add(fillLight);
 
     const modelGroup = new THREE.Group();
-    modelGroup.renderOrder = 1;
     modelGroupRef.current = modelGroup;
     scene.add(modelGroup);
-
-    // Invisible Head/Face/Ear Occluder (Depth Masking for Glasses Temples & Hat Interior)
-    const occluderGroup = new THREE.Group();
-    occluderGroup.renderOrder = 0;
-    occluderGroupRef.current = occluderGroup;
-
-    const occluderMat = new THREE.MeshBasicMaterial({
-      colorWrite: false,
-      depthWrite: true,
-    });
-
-    // Anatomical Head Ellipsoid (Blocks glasses temples from showing in front of ears/cheeks)
-    // Scaled and positioned safely behind the facial plane so it never clips glasses front frame
-    const headGeo = new THREE.SphereGeometry(0.52, 32, 24);
-    headGeo.scale(0.85, 1.05, 0.85);
-    const headMesh = new THREE.Mesh(headGeo, occluderMat);
-    headMesh.position.set(0, -0.08, -0.65);
-    occluderGroup.add(headMesh);
-
-    scene.add(occluderGroup);
 
     // Load Categorized 3D Model (GLB / OBJ)
     loadCategorized3DModel(modelGroup);
@@ -333,9 +308,6 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
       const landmarker = faceLandmarkerRef.current;
 
       if (viewMode === "ar" && video && video.readyState >= 2 && landmarker) {
-        if (occluderGroup) {
-          occluderGroup.visible = isHat;
-        }
         if (video.currentTime !== lastVideoTime) {
           lastVideoTime = video.currentTime;
           try {
@@ -343,14 +315,16 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
             if (result && result.faceLandmarks && result.faceLandmarks.length > 0) {
               setIsTrackingFace(true);
               modelGroup.visible = true;
-              lastDetectedTimeRef.current = performance.now();
-              applyLandmarksTo3DModel(result.faceLandmarks[0], modelGroup, occluderGroup);
+              applyLandmarksTo3DModel(result.faceLandmarks[0], modelGroup);
             } else {
-              // Grace period 250ms to prevent flickering during fast head turns
-              if (performance.now() - lastDetectedTimeRef.current > 250) {
-                setIsTrackingFace(false);
-                modelGroup.visible = false;
-              }
+              // Wajah hilang dari deteksi (keluar frame, terpotong tepi atas,
+              // cahaya kurang). Dulu model malah dihanyutkan ke tengah layar,
+              // sehingga tampak menempel diam menutupi wajah — persis yang
+              // dilaporkan sebagai "kaku, tidak mengikuti pergerakan".
+              // Menyembunyikannya jauh lebih jujur: yang hilang pelacakannya,
+              // bukan modelnya yang salah tempat.
+              setIsTrackingFace(false);
+              modelGroup.visible = false;
             }
           } catch {
             // Frame skip
@@ -358,9 +332,6 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
         }
       } else if (viewMode === "studio") {
         setIsTrackingFace(false);
-        if (occluderGroup) {
-          occluderGroup.visible = false;
-        }
         if (modelGroup) {
           // Mode studio tidak bergantung pelacakan wajah; pastikan model
           // kembali terlihat setelah sesi AR yang kehilangan wajah.
@@ -392,7 +363,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
       cancelAnimationFrame(rafRef.current);
       renderer.dispose();
     };
-  }, [viewMode, activeItem, subcategory, offsetY, offsetZ, scaleMultiplier]);
+  }, [viewMode, activeItem, subcategory, offsetY, scaleMultiplier]);
 
   /* ------------------------------------------------------------------ */
   /*  4. Load 3D Model File with Optical Glass Shaders & Auto-Alignment */
@@ -432,10 +403,20 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
           // 1. Orientasi model dari manifest — hasil audit geometri, bukan tebakan.
           //
-          // Heuristik bounding box sudah terbukti salah arah untuk kacamata;
-          // audit vertex per model (scripts/audit_glb_orientation.py)
-          // memverifikasi orientasi tiap model. Entri manifest dipakai apa
-          // adanya — nol berarti "terverifikasi benar", bukan "tidak tahu".
+          // Ini sudah dicoba dua kali sebagai heuristik bounding box (aturan
+          // lama y>z, lalu aturan sumbu-terpanjang), dan keduanya salah arah:
+          // kacamata sungguhan memang kira-kira sedalam lebarnya saat gagang
+          // terbuka, jadi urutan panjang sumbu tidak menentukan arah hadap.
+          // Audit vertex per model (scripts/audit_glb_orientation.py)
+          // membuktikan 5 dari 7 kacamata katalog sudah benar dari sananya dan
+          // justru dirusak heuristik; dua sisanya menghadap sumbu lain dan
+          // dipulihkan lewat rotation_correction di manifest.
+          //
+          // Aturannya sekarang: entri manifest dipakai apa adanya — nol
+          // berarti "terverifikasi benar", bukan "tidak tahu". Berkas yang
+          // tidak ada di manifest dibiarkan pada orientasi aslinya, karena
+          // konvensi glTF (Y-up, menghadap +Z) memang yang paling umum, lalu
+          // dicatat supaya ketahuan butuh kalibrasi.
           const manifestRotation = modelConfig?.rotation_correction as
             | [number, number, number]
             | undefined;
@@ -454,61 +435,93 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           const center = boxAfter.getCenter(new THREE.Vector3());
           const sizeAfter = boxAfter.getSize(new THREE.Vector3());
 
-          // Center X and Y, but align Z/Y anchor so glasses temples extend
-          // backward into -Z (ears) and hats rest on the forehead.
+          // Center X and Y, but align Z/Y anchor so glasses temples extend backward into -Z (ears) and hats rest on forehead.
           //
-          // Nilai-nilai di bawah berada dalam SATUAN MENTAH model, karena
-          // boxAfter diukur saat wrapper masih berskala 1. Karena itu
-          // normalisasi di bawah WAJIB dipasang pada wrapper, bukan model.
+          // Nilai-nilai di bawah berada dalam SATUAN MENTAH model, karena boxAfter
+          // diukur saat wrapper masih berskala 1. Karena itu normalisasi di bawah
+          // WAJIB dipasang pada wrapper, bukan pada model.
           if (!isHat) {
             model.position.x -= center.x;
             model.position.y -= center.y;
-            // Align front frame to Z = 0 so temples point backwards into -Z.
+            // Align front frame to Z = 0 so temples naturally point backwards into -Z towards the ears!
             model.position.z -= boxAfter.max.z;
           } else {
             model.position.x -= center.x;
             model.position.z -= center.z;
             // Jangkar topi = bidang brim (lubang kepala), diukur dari mesh.
+            // Bila mesh terlalu jarang untuk disimpulkan, jatuh ke dasar bbox
+            // seperti perilaku lama — buruk, tapi tidak menghentikan render.
             const brimY = findBrimPlaneY(wrapper);
             model.position.y -= brimY ?? boxAfter.min.y;
           }
 
           // Normalize model width (sizeAfter.x) to ~1.45 standard units.
           //
-          // Skala dipasang di wrapper, bukan di model: `position` sebuah objek
-          // hidup di ruang koordinat induknya dan TIDAK ikut terskalakan oleh
-          // `scale` objek itu sendiri. Katalog berisi GLB dengan satuan author
-          // yang berbeda-beda, jadi dipasang di wrapper agar model.position
-          // ikut terskalakan bersama geometri.
+          // Skala dipasang di wrapper, bukan di model. Sebabnya: `position` sebuah
+          // objek hidup di ruang koordinat induknya dan TIDAK ikut terskalakan oleh
+          // `scale` objek itu sendiri. Kalau model yang diskalakan, seluruh
+          // penempatan di atas meleset sebesar center * (s - 1). Katalog ini berisi
+          // GLB dengan satuan author yang berbeda-beda (lebar mentah 0,18 sampai
+          // 34,89 alias rentang 189x), sehingga s berkisar 0,04 sampai 7,88 dan
+          // galatnya sanggup melempar model puluhan unit keluar layar.
+          // Dipasang di wrapper, model.position ikut terskalakan bersama geometri.
           const targetWidth = sizeAfter.x > 0 ? sizeAfter.x : 1.0;
           const baseNormScale = (isHat ? HAT_TARGET_WIDTH : 1.45) / targetWidth;
           const customScaleFactor = modelConfig?.scale_factor || 1.0;
           const normalizeScale = baseNormScale * customScaleFactor;
           wrapper.scale.setScalar(normalizeScale);
 
-          // Apply manifest pivot offset (normalized space) to fine-tune anchor.
+          // Apply manifest pivot offset to fine-tune exact anchor point.
+          //
+          // Nilainya memang berada di ruang ternormalisasi, dan itu sudah benar
+          // sejak versi sebelumnya: `position` tidak ikut terskalakan oleh
+          // `scale` objeknya sendiri, sehingga offset selalu mendarat 1:1 di
+          // ruang induk. Yang dipindahkan ke wrapper hanyalah tempatnya, supaya
+          // ia tidak lagi bercampur dengan penempatan titik jangkar yang justru
+          // HARUS ikut terskalakan.
           const pivot = modelConfig?.pivot_offset ?? [0, 0, 0];
 
-          // Topi: turunkan agar mahkotanya menelan kepala — jangkar topi adalah
-          // landmark dahi (10), dinyatakan relatif terhadap lebar kepala agar
-          // topi jangkung tidak ikut terbenam lebih dalam.
+          // Topi: turunkan agar mahkotanya menelan kepala.
+          //
+          // Titik jangkar topi adalah landmark dahi (10), dan penempatan di atas
+          // menaruh DASAR bounding box tepat di titik itu. Akibatnya seluruh
+          // tinggi topi — rata-rata 0,94 dan sampai 1,66 satuan ternormalisasi,
+          // sementara lebar kepala hanya 1,35 — melayang di atas dahi tanpa
+          // sedikit pun bersinggungan dengan kepala.
+          //
+          // Topi sungguhan tidak bertumpu di atas kepala; lubang mahkotanya
+          // berada di sekitar pelipis, yaitu DI BAWAH garis dahi. Karena itu
+          // topi diturunkan sebesar pecahan dari lebar kepala. Dinyatakan
+          // relatif terhadap lebar kepala, bukan terhadap tinggi topi, supaya
+          // topi jangkung seperti witch_hat tidak ikut terbenam lebih dalam
+          // hanya karena kerucutnya panjang.
           const hatSink = isHat ? HAT_BRIM_BELOW_BROW * HAT_TARGET_WIDTH : 0;
 
           wrapper.position.set(pivot[0], pivot[1] - hatSink, pivot[2]);
 
-          // 3. Ultra-Realistic Optical Materials (sleek dark tint sunglasses lens, preserve GLTF textures)
+          // 3. Apply Ultra-Realistic PBR Materials
+          const hexColor = activeItem.hex_colour || "#1e293b";
+
+          const luxuryFrameMat = new THREE.MeshPhysicalMaterial({
+            color: new THREE.Color(hexColor),
+            roughness: isHat ? 0.75 : 0.22,
+            metalness: isHat ? 0.05 : 0.78,
+            clearcoat: isHat ? 0.1 : 0.6,
+            clearcoatRoughness: 0.1,
+          });
+
           const opticalLensMat = new THREE.MeshPhysicalMaterial({
-            color: new THREE.Color(0x1e293b),
+            color: new THREE.Color(0x0f172a),
             transparent: true,
-            opacity: 0.72,
-            roughness: 0.12,
-            metalness: 0.25,
-            transmission: 0.35,
+            opacity: 0.22,
+            roughness: 0.05,
+            metalness: 0.08,
+            transmission: 0.92,
             ior: 1.52,
             reflectivity: 0.85,
             clearcoat: 1.0,
             clearcoatRoughness: 0.05,
-            depthWrite: true,
+            depthWrite: false,
             side: THREE.DoubleSide,
           });
 
@@ -517,51 +530,26 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               const mesh = child as THREE.Mesh;
               mesh.castShadow = true;
               mesh.receiveShadow = true;
-              mesh.frustumCulled = false;
 
-              const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-              mats.forEach((mat: any) => {
-                if (!mat) return;
-                const matName = (mat.name || "").toLowerCase();
-                const meshName = (mesh.name || "").toLowerCase();
+              const matName = ((mesh.material as THREE.Material)?.name || "").toLowerCase();
+              const meshName = (mesh.name || "").toLowerCase();
 
-                // Identify lens geometry vs frame geometry
-                const isLens =
-                  !isHat &&
-                  (matName === "glass" ||
-                    matName.includes("lens") ||
-                    matName.includes("lenses") ||
-                    matName === "001_g" ||
-                    matName === "000_glass" ||
-                    matName === "002_glass" ||
-                    meshName.includes("lens") ||
-                    meshName.includes("lenses") ||
-                    meshName === "glass_glass_0") &&
-                  !matName.includes("sunglass") &&
-                  !matName.includes("frame") &&
-                  !matName.includes("temple") &&
-                  !matName.includes("earhook") &&
-                  !matName.includes("nose_pad") &&
-                  !matName.includes("lambert") &&
-                  !meshName.includes("frame") &&
-                  !meshName.includes("temple") &&
-                  !meshName.includes("earhook");
+              // Identify lens geometry vs frame geometry
+              const isLens =
+                !isHat &&
+                (matName.includes("glass") ||
+                  matName.includes("lens") ||
+                  matName.includes("001_g") ||
+                  matName.includes("000_glass") ||
+                  matName.includes("002_glass") ||
+                  meshName.includes("glass") ||
+                  meshName.includes("lens"));
 
-                if (isLens) {
-                  mesh.material = opticalLensMat;
-                } else {
-                  // PRESERVE authentic high-definition GLTF textures and normal maps
-                  mat.side = THREE.DoubleSide;
-                  if (mat.map) {
-                    mat.map.colorSpace = THREE.SRGBColorSpace;
-                    mat.map.needsUpdate = true;
-                  }
-                  if (mat.normalMap) mat.normalMap.needsUpdate = true;
-                  if (mat.roughnessMap) mat.roughnessMap.needsUpdate = true;
-                  if (mat.metalnessMap) mat.metalnessMap.needsUpdate = true;
-                  mat.needsUpdate = true;
-                }
-              });
+              if (isLens) {
+                mesh.material = opticalLensMat;
+              } else {
+                mesh.material = luxuryFrameMat;
+              }
             }
           });
 
@@ -579,11 +567,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   /* ------------------------------------------------------------------ */
   /*  5. Landmark Alignment Loop (Rock-Solid 60 FPS 3D Pose Tracking)   */
   /* ------------------------------------------------------------------ */
-  const applyLandmarksTo3DModel = (
-    landmarks: any[],
-    group: THREE.Group,
-    occluderGroup?: THREE.Group
-  ) => {
+  const applyLandmarksTo3DModel = (landmarks: any[], group: THREE.Group) => {
     if (!videoRef.current || !containerRef.current) return;
 
     // Anatomical Face Landmarks (MediaPipe 468 Mesh)
@@ -639,12 +623,9 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const midEyeX = (eyeLX + eyeRX) / 2;
     const midEyeY = (eyeLY + eyeRY) / 2;
 
-    // Anchor: Sellion/Pupil blend for glasses, Forehead for hats
-    // For glasses, anchor directly on the horizontal eye pupil line (midEyeY)
-    // with sellion/glabella (Landmark 168) for horizontal symmetry.
-    const glabella168 = landmarks[168] || nasion;
-    const anchorX = isHat ? (foreheadTop ? foreheadTop.x : midEyeX) : (midEyeX * 0.70 + glabella168.x * 0.30);
-    const anchorY = isHat ? (foreheadTop ? foreheadTop.y : midEyeY) : (midEyeY * 0.85 + glabella168.y * 0.15);
+    // Anchor: Nasion + MidEye blend for glasses, Forehead for hats
+    const anchorX = isHat ? (foreheadTop ? foreheadTop.x : midEyeX) : (midEyeX * 0.35 + nasion.x * 0.65);
+    const anchorY = isHat ? (foreheadTop ? foreheadTop.y : midEyeY) : (midEyeY * 0.35 + nasion.y * 0.65);
 
     // Screen Pixel Coordinates (Mirrored Video Feed -X)
     const screenX = offsetX + (1 - anchorX) * renderedWidth;
@@ -659,11 +640,14 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const halfW = halfH * (cw / ch);
 
     const worldX = ndcX * halfW;
-    // Penempatan vertikal & kedalaman kacamata:
-    // 1. worldY: selaraskan pusat optik lensa persis di depan pupil mata (+0.065)
-    // 2. worldZ: dorong kacamata maju (+0.12) agar bertengger di atas batang hidung (tidak terbenam di wajah)
-    const worldY = ndcY * halfH + (isHat ? 0 : 0.065) + offsetY * 0.012;
-    const worldZ = ((glabella168?.z ?? nasion.z ?? 0) * -1.8) + (isHat ? 0 : 0.12) + (offsetZ * 0.02);
+    // Dulu baris ini menambahkan +0.32 khusus topi. Itu keliru secara struktural:
+    // nilainya dalam satuan dunia dan TETAP, sementara ukuran topi mengikuti
+    // jarak wajah ke kamera. Akibatnya angkat vertikal hanya pas pada satu
+    // jarak tertentu, lalu makin melenceng saat pengguna maju atau mundur.
+    // Penempatan vertikal topi kini seluruhnya ditangani di ruang ternormalisasi
+    // (lihat hatSink), yang ikut terskalakan bersama kepala.
+    const worldY = ndcY * halfH + (isHat ? 0 : -0.01) + offsetY * 0.012;
+    const worldZ = (nasion.z || 0) * -1.8;
 
     // Screen Positions of Both Eyes for Angle & Scale
     const screenLX = offsetX + (1 - eyeLX) * renderedWidth;
@@ -676,73 +660,50 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const deltaY = screenLY - screenRY;
     const pixelDist = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-    // ---------------------------------------------------------------
-    // TRUE 6-DoF 3D ORTHONORMAL HEAD POSE TRACKING
-    // ---------------------------------------------------------------
-    // 1. Vector Ux (Horizontal Head Axis from Subject Right Eye to Left Eye)
-    // In mirrored video, Subject Right Eye (263) is on the left (-X), Subject Left Eye (33) is on the right (+X).
-    // In Three.js world space: +X is Right, +Y is Up, +Z is towards Camera.
-    const eyeDx = (rightOuter.x - leftOuter.x) * renderedWidth;
-    const eyeDy = (leftOuter.y - rightOuter.y) * renderedHeight;
-    // Depth (Z): When user turns head to their left (facing screen-right):
-    // Subject Right Eye (263, screen left) turns forward (+Z towards camera).
-    // Subject Left Eye (33, screen right) turns backward (-Z away from camera).
-    // (rightOuter.z - leftOuter.z) is positive -> dz from right to left eye is negative into screen.
-    const eyeDz = ((rightOuter.z || 0) - (leftOuter.z || 0)) * renderedWidth * 1.85;
-    const uX = new THREE.Vector3(eyeDx, eyeDy, eyeDz).normalize();
+    // 1. True 3D Roll (Tilt angle around Z)
+    const rollAngle = Math.atan2(deltaY, deltaX);
+    const safeRoll = THREE.MathUtils.clamp(rollAngle, -0.95, 0.95);
 
-    // 2. Vector Uy (Vertical Head Axis from Chin to Forehead)
-    // Chin is lower on screen (larger Y), Forehead is higher on screen (smaller Y).
-    // In Three.js, +Y is Up, so (chin.y - forehead.y) is positive.
-    const chinPt = chin || landmarks[152] || landmarks[175];
-    const forePt = foreheadTop || landmarks[10] || landmarks[151];
-    const headDx = (chinPt.x - forePt.x) * renderedWidth;
-    const headDy = (chinPt.y - forePt.y) * renderedHeight;
-    const headDz = ((chinPt.z || 0) - (forePt.z || 0)) * renderedWidth * 1.85;
-    const rawUy = new THREE.Vector3(headDx, headDy, headDz);
+    // 2. True 3D Yaw (Head turning Left / Right in 3D Space)
+    // MediaPipe z-depth delta between right and left eye + horizontal nasion shift
+    const eyeZDelta = (rightOuter.z || 0) - (leftOuter.z || 0);
+    const screenBridgeX = offsetX + (1 - nasion.x) * renderedWidth;
+    const eyeMidScreenX = (screenLX + screenRX) / 2;
+    const noseScreenShift = (screenBridgeX - eyeMidScreenX) / (pixelDist * 0.5 + 0.001);
+    
+    // Combining 3D depth and facial feature perspective foreshortening
+    const rawYaw = (eyeZDelta * 3.2) + (noseScreenShift * 1.1);
+    const safeYaw = THREE.MathUtils.clamp(rawYaw, -0.95, 0.95);
 
-    // Gram-Schmidt orthogonalize Uy against Ux to guarantee perfect 90° orthogonality
-    const dotXY = rawUy.dot(uX);
-    const uY = rawUy.sub(uX.clone().multiplyScalar(dotXY)).normalize();
-
-    // 3. Vector Uz (Normal Face Vector pointing directly out of the face plane)
-    const uZ = new THREE.Vector3().crossVectors(uX, uY).normalize();
-
-    // Build Exact 3D Rotation Matrix and Target Quaternion
-    const rotMatrix = new THREE.Matrix4().makeBasis(uX, uY, uZ);
-    const targetQuaternion = new THREE.Quaternion().setFromRotationMatrix(rotMatrix);
+    // 3. True 3D Pitch (Head tilting Up / Down)
+    let safePitch = 0;
+    if (chin && foreheadTop) {
+      const vertDepth = ((foreheadTop.z || 0) - (chin.z || 0)) * 2.2;
+      const noseRelY = ((nasion.y - foreheadTop.y) / (chin.y - foreheadTop.y + 0.001) - 0.45) * 2.0;
+      safePitch = THREE.MathUtils.clamp(vertDepth + noseRelY, -0.55, 0.55);
+    }
 
     // World Space Scale (Glasses width matches real Inter-Pupillary Distance)
     const worldInterPupil = (pixelDist / cw) * (2 * halfW);
-    const baseScale = isHat ? worldInterPupil * 1.95 : worldInterPupil * 1.65;
+    const baseScale = isHat ? worldInterPupil * 1.95 : worldInterPupil * 1.62;
     const finalScale = baseScale * (scaleMultiplier / 100);
 
-    // 60 FPS Smooth Interpolation for 3D Accessory
-    group.position.x = THREE.MathUtils.lerp(group.position.x, worldX, 0.55);
-    group.position.y = THREE.MathUtils.lerp(group.position.y, worldY, 0.55);
-    group.position.z = THREE.MathUtils.lerp(group.position.z, worldZ, 0.55);
+    // 60 FPS Smooth Interpolation
+    group.position.x = THREE.MathUtils.lerp(group.position.x, worldX, 0.45);
+    group.position.y = THREE.MathUtils.lerp(group.position.y, worldY, 0.45);
+    group.position.z = THREE.MathUtils.lerp(group.position.z, worldZ, 0.45);
 
-    // Quaternion SLERP: 100% 1-to-1 sync for Roll, Pitch, and Yaw with Zero Gimbal Lock
-    group.quaternion.slerp(targetQuaternion, 0.55);
+    group.rotation.z = THREE.MathUtils.lerp(group.rotation.z, safeRoll, 0.45);
+    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw, 0.45);
+    group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, safePitch, 0.45);
 
-    group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.55);
-
-    // Synchronize Invisible Head Occluder (For Temples & Hat Interior Masking)
-    if (occluderGroupRef.current) {
-      const occ = occluderGroupRef.current;
-      occ.position.x = group.position.x;
-      occ.position.y = group.position.y - 0.05;
-      occ.position.z = group.position.z - 0.25;
-
-      occ.quaternion.slerp(targetQuaternion, 0.55);
-      occ.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.55);
-    }
-  };
+    group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.45);
+  };;
 
   return (
     <div className="w-full h-full flex flex-col space-y-4">
       {/* 3D AR & Studio Viewport */}
-      <div className="relative w-full h-[520px] sm:h-[580px] rounded-3xl overflow-hidden bg-[#060B14] border border-blue-500/20 shadow-2xl flex items-center justify-center">
+      <div className="relative w-full h-[520px] sm:h-[580px] rounded-3xl overflow-hidden bg-slate-950 border border-white/10 shadow-2xl flex items-center justify-center">
         {/* 3D WebGL Canvas Layer Overlay */}
         <div ref={containerRef} className="absolute inset-0 w-full h-full z-10 pointer-events-none" />
 
@@ -757,10 +718,14 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               muted
             />
 
+            {/* Keadaan pelacakan ditampilkan dua-duanya. Sebelumnya hanya lencana
+                hijau yang ada, sehingga saat pelacakan putus layar tidak
+                mengatakan apa pun dan model yang tertinggal di tengah tampak
+                seperti salah posisi, bukan seperti pelacakan yang hilang. */}
             {isTrackingFace ? (
-              <div className="absolute top-4 left-4 inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-[#0B1528] text-[#93C5FD] border border-blue-500/30 text-[11px] font-mono z-20 shadow-lg">
-                <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />
-                <span>6-DoF FACE &amp; HEAD TRACKING (60 FPS)</span>
+              <div className="absolute top-4 left-4 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono z-30">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                <span>AR 3D GLB HEAD TRACKING (60 FPS)</span>
               </div>
             ) : (
               <div className="absolute top-4 left-4 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-mono z-30">
@@ -770,37 +735,54 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
             )}
           </div>
         ) : (
-          /* Mode 2: 3D Studio Turntable */
-          <div className="relative w-full h-full flex items-center justify-center bg-gradient-to-b from-[#0B1528] via-[#060B14] to-[#040810]">
-            <div className="absolute top-4 left-4 inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-[#0B1528] text-[#93C5FD] border border-blue-500/30 text-[11px] font-mono z-20 shadow-lg">
-              <Box className="w-3.5 h-3.5 text-[#38BDF8]" />
-              <span>3D STUDIO ROTATION (360°)</span>
+          /* Mode 2: 3D Studio 360 Turntable */
+          <div className="relative w-full h-full flex items-center justify-center bg-gradient-to-b from-surface-200/50 via-surface-100/40 to-slate-950">
+            <div className="absolute bottom-6 w-72 h-72 rounded-full bg-indigo-500/10 border border-indigo-500/20 blur-sm pointer-events-none" />
+            <div className="absolute top-4 left-4 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10px] font-mono z-20">
+              <Sparkles className="w-3 h-3 text-indigo-400" />
+              <span>STUDIO 3D INSPECTION 360°</span>
             </div>
           </div>
         )}
 
-        {/* Top Floating View Controls */}
-        <div className="absolute top-4 right-4 z-30 flex items-center space-x-2 bg-[#0B1528]/90 backdrop-blur-2xl p-1.5 rounded-full border border-blue-500/30 shadow-2xl">
-          <button
-            onClick={() => setViewMode("ar")}
-            disabled={isUploadMode}
-            className={`px-4 py-2 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer ${
-              viewMode === "ar"
-                ? "bg-blue-600 text-white shadow-md"
-                : isUploadMode
-                ? "text-[#64748B] cursor-not-allowed opacity-50"
-                : "text-[#94A3B8] hover:text-white"
-            }`}
-          >
-            {isUploadMode ? <Lock className="w-3.5 h-3.5" /> : <Box className="w-3.5 h-3.5 text-[#38BDF8]" />}
-            <span>{isUploadMode ? "AR Mode Terkunci" : "Coba Langsung (AR 3D)"}</span>
-          </button>
+        {/* Top Floating Action Pill: Mode Selector */}
+        <div className="absolute top-4 right-4 z-30 flex items-center space-x-1.5 bg-slate-900/90 backdrop-blur-md p-1 rounded-2xl border border-white/15 shadow-2xl">
+          {/* Button AR: Disabled with lock icon & tooltip if photo upload */}
+          <div className="relative group">
+            <button
+              onClick={() => {
+                if (!isUploadMode) setViewMode("ar");
+              }}
+              disabled={isUploadMode}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all ${
+                isUploadMode
+                  ? "opacity-40 cursor-not-allowed text-slate-500 bg-slate-800/40"
+                  : viewMode === "ar"
+                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 cursor-pointer"
+                  : "text-slate-400 hover:text-white cursor-pointer"
+              }`}
+            >
+              {isUploadMode ? (
+                <Lock className="w-3.5 h-3.5 text-slate-400" />
+              ) : (
+                <Zap className="w-3.5 h-3.5 text-amber-300" />
+              )}
+              <span>Pasang ke Wajah (AR 3D)</span>
+            </button>
+
+            {isUploadMode && (
+              <div className="absolute right-0 top-full mt-2 w-64 p-2.5 rounded-xl bg-slate-900/95 border border-amber-500/30 text-[11px] text-amber-200/90 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-40 backdrop-blur-md">
+                🔒 <strong>Mode AR Terkunci:</strong> Live Face AR membutuhkan pemindaian video langsung. Gunakan mode <strong>Studio 360°</strong> untuk melihat detail 3D produk.
+              </div>
+            )}
+          </div>
+
           <button
             onClick={() => setViewMode("studio")}
-            className={`px-4 py-2 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer ${
               viewMode === "studio"
-                ? "bg-blue-600 text-white shadow-md"
-                : "text-[#94A3B8] hover:text-white"
+                ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md shadow-purple-500/20"
+                : "text-slate-400 hover:text-white"
             }`}
           >
             <Move3d className="w-3.5 h-3.5" />
@@ -809,80 +791,54 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
         </div>
 
         {/* Bottom Floating Info Badge */}
-        <div className="absolute bottom-4 left-4 z-20 hidden sm:flex items-center space-x-2.5 px-4 py-2 rounded-full bg-[#0B1528]/90 backdrop-blur-2xl border border-blue-500/20 text-xs shadow-xl">
-          <Box className="w-4 h-4 text-[#38BDF8]" />
+        <div className="absolute bottom-4 left-4 z-20 hidden sm:flex items-center space-x-2.5 px-3.5 py-1.5 rounded-2xl bg-slate-900/85 backdrop-blur-md border border-white/10 text-xs shadow-lg">
+          <Box className="w-3.5 h-3.5 text-blue-400" />
           <span className="font-semibold text-white">{activeItem.name}</span>
-          <span className="text-[#FACC15] text-xs font-mono font-bold">
+          <span className="text-emerald-400 text-[11px] font-mono font-bold">
             [{modelSource}]
           </span>
         </div>
       </div>
 
       {/* AR Fine-Tuning Micro-Controls */}
-      <div className="p-4 sm:p-5 rounded-3xl border border-blue-500/20 bg-[#0B1528]/90 backdrop-blur-xl shadow-xl flex flex-wrap items-center justify-between gap-4">
-        {/* Height and Depth Adjustments */}
-        <div className="flex items-center space-x-4 text-xs">
-          <Sliders className="w-4 h-4 text-[#38BDF8]" />
-          
-          <div className="flex items-center space-x-2">
-            <span className="text-[#94A3B8] font-semibold">Tinggi:</span>
+      <div className="glass-panel p-4 rounded-3xl border border-white/10 bg-surface-100/60 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center space-x-3 text-xs">
+          <Sliders className="w-4 h-4 text-indigo-400" />
+          <span className="font-semibold text-slate-300">Penyesuaian Posisi Kacamata:</span>
+          <div className="flex items-center space-x-1.5">
             <button
               onClick={() => setOffsetY((prev) => prev + 1)}
-              className="px-2.5 py-1 rounded-full bg-[#071120] hover:bg-blue-600 text-white border border-blue-500/30 font-bold text-xs transition-colors"
+              className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 font-bold text-xs"
               title="Geser Naik"
             >
-              ▲
+              ▲ Naik
             </button>
             <button
               onClick={() => setOffsetY((prev) => prev - 1)}
-              className="px-2.5 py-1 rounded-full bg-[#071120] hover:bg-blue-600 text-white border border-blue-500/30 font-bold text-xs transition-colors"
+              className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 font-bold text-xs"
               title="Geser Turun"
             >
-              ▼
-            </button>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <span className="text-[#94A3B8] font-semibold">Kedalaman:</span>
-            <button
-              onClick={() => setOffsetZ((prev) => prev - 1)}
-              className="px-3 py-1 rounded-full bg-[#071120] hover:bg-blue-600 text-white border border-blue-500/30 font-semibold text-xs transition-colors"
-              title="Maju ke Depan"
-            >
-              + Maju
+              ▼ Turun
             </button>
             <button
-              onClick={() => setOffsetZ((prev) => prev + 1)}
-              className="px-3 py-1 rounded-full bg-[#071120] hover:bg-blue-600 text-white border border-blue-500/30 font-semibold text-xs transition-colors"
-              title="Mundur ke Belakang"
+              onClick={() => setOffsetY(0)}
+              className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-white/10"
+              title="Reset Posisi"
             >
-              - Mundur
+              <RotateCcw className="w-3.5 h-3.5" />
             </button>
           </div>
-
-          <button
-            onClick={() => {
-              setOffsetY(0);
-              setOffsetZ(0);
-              setScaleMultiplier(100);
-            }}
-            className="p-2 rounded-full bg-[#071120] hover:bg-blue-600 text-[#93C5FD] hover:text-white border border-blue-500/30 transition-colors"
-            title="Reset Posisi &amp; Skala"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-          </button>
         </div>
 
-        {/* Size Scale */}
-        <div className="flex items-center space-x-2.5 text-xs">
-          <span className="text-[#94A3B8] font-mono">Skala: <strong className="text-[#93C5FD]">{scaleMultiplier}%</strong></span>
+        <div className="flex items-center space-x-3 text-xs">
+          <span className="text-slate-400 font-mono">Skala Ukuran: <strong className="text-blue-400">{scaleMultiplier}%</strong></span>
           <input
             type="range"
             min={70}
             max={130}
             value={scaleMultiplier}
             onChange={(e) => setScaleMultiplier(Number(e.target.value))}
-            className="w-28 h-2 bg-[#071120] rounded-full appearance-none cursor-pointer accent-blue-500"
+            className="w-28 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
           />
         </div>
       </div>
