@@ -3,83 +3,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-
-/**
- * Cari bidang brim topi: ketinggian Y dengan penampang mendatar TERLEBAR.
- *
- * Inilah lubang tempat kepala masuk, dan satu-satunya titik jangkar yang masuk
- * akal untuk topi. Versi sebelumnya menjangkarkan dasar bounding box, yang
- * untuk topi bertepi lebar berarti ujung tepi yang menjuntai — sehingga
- * seluruh badan topi melayang di atas dahi.
- *
- * Diukur dari mesh, bukan dari angka manual, karena letak brim sangat berbeda
- * antar model: audit katalog memberi rentang 0,013 (cowboy hat) sampai 0,636
- * (propeller hat) satuan ternormalisasi dari dasar. Konstanta tunggal apa pun
- * pasti salah untuk sebagian besar aset.
- */
-function findBrimPlaneY(object: THREE.Object3D): number | null {
-  const box = new THREE.Box3().setFromObject(object);
-  const lo = box.min.y;
-  const span = box.max.y - lo;
-  if (!(span > 0)) return null;
-
-  const SLICES = 24;
-  const minX = new Float64Array(SLICES).fill(Infinity);
-  const maxX = new Float64Array(SLICES).fill(-Infinity);
-  const minZ = new Float64Array(SLICES).fill(Infinity);
-  const maxZ = new Float64Array(SLICES).fill(-Infinity);
-  const counts = new Uint32Array(SLICES);
-  const v = new THREE.Vector3();
-
-  object.updateWorldMatrix(true, true);
-  object.traverse((child) => {
-    const mesh = child as THREE.Mesh;
-    if (!mesh.isMesh || !mesh.geometry) return;
-    const pos = mesh.geometry.getAttribute("position");
-    if (!pos) return;
-    // Sampling jarang sudah cukup: yang dicari letak brim, bukan bentuk presisi.
-    const step = Math.max(1, Math.floor(pos.count / 4000));
-    for (let i = 0; i < pos.count; i += step) {
-      v.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld);
-      let k = Math.floor(((v.y - lo) / span) * SLICES);
-      if (k < 0) k = 0;
-      else if (k >= SLICES) k = SLICES - 1;
-      if (v.x < minX[k]) minX[k] = v.x;
-      if (v.x > maxX[k]) maxX[k] = v.x;
-      if (v.z < minZ[k]) minZ[k] = v.z;
-      if (v.z > maxZ[k]) maxZ[k] = v.z;
-      counts[k]++;
-    }
-  });
-
-  let bestWidth = -1;
-  let bestSlice = -1;
-  for (let k = 0; k < SLICES; k++) {
-    if (counts[k] < 20) continue; // irisan terlalu jarang, statistiknya tidak dipercaya
-    const w = Math.max(maxX[k] - minX[k], maxZ[k] - minZ[k]);
-    if (w > bestWidth) {
-      bestWidth = w;
-      bestSlice = k;
-    }
-  }
-  if (bestSlice < 0) return null;
-  return lo + (span * (bestSlice + 0.5)) / SLICES;
-}
-
-/** Lebar topi setelah normalisasi, kira-kira selebar kepala di ruang scene. */
-const HAT_TARGET_WIDTH = 1.35;
-
-/**
- * Seberapa jauh bidang brim duduk di bawah landmark dahi (10), sebagai pecahan
- * lebar kepala.
- *
- * Kini nilainya kecil dan bermakna sempit: landmark 10 ada di batas dahi,
- * sedangkan brim topi biasanya bertumpu sedikit di bawahnya. Sebelumnya angka
- * ini besar (0,35) karena harus menebus jangkar yang salah — dasar bounding
- * box, bukan bidang brim. Setelah jangkarnya benar, koreksi yang tersisa jauh
- * lebih kecil dan tidak lagi berbeda-beda per model.
- */
-const HAT_BRIM_BELOW_BROW = 0.08;
 import {
   Sparkles,
   Move3d,
@@ -90,6 +13,11 @@ import {
   Lock,
 } from "lucide-react";
 import { RecommendationItem } from "../lib/mockData";
+
+/** Lebar topi setelah normalisasi, kira-kira selebar kepala di ruang scene. */
+const HAT_TARGET_WIDTH = 1.35;
+/** Lebar baju setelah normalisasi di ruang scene. */
+const SHIRT_TARGET_WIDTH = 1.45;
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                             */
@@ -117,10 +45,11 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const modelGroupRef = useRef<THREE.Group | null>(null);
   const faceLandmarkerRef = useRef<any>(null);
+  const poseLandmarkerRef = useRef<any>(null);
   const rafRef = useRef<number>(0);
   const localStreamRef = useRef<MediaStream | null>(null);
 
-  const [isTrackingFace, setIsTrackingFace] = useState(false);
+  const [isTrackingLive, setIsTrackingLive] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [modelSource, setModelSource] = useState<string>("Memuat 3D Model...");
@@ -129,12 +58,12 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
   const isUploadMode = inputMode === "upload";
 
-  // View Mode: 'ar' (Live 3D AR on Face) vs 'studio' (3D 360° Inspection)
-  // If uploaded photo, AR mode is locked and defaults to studio inspection
+  // View Mode: 'ar' (Live 3D AR on Face/Body) vs 'studio' (3D 360° Inspection)
   const [viewMode, setViewMode] = useState<"ar" | "studio">(isUploadMode ? "studio" : "ar");
 
-  const sub = (activeItem.subcategory || subcategory).toLowerCase();
+  const sub = (activeItem.subcategory || subcategory || "").toLowerCase();
   const isHat = sub === "hats" || sub === "hat" || sub.includes("hat") || sub.includes("cap");
+  const isShirt = sub === "shirts" || sub === "shirt" || sub.includes("shirt") || sub.includes("baju") || sub.includes("apparel");
 
   /* ------------------------------------------------------------------ */
   /*  1. Initialize / Manage Camera Stream                              */
@@ -199,7 +128,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   }, [mediaStream]);
 
   /* ------------------------------------------------------------------ */
-  /*  2. Initialize MediaPipe FaceLandmarker for Live Tracking           */
+  /*  2. Initialize MediaPipe Landmarker (Face for Glasses/Hats, Pose for Shirts) */
   /* ------------------------------------------------------------------ */
   useEffect(() => {
     let cancelled = false;
@@ -207,7 +136,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     async function initLandmarker() {
       try {
         const vision = await import("@mediapipe/tasks-vision");
-        const { FaceLandmarker, FilesetResolver } = vision;
+        const { FaceLandmarker, PoseLandmarker, FilesetResolver } = vision;
 
         const fileset = await FilesetResolver.forVisionTasks(
           "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
@@ -215,23 +144,55 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
         if (cancelled) return;
 
-        const landmarker = await FaceLandmarker.createFromOptions(fileset, {
-          baseOptions: {
-            modelAssetPath:
-              "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
-            delegate: "GPU",
-          },
-          runningMode: "VIDEO",
-          numFaces: 1,
-          outputFaceBlendshapes: false,
-          outputFacialTransformationMatrixes: true,
-        });
+        if (isShirt) {
+          // Initialize PoseLandmarker for Upper-Body Clothes Tracking
+          let landmarker: any;
+          try {
+            landmarker = await PoseLandmarker.createFromOptions(fileset, {
+              baseOptions: {
+                modelAssetPath:
+                  "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+                delegate: "GPU",
+              },
+              runningMode: "VIDEO",
+              numPoses: 1,
+            });
+          } catch (gpuErr) {
+            console.warn("PoseLandmarker GPU failed, falling back to CPU:", gpuErr);
+            landmarker = await PoseLandmarker.createFromOptions(fileset, {
+              baseOptions: {
+                modelAssetPath:
+                  "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+                delegate: "CPU",
+              },
+              runningMode: "VIDEO",
+              numPoses: 1,
+            });
+          }
 
-        if (!cancelled) {
-          faceLandmarkerRef.current = landmarker;
+          if (!cancelled) {
+            poseLandmarkerRef.current = landmarker;
+          }
+        } else {
+          // Initialize FaceLandmarker for Glasses / Hats
+          const landmarker = await FaceLandmarker.createFromOptions(fileset, {
+            baseOptions: {
+              modelAssetPath:
+                "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+              delegate: "GPU",
+            },
+            runningMode: "VIDEO",
+            numFaces: 1,
+            outputFaceBlendshapes: false,
+            outputFacialTransformationMatrixes: true,
+          });
+
+          if (!cancelled) {
+            faceLandmarkerRef.current = landmarker;
+          }
         }
       } catch (err) {
-        console.warn("AR FaceLandmarker initialization failed:", err);
+        console.warn("AR Landmarker initialization failed:", err);
       }
     }
 
@@ -242,8 +203,11 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
       if (faceLandmarkerRef.current) {
         faceLandmarkerRef.current.close?.();
       }
+      if (poseLandmarkerRef.current) {
+        poseLandmarkerRef.current.close?.();
+      }
     };
-  }, []);
+  }, [isShirt]);
 
   /* ------------------------------------------------------------------ */
   /*  3. Setup Three.js WebGL Scene & 60 FPS Render Loop                */
@@ -296,7 +260,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     modelGroupRef.current = modelGroup;
     scene.add(modelGroup);
 
-    // Load Categorized 3D Model (GLB / OBJ)
+    // Load Categorized 3D Model (GLB)
     loadCategorized3DModel(modelGroup);
 
     let lastVideoTime = -1;
@@ -305,39 +269,44 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
       rafRef.current = requestAnimationFrame(animate);
 
       const video = videoRef.current;
-      const landmarker = faceLandmarkerRef.current;
+      const faceLandmarker = faceLandmarkerRef.current;
+      const poseLandmarker = poseLandmarkerRef.current;
 
-      if (viewMode === "ar" && video && video.readyState >= 2 && landmarker) {
+      if (viewMode === "ar" && video && video.readyState >= 2) {
         if (video.currentTime !== lastVideoTime) {
           lastVideoTime = video.currentTime;
           try {
-            const result = landmarker.detectForVideo(video, performance.now());
-            if (result && result.faceLandmarks && result.faceLandmarks.length > 0) {
-              setIsTrackingFace(true);
-              modelGroup.visible = true;
-              applyLandmarksTo3DModel(result.faceLandmarks[0], modelGroup);
-            } else {
-              // Wajah hilang dari deteksi (keluar frame, terpotong tepi atas,
-              // cahaya kurang). Dulu model malah dihanyutkan ke tengah layar,
-              // sehingga tampak menempel diam menutupi wajah — persis yang
-              // dilaporkan sebagai "kaku, tidak mengikuti pergerakan".
-              // Menyembunyikannya jauh lebih jujur: yang hilang pelacakannya,
-              // bukan modelnya yang salah tempat.
-              setIsTrackingFace(false);
-              modelGroup.visible = false;
+            if (isShirt && poseLandmarker) {
+              const result = poseLandmarker.detectForVideo(video, performance.now());
+              if (result && result.landmarks && result.landmarks.length > 0) {
+                setIsTrackingLive(true);
+                modelGroup.visible = true;
+                applyPoseLandmarksTo3DShirt(result.landmarks[0], modelGroup);
+              } else {
+                setIsTrackingLive(false);
+                modelGroup.visible = false;
+              }
+            } else if (!isShirt && faceLandmarker) {
+              const result = faceLandmarker.detectForVideo(video, performance.now());
+              if (result && result.faceLandmarks && result.faceLandmarks.length > 0) {
+                setIsTrackingLive(true);
+                modelGroup.visible = true;
+                applyLandmarksTo3DModel(result.faceLandmarks[0], modelGroup);
+              } else {
+                setIsTrackingLive(false);
+                modelGroup.visible = false;
+              }
             }
           } catch {
             // Frame skip
           }
         }
       } else if (viewMode === "studio") {
-        setIsTrackingFace(false);
+        setIsTrackingLive(false);
         if (modelGroup) {
-          // Mode studio tidak bergantung pelacakan wajah; pastikan model
-          // kembali terlihat setelah sesi AR yang kehilangan wajah.
           modelGroup.visible = true;
           modelGroup.rotation.y += 0.015;
-          modelGroup.position.lerp(new THREE.Vector3(0, 0, 0), 0.08);
+          modelGroup.position.lerp(new THREE.Vector3(0, isShirt ? -0.2 : 0, 0), 0.08);
           modelGroup.scale.lerp(new THREE.Vector3(1.2, 1.2, 1.2), 0.08);
         }
       }
@@ -363,7 +332,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
       cancelAnimationFrame(rafRef.current);
       renderer.dispose();
     };
-  }, [viewMode, activeItem, subcategory, offsetY, scaleMultiplier]);
+  }, [viewMode, activeItem, subcategory, offsetY, scaleMultiplier, isShirt]);
 
   /* ------------------------------------------------------------------ */
   /*  4. Load 3D Model File with Optical Glass Shaders & Auto-Alignment */
@@ -375,7 +344,9 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
     let modelPath = activeItem.model_3d_path || "";
     if (!modelPath) {
-      modelPath = isHat ? "/images/products/hats/bicorn_hat.glb" : "/images/products/glasses/glasses_01_khronos_pbr.glb";
+      if (isHat) modelPath = "/images/products/hats/bicorn_hat.glb";
+      else if (isShirt) modelPath = "/images/products/shirts/man_shirt.glb";
+      else modelPath = "/images/products/glasses/glasses_01_khronos_pbr.glb";
     }
 
     const filename = modelPath.split("/").pop() || "";
@@ -389,7 +360,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
         modelConfig = manifest[filename] || null;
       }
     } catch {
-      // Use standard default normalization if manifest fetch fails
+      // Standard fallback
     }
 
     const isGLB = modelPath.endsWith(".glb") || modelPath.endsWith(".gltf");
@@ -401,33 +372,15 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
         (gltf) => {
           const model = gltf.scene;
 
-          // 1. Orientasi model dari manifest — hasil audit geometri, bukan tebakan.
-          //
-          // Ini sudah dicoba dua kali sebagai heuristik bounding box (aturan
-          // lama y>z, lalu aturan sumbu-terpanjang), dan keduanya salah arah:
-          // kacamata sungguhan memang kira-kira sedalam lebarnya saat gagang
-          // terbuka, jadi urutan panjang sumbu tidak menentukan arah hadap.
-          // Audit vertex per model (scripts/audit_glb_orientation.py)
-          // membuktikan 5 dari 7 kacamata katalog sudah benar dari sananya dan
-          // justru dirusak heuristik; dua sisanya menghadap sumbu lain dan
-          // dipulihkan lewat rotation_correction di manifest.
-          //
-          // Aturannya sekarang: entri manifest dipakai apa adanya — nol
-          // berarti "terverifikasi benar", bukan "tidak tahu". Berkas yang
-          // tidak ada di manifest dibiarkan pada orientasi aslinya, karena
-          // konvensi glTF (Y-up, menghadap +Z) memang yang paling umum, lalu
-          // dicatat supaya ketahuan butuh kalibrasi.
           const manifestRotation = modelConfig?.rotation_correction as
             | [number, number, number]
             | undefined;
           if (manifestRotation) {
             const [rx, ry, rz] = manifestRotation;
             model.rotation.set(rx, ry, rz);
-          } else if (modelConfig == null) {
-            console.info(`GLB tanpa kalibrasi manifest, orientasi asli dipakai: ${filename}`);
           }
 
-          // 2. Wrap in wrapper group to ensure clean normalized transforms
+          // Wrap in wrapper group to ensure clean normalized transforms
           const wrapper = new THREE.Group();
           wrapper.add(model);
 
@@ -435,35 +388,35 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           const center = boxAfter.getCenter(new THREE.Vector3());
           const sizeAfter = boxAfter.getSize(new THREE.Vector3());
 
-          // Center X and Y, but align Z/Y anchor so glasses temples extend backward into -Z (ears) and hats rest on forehead.
-          //
-          // Nilai-nilai di bawah berada dalam SATUAN MENTAH model, karena boxAfter
-          // diukur saat wrapper masih berskala 1. Karena itu normalisasi di bawah
-          // WAJIB dipasang pada wrapper, bukan pada model.
-          if (!isHat) {
-            model.position.x -= center.x;
-            model.position.y -= center.y;
-            // Align front frame to Z = 0 so temples naturally point backwards into -Z towards the ears!
-            model.position.z -= boxAfter.max.z;
-          } else {
+          if (isShirt) {
+            // Shirts: Center X and Z, align collar top to origin Y = 0
             model.position.x -= center.x;
             model.position.z -= center.z;
-            // Base of hat sits at anchor origin
+            model.position.y -= boxAfter.max.y;
+          } else if (isHat) {
+            // Hats: Center X and Z, align base to origin Y = 0
+            model.position.x -= center.x;
+            model.position.z -= center.z;
             model.position.y -= boxAfter.min.y;
+          } else {
+            // Glasses: Center X and Y, align front frame to Z = 0
+            model.position.x -= center.x;
+            model.position.y -= center.y;
+            model.position.z -= boxAfter.max.z;
           }
 
-          // Normalize model width (sizeAfter.x) to ~1.35 (hat) or 1.0 (glasses) standard units
+          // Normalize model width (sizeAfter.x) to category standard units
           const targetWidth = sizeAfter.x > 0 ? sizeAfter.x : 1.0;
-          const baseNormScale = (isHat ? HAT_TARGET_WIDTH : 1.0) / targetWidth;
+          const baseNormScale = (isHat ? HAT_TARGET_WIDTH : isShirt ? SHIRT_TARGET_WIDTH : 1.0) / targetWidth;
           const customScaleFactor = modelConfig?.scale_factor || 1.0;
           const normalizeScale = baseNormScale * customScaleFactor;
           wrapper.scale.setScalar(normalizeScale);
 
-          // Apply manifest pivot offset to fine-tune exact anchor point
+          // Apply manifest pivot offset
           const pivot = modelConfig?.pivot_offset ?? [0, 0, 0];
           wrapper.position.set(pivot[0], pivot[1], pivot[2]);
 
-          // 3. Preserve Authentic Original GLB PBR Textures & Materials
+          // Preserve Authentic Original GLB PBR Textures & Materials
           model.traverse((child) => {
             if ((child as THREE.Mesh).isMesh) {
               const mesh = child as THREE.Mesh;
@@ -496,27 +449,17 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   };
 
   /* ------------------------------------------------------------------ */
-  /*  5. Landmark Alignment Loop (Rock-Solid 60 FPS 3D Pose Tracking)   */
+  /*  5. Face Landmark Alignment (Glasses & Hats)                       */
   /* ------------------------------------------------------------------ */
   const applyLandmarksTo3DModel = (landmarks: any[], group: THREE.Group) => {
     if (!videoRef.current || !containerRef.current) return;
 
-    // Anatomical Face Landmarks (MediaPipe 468 Mesh)
-    // Landmark 33: Right eye outer corner (subject's right)
-    // Landmark 133: Right eye inner corner
-    // Landmark 263: Left eye outer corner (subject's left)
-    // Landmark 362: Left eye inner corner
-    // Nasion / Nose Bridge: 168 (top) & 6 (mid bridge)
-    // Forehead: 10
-    // Nose tip: 4
-    // Chin: 152
     const rightOuter = landmarks[33];
     const rightInner = landmarks[133];
     const leftOuter = landmarks[263];
     const leftInner = landmarks[362];
     const nasion = landmarks[168] || landmarks[6];
     const foreheadTop = landmarks[10];
-    const noseTip = landmarks[4] || landmarks[1];
     const chin = landmarks[152];
 
     if (!leftOuter || !rightOuter || !nasion) return;
@@ -546,29 +489,23 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
       offsetYPixel = (ch - renderedHeight) / 2;
     }
 
-    // Accurate Eye Pupil Centers (Normal Video Frame Coordinates, 0 to 1)
     const eyeRX = rightInner ? (rightOuter.x + rightInner.x) / 2 : rightOuter.x;
     const eyeRY = rightInner ? (rightOuter.y + rightInner.y) / 2 : rightOuter.y;
     const eyeLX = leftInner ? (leftOuter.x + leftInner.x) / 2 : leftOuter.x;
     const eyeLY = leftInner ? (leftOuter.y + leftInner.y) / 2 : leftOuter.y;
 
-    // Midpoint between eye centers
     const midEyeX = (eyeLX + eyeRX) / 2;
     const midEyeY = (eyeLY + eyeRY) / 2;
 
-    // Anchor: Nasion + MidEye blend for glasses, Forehead for hats
     const anchorX = isHat ? (foreheadTop ? foreheadTop.x : midEyeX) : (midEyeX * 0.35 + nasion.x * 0.65);
     const anchorY = isHat ? (foreheadTop ? foreheadTop.y : midEyeY) : (midEyeY * 0.35 + nasion.y * 0.65);
 
-    // Screen Pixel Coordinates (Mirrored Video Feed -X)
     const screenX = offsetX + (1 - anchorX) * renderedWidth;
     const screenY = offsetYPixel + anchorY * renderedHeight;
 
-    // Convert Screen Pixels to Three.js NDC (-1 to +1)
     const ndcX = (screenX / cw) * 2 - 1;
     const ndcY = 1 - (screenY / ch) * 2;
 
-    // Camera Frustum Dimensions at Z = 0
     const halfH = Math.tan((45 * Math.PI) / 360) * 4.2;
     const halfW = halfH * (cw / ch);
 
@@ -576,46 +513,36 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const worldY = ndcY * halfH + (isHat ? 0.22 : -0.01) + offsetY * 0.012;
     const worldZ = (nasion.z || 0) * -1.8;
 
-    // Screen Positions on Mirrored Viewport:
-    // Left eye (in frame x ~0.65) appears on SCREEN-LEFT (1 - 0.65 = 0.35)
-    // Right eye (in frame x ~0.35) appears on SCREEN-RIGHT (1 - 0.35 = 0.65)
     const screenLeftEyeX = offsetX + (1 - eyeLX) * renderedWidth;
     const screenLeftEyeY = offsetYPixel + eyeLY * renderedHeight;
     const screenRightEyeX = offsetX + (1 - eyeRX) * renderedWidth;
     const screenRightEyeY = offsetYPixel + eyeRY * renderedHeight;
 
-    // Vector pointing from Screen-Left to Screen-Right across the face
-    const dx = screenRightEyeX - screenLeftEyeX; // Always positive across face
+    const dx = screenRightEyeX - screenLeftEyeX;
     const dy = screenRightEyeY - screenLeftEyeY;
     const pixelDist = Math.sqrt(dx * dx + dy * dy);
 
-    // 1. True 3D Roll: Horizontal alignment across eyes (0 = perfectly straight/level)
     const rollAngle = Math.atan2(dy, dx);
     const safeRoll = THREE.MathUtils.clamp(rollAngle, -0.85, 0.85);
 
-    // 2. True 3D Yaw (Head turning Left / Right in 3D Space)
     const eyeZDelta = (leftOuter.z || 0) - (rightOuter.z || 0);
     const screenBridgeX = offsetX + (1 - nasion.x) * renderedWidth;
     const screenMidEyeX = (screenLeftEyeX + screenRightEyeX) / 2;
     const noseScreenShift = (screenBridgeX - screenMidEyeX) / (pixelDist * 0.5 + 0.001);
     
-    // Combining 3D depth and facial feature perspective foreshortening
     const rawYaw = (eyeZDelta * 2.2) + (noseScreenShift * 0.8);
     const safeYaw = THREE.MathUtils.clamp(rawYaw, -0.75, 0.75);
 
-    // 3. True 3D Pitch (Head tilting Up / Down)
     let safePitch = 0;
     if (chin && foreheadTop) {
       const vertDepth = ((foreheadTop.z || 0) - (chin.z || 0)) * 1.6;
       safePitch = THREE.MathUtils.clamp(vertDepth, -0.45, 0.45);
     }
 
-    // World Space Scale (Glasses width matches real Inter-Pupillary Distance)
     const worldInterPupil = (pixelDist / cw) * (2 * halfW);
     const baseScale = isHat ? worldInterPupil * 1.95 : worldInterPupil * 2.35;
     const finalScale = baseScale * (scaleMultiplier / 100);
 
-    // 60 FPS Smooth Interpolation
     group.position.x = THREE.MathUtils.lerp(group.position.x, worldX, 0.45);
     group.position.y = THREE.MathUtils.lerp(group.position.y, worldY, 0.45);
     group.position.z = THREE.MathUtils.lerp(group.position.z, worldZ, 0.45);
@@ -625,7 +552,104 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, safePitch, 0.45);
 
     group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.45);
-  };;
+  };
+
+  /* ------------------------------------------------------------------ */
+  /*  6. Pose Landmark Alignment (Upper-Body Clothes / Shirts)          */
+  /* ------------------------------------------------------------------ */
+  const applyPoseLandmarksTo3DShirt = (landmarks: any[], group: THREE.Group) => {
+    if (!videoRef.current || !containerRef.current) return;
+
+    // MediaPipe Pose Landmarks:
+    // 11: Left Shoulder, 12: Right Shoulder, 23: Left Hip, 24: Right Hip, 0: Nose
+    const leftShoulder = landmarks[11];
+    const rightShoulder = landmarks[12];
+    const leftHip = landmarks[23];
+    const rightHip = landmarks[24];
+
+    if (!leftShoulder || !rightShoulder) return;
+
+    const video = videoRef.current;
+    const container = containerRef.current;
+    const cw = container.clientWidth;
+    const ch = container.clientHeight;
+
+    const vw = video.videoWidth || 1280;
+    const vh = video.videoHeight || 720;
+    const videoAspect = vw / vh;
+    const containerAspect = cw / ch;
+
+    let renderedWidth = cw;
+    let renderedHeight = ch;
+    let offsetX = 0;
+    let offsetYPixel = 0;
+
+    if (containerAspect > videoAspect) {
+      renderedHeight = ch;
+      renderedWidth = ch * videoAspect;
+      offsetX = (cw - renderedWidth) / 2;
+    } else {
+      renderedWidth = cw;
+      renderedHeight = cw / videoAspect;
+      offsetYPixel = (ch - renderedHeight) / 2;
+    }
+
+    // Mirrored Video Screen Coordinates (1 - x)
+    const screenLeftShoulderX = offsetX + (1 - leftShoulder.x) * renderedWidth;
+    const screenLeftShoulderY = offsetYPixel + leftShoulder.y * renderedHeight;
+    const screenRightShoulderX = offsetX + (1 - rightShoulder.x) * renderedWidth;
+    const screenRightShoulderY = offsetYPixel + rightShoulder.y * renderedHeight;
+
+    const dx = screenRightShoulderX - screenLeftShoulderX;
+    const dy = screenRightShoulderY - screenLeftShoulderY;
+    const shoulderSpanPx = Math.sqrt(dx * dx + dy * dy);
+
+    // Anchor: Midpoint of shoulders at base of neck
+    const screenMidX = (screenLeftShoulderX + screenRightShoulderX) / 2;
+    const screenMidY = (screenLeftShoulderY + screenRightShoulderY) / 2;
+
+    const ndcX = (screenMidX / cw) * 2 - 1;
+    const ndcY = 1 - (screenMidY / ch) * 2;
+
+    const halfH = Math.tan((45 * Math.PI) / 360) * 4.2;
+    const halfW = halfH * (cw / ch);
+
+    const worldX = ndcX * halfW;
+    // Align neckline with collar base and apply manual offset
+    const worldY = ndcY * halfH - 0.08 + offsetY * 0.012;
+    const midShoulderZ = ((leftShoulder.z || 0) + (rightShoulder.z || 0)) / 2;
+    const worldZ = midShoulderZ * -2.2;
+
+    // 1. True 3D Roll: Shoulder slant
+    const rollAngle = Math.atan2(dy, dx);
+    const safeRoll = THREE.MathUtils.clamp(rollAngle, -0.85, 0.85);
+
+    // 2. True 3D Yaw: Shoulder depth difference
+    const shoulderZDelta = (leftShoulder.z || 0) - (rightShoulder.z || 0);
+    const safeYaw = THREE.MathUtils.clamp(shoulderZDelta * 2.6, -0.85, 0.85);
+
+    // 3. True 3D Pitch: Torso tilt relative to hips
+    let safePitch = 0;
+    if (leftHip && rightHip) {
+      const midHipZ = ((leftHip.z || 0) + (rightHip.z || 0)) / 2;
+      safePitch = THREE.MathUtils.clamp((midShoulderZ - midHipZ) * 1.5, -0.45, 0.45);
+    }
+
+    // World Space Scale (Shirt fits user shoulder span accurately)
+    const worldShoulderSpan = (shoulderSpanPx / cw) * (2 * halfW);
+    const baseScale = worldShoulderSpan * 1.35;
+    const finalScale = baseScale * (scaleMultiplier / 100);
+
+    group.position.x = THREE.MathUtils.lerp(group.position.x, worldX, 0.45);
+    group.position.y = THREE.MathUtils.lerp(group.position.y, worldY, 0.45);
+    group.position.z = THREE.MathUtils.lerp(group.position.z, worldZ, 0.45);
+
+    group.rotation.z = THREE.MathUtils.lerp(group.rotation.z, safeRoll, 0.45);
+    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw, 0.45);
+    group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, safePitch, 0.45);
+
+    group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.45);
+  };
 
   return (
     <div className="w-full h-full flex flex-col space-y-4">
@@ -645,19 +669,25 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               muted
             />
 
-            {/* Keadaan pelacakan ditampilkan dua-duanya. Sebelumnya hanya lencana
-                hijau yang ada, sehingga saat pelacakan putus layar tidak
-                mengatakan apa pun dan model yang tertinggal di tengah tampak
-                seperti salah posisi, bukan seperti pelacakan yang hilang. */}
-            {isTrackingFace ? (
+            {isTrackingLive ? (
               <div className="absolute top-4 left-4 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono z-30">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                <span>AR 3D GLB HEAD TRACKING (60 FPS)</span>
+                <span>
+                  {isShirt
+                    ? "AR 3D BODY POSE TRACKING (60 FPS)"
+                    : isHat
+                    ? "AR 3D GLB HEAD TRACKING (60 FPS)"
+                    : "AR 3D GLB FACE TRACKING (60 FPS)"}
+                </span>
               </div>
             ) : (
               <div className="absolute top-4 left-4 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-mono z-30">
                 <span className="w-2 h-2 rounded-full bg-amber-400" />
-                <span>WAJAH TIDAK TERDETEKSI — MUNDUR SEDIKIT & MASUKKAN SELURUH KEPALA</span>
+                <span>
+                  {isShirt
+                    ? "BADAN TIDAK TERDETEKSI — MUNDUR SEDIKIT AGAR BAHU & DADA TERLIHAT"
+                    : "WAJAH TIDAK TERDETEKSI — MUNDUR SEDIKIT & MASUKKAN SELURUH KEPALA"}
+                </span>
               </div>
             )}
           </div>
@@ -674,7 +704,6 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
         {/* Top Floating Action Pill: Mode Selector */}
         <div className="absolute top-4 right-4 z-30 flex items-center space-x-1.5 bg-slate-900/90 backdrop-blur-md p-1 rounded-2xl border border-white/15 shadow-2xl">
-          {/* Button AR: Disabled with lock icon & tooltip if photo upload */}
           <div className="relative group">
             <button
               onClick={() => {
@@ -694,12 +723,18 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               ) : (
                 <Zap className="w-3.5 h-3.5 text-amber-300" />
               )}
-              <span>Pasang ke Wajah (AR 3D)</span>
+              <span>
+                {isShirt
+                  ? "Pasang ke Badan (AR 3D)"
+                  : isHat
+                  ? "Pasang ke Kepala (AR 3D)"
+                  : "Pasang ke Wajah (AR 3D)"}
+              </span>
             </button>
 
             {isUploadMode && (
               <div className="absolute right-0 top-full mt-2 w-64 p-2.5 rounded-xl bg-slate-900/95 border border-amber-500/30 text-[11px] text-amber-200/90 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-40 backdrop-blur-md">
-                🔒 <strong>Mode AR Terkunci:</strong> Live Face AR membutuhkan pemindaian video langsung. Gunakan mode <strong>Studio 360°</strong> untuk melihat detail 3D produk.
+                🔒 <strong>Mode AR Terkunci:</strong> Live AR membutuhkan pemindaian video langsung. Gunakan mode <strong>Studio 360°</strong> untuk melihat detail 3D produk.
               </div>
             )}
           </div>
@@ -731,7 +766,13 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
       <div className="glass-panel p-4 rounded-3xl border border-white/10 bg-surface-100/60 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center space-x-3 text-xs">
           <Sliders className="w-4 h-4 text-indigo-400" />
-          <span className="font-semibold text-slate-300">Penyesuaian Posisi Kacamata:</span>
+          <span className="font-semibold text-slate-300">
+            {isShirt
+              ? "Penyesuaian Posisi Baju:"
+              : isHat
+              ? "Penyesuaian Posisi Topi:"
+              : "Penyesuaian Posisi Kacamata:"}
+          </span>
           <div className="flex items-center space-x-1.5">
             <button
               onClick={() => setOffsetY((prev) => prev + 1)}
@@ -774,3 +815,4 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 };
 
 export default ARCanvasViewer;
+
