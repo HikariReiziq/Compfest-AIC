@@ -850,35 +850,73 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   };
 
   return (
-    <div className="w-full h-full flex flex-col space-y-4">
-      {/* 3D AR & Studio Viewport with DSLR Camera Frame */}
-      <div
-        className="relative w-full max-w-[800px] mx-auto drop-shadow-2xl flex items-center justify-center select-none"
-        style={{ aspectRatio: "548 / 455" }}
-      >
-        {/* Bingkai kamera DSLR Canon EOS 4K Ultra HD — tajam & jernih */}
-        <img
-          src="/images/camera-frame.png"
-          alt="Canon Camera Frame"
-          aria-hidden
-          draggable={false}
-          className="absolute inset-0 w-full h-full object-contain pointer-events-none z-20 select-none"
-          style={{
-            filter: "drop-shadow(0 25px 50px rgba(0,0,0,0.85)) contrast(1.04) brightness(1.02)",
-            imageRendering: "auto",
-          }}
-        />
+    <div className="w-full h-full flex flex-col space-y-3.5">
+      {/* Top Header Bar: Mode Switcher [ AR | 360° ] diletakkan di LUAR Viewport */}
+      <div className="flex items-center justify-between gap-3 bg-[#081322]/90 backdrop-blur-xl px-4 py-2 rounded-2xl border border-white/10 shadow-lg">
+        <div className="flex items-center gap-2">
+          <Box className="w-4 h-4 text-sky-400" />
+          <span className="text-xs font-mono font-bold text-white uppercase tracking-wider">
+            {activeItem.name}
+          </span>
+        </div>
 
-        {/* Layar LCD Kamera DSLR Canon — proporsi pas di dalam bezel layar */}
+        {/* Mode Switcher Pill (AR vs 360°) */}
+        <div className="flex items-center bg-[#071120] p-1 rounded-full border border-blue-500/20 shadow-inner">
+          {!isUploadMode && (
+            <button
+              onClick={() => setViewMode("ar")}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer select-none ${
+                viewMode === "ar"
+                  ? "bg-gradient-to-r from-blue-600 to-sky-500 text-white font-bold shadow-md shadow-blue-500/25 border border-blue-400/40"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <Camera className="w-3.5 h-3.5" />
+              <span>AR (Kamera Live)</span>
+            </button>
+          )}
+          <button
+            onClick={() => setViewMode("studio")}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer select-none ${
+              viewMode === "studio"
+                ? "bg-gradient-to-r from-blue-600 to-sky-500 text-white font-bold shadow-md shadow-blue-500/25 border border-blue-400/40"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>360° Studio</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Main Viewport Container */}
+      {viewMode === "ar" ? (
+        /* MODE 1: LIVE AR WITH CANON DSLR CAMERA FRAME */
         <div
-          className="absolute z-10 overflow-hidden rounded-[3px] bg-black shadow-[inset_0_0_20px_rgba(0,0,0,0.95)]"
-          style={{ left: "16.42%", top: "42.20%", width: "45.07%", height: "36.26%" }}
+          className="relative w-full max-w-[800px] mx-auto drop-shadow-2xl flex items-center justify-center select-none animate-fadeIn"
+          style={{ aspectRatio: "548 / 455" }}
         >
-          {/* 3D WebGL Canvas Layer Overlay */}
-          <div ref={containerRef} className="absolute inset-0 w-full h-full z-10 pointer-events-none" />
+          {/* Bingkai kamera DSLR Canon EOS 4K Ultra HD — tajam & jernih */}
+          <img
+            src="/images/camera-frame.png"
+            alt="Canon Camera Frame"
+            aria-hidden
+            draggable={false}
+            className="absolute inset-0 w-full h-full object-contain pointer-events-none z-20 select-none"
+            style={{
+              filter: "drop-shadow(0 25px 50px rgba(0,0,0,0.85)) contrast(1.04) brightness(1.02)",
+              imageRendering: "auto",
+            }}
+          />
 
-          {/* Mode 1: Live Video AR Feed */}
-          {viewMode === "ar" ? (
+          {/* Layar LCD Kamera DSLR Canon — proporsi pas di dalam bezel layar */}
+          <div
+            className="absolute z-10 overflow-hidden rounded-[3px] bg-black shadow-[inset_0_0_20px_rgba(0,0,0,0.95)]"
+            style={{ left: "16.42%", top: "42.20%", width: "45.07%", height: "36.26%" }}
+          >
+            {/* 3D WebGL Canvas Layer Overlay */}
+            <div ref={containerRef} className="absolute inset-0 w-full h-full z-10 pointer-events-none" />
+
             <div
               className="relative w-full h-full flex items-center justify-center bg-black overflow-hidden select-none cursor-grab active:cursor-grabbing touch-none"
               onPointerDown={(e) => {
@@ -947,52 +985,70 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
                 </div>
               )}
             </div>
-          ) : (
-            /* Mode 2: Studio 3D Inspection Viewer */
-            <div className="relative w-full h-full flex items-center justify-center bg-gradient-to-b from-slate-900 via-[#0a0f1d] to-black">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.12)_0%,transparent_70%)] pointer-events-none" />
-              <div className="absolute top-2 left-2 inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[8px] font-mono z-30">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-                <span>STUDIO 360°</span>
-              </div>
-            </div>
-          )}
-
-          {/* Top-Right Toggle Mode: AR vs Studio View */}
-          <div className="absolute top-2 right-2 z-30 flex items-center bg-slate-900/85 backdrop-blur-md p-0.5 rounded-xl border border-white/10 shadow-lg scale-90 origin-top-right">
-            {!isUploadMode && (
-              <button
-                onClick={() => setViewMode("ar")}
-                className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold flex items-center space-x-1 transition-all cursor-pointer ${
-                  viewMode === "ar"
-                    ? "bg-blue-600 text-white shadow-sm"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                <Camera className="w-3 h-3" />
-                <span>AR</span>
-              </button>
-            )}
-            <button
-              onClick={() => setViewMode("studio")}
-              className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold flex items-center space-x-1 transition-all cursor-pointer ${
-                viewMode === "studio"
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "text-slate-400 hover:text-white"
-              }`}
-            >
-              <Sparkles className="w-3 h-3" />
-              <span>360°</span>
-            </button>
-          </div>
-
-          {/* Bottom Floating Info Badge */}
-          <div className="absolute bottom-2 left-2 z-20 hidden sm:flex items-center space-x-1.5 px-2 py-0.5 rounded-xl bg-slate-900/90 backdrop-blur-md border border-white/10 text-[9px] shadow-lg scale-90 origin-bottom-left">
-            <Box className="w-3 h-3 text-blue-400" />
-            <span className="font-semibold text-white max-w-[120px] truncate">{activeItem.name}</span>
           </div>
         </div>
-      </div>
+      ) : (
+        /* MODE 2: 360° STUDIO VIEWPORT — LEGA, BEBAS FRAME KAMERA & INTERAKTIF */
+        <div
+          className="relative w-full max-w-[800px] mx-auto rounded-3xl border border-white/10 bg-gradient-to-b from-slate-900 via-[#0a0f1d] to-black overflow-hidden shadow-2xl flex items-center justify-center select-none animate-fadeIn cursor-grab active:cursor-grabbing touch-none"
+          style={{ aspectRatio: "548 / 455" }}
+          onPointerDown={(e) => {
+            dragStateRef.current = {
+              startX: e.clientX,
+              startY: e.clientY,
+              startOffsetX: offsetXRef.current,
+              startOffsetY: offsetYRef.current,
+              startRotX: rotOffsetXRef.current,
+              startRotY: rotOffsetYRef.current,
+            };
+            (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+          }}
+          onPointerMove={(e) => {
+            const ds = dragStateRef.current;
+            if (!ds) return;
+            if (dragModeRef.current === "rotate") {
+              const deltaYaw = (e.clientX - ds.startX) * 0.012;
+              const deltaPitch = (e.clientY - ds.startY) * 0.012;
+              const newRotY = ds.startRotY + deltaYaw;
+              const newRotX = ds.startRotX + deltaPitch;
+              rotOffsetYRef.current = newRotY;
+              rotOffsetXRef.current = newRotX;
+              setRotOffsetY(newRotY);
+              setRotOffsetX(newRotX);
+            } else {
+              const deltaX = (e.clientX - ds.startX) * 0.15;
+              const deltaY = -(e.clientY - ds.startY) * 0.15;
+              const newX = Number((ds.startOffsetX + deltaX).toFixed(1));
+              const newY = Number((ds.startOffsetY + deltaY).toFixed(1));
+              offsetXRef.current = newX;
+              offsetYRef.current = newY;
+              setOffsetX(newX);
+              setOffsetY(newY);
+            }
+          }}
+          onPointerUp={() => { dragStateRef.current = null; }}
+          onPointerLeave={() => { dragStateRef.current = null; }}
+          onPointerCancel={() => { dragStateRef.current = null; }}
+        >
+          {/* Radial Studio Spotlight */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(56,189,248,0.18)_0%,_transparent_75%)] pointer-events-none" />
+
+          {/* 3D WebGL Canvas Layer Overlay */}
+          <div ref={containerRef} className="absolute inset-0 w-full h-full z-10 pointer-events-none" />
+
+          {/* 360 Studio Badge */}
+          <div className="absolute top-4 left-4 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-blue-500/20 text-sky-300 border border-blue-500/30 text-xs font-mono z-30 shadow-lg backdrop-blur-md">
+            <Sparkles className="w-3.5 h-3.5 text-sky-400 animate-pulse" />
+            <span>STUDIO 360° INSPECTION</span>
+          </div>
+
+          {/* Floating Instructions */}
+          <div className="absolute bottom-4 right-4 z-20 hidden sm:flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#071120]/80 backdrop-blur-md border border-white/10 text-[10px] font-mono text-slate-400">
+            <RotateCw className="w-3 h-3 text-sky-400" />
+            <span>Geser untuk memutar 360°</span>
+          </div>
+        </div>
+      )}
 
       {/* AR Fine-Tuning Micro-Controls (Single Line Seamless Bar) */}
       <div className="glass-panel py-2 px-3 rounded-2xl border border-white/10 bg-[#081322]/95 backdrop-blur-xl flex flex-nowrap items-center justify-between gap-2 text-xs overflow-x-auto no-scrollbar shadow-lg w-full min-w-0">
