@@ -105,7 +105,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
         if (videoRef.current && stream) {
           videoRef.current.srcObject = stream;
           videoRef.current.onloadedmetadata = () => {
-            videoRef.current?.play().catch(() => {});
+            videoRef.current?.play().catch(() => { });
             setCameraReady(true);
           };
         }
@@ -440,6 +440,36 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           });
 
           group.add(wrapper);
+
+          // Create Invisible AR Depth Occluder for authentic 3D penetration
+          if (isHat) {
+            // Head Occluder: Writes to Z-depth buffer so the back brim & interior of the hat
+            // is culled behind the user's real head and hair, creating true 3D head immersion!
+            const headGeom = new THREE.SphereGeometry(0.46, 32, 24);
+            headGeom.scale(1.0, 1.3, 1.15);
+            headGeom.translate(0, -0.32, -0.06);
+            const occluderMat = new THREE.MeshBasicMaterial({
+              colorWrite: false,
+              depthWrite: true,
+            });
+            const occluderMesh = new THREE.Mesh(headGeom, occluderMat);
+            occluderMesh.renderOrder = -1;
+            wrapper.renderOrder = 1;
+            group.add(occluderMesh);
+          } else if (isShirt) {
+            // Torso/Neck Occluder: Prevents back of collar from rendering over the neck
+            const torsoGeom = new THREE.CylinderGeometry(0.38, 0.35, 1.1, 32);
+            torsoGeom.translate(0, -0.55, -0.06);
+            const occluderMat = new THREE.MeshBasicMaterial({
+              colorWrite: false,
+              depthWrite: true,
+            });
+            const occluderMesh = new THREE.Mesh(torsoGeom, occluderMat);
+            occluderMesh.renderOrder = -1;
+            wrapper.renderOrder = 1;
+            group.add(occluderMesh);
+          }
+
           setModelSource(`3D GLB (${filename})`);
         },
         undefined,
@@ -534,7 +564,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const screenBridgeX = offsetX + (1 - nasion.x) * renderedWidth;
     const screenMidEyeX = (screenLeftEyeX + screenRightEyeX) / 2;
     const noseScreenShift = (screenBridgeX - screenMidEyeX) / (pixelDist * 0.5 + 0.001);
-    
+
     const rawYaw = (eyeZDelta * 2.2) + (noseScreenShift * 0.8);
     const safeYaw = THREE.MathUtils.clamp(rawYaw, -0.75, 0.75);
 
@@ -689,8 +719,8 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
                   {isShirt
                     ? "AR 3D BODY POSE TRACKING (60 FPS)"
                     : isHat
-                    ? "AR 3D GLB HEAD TRACKING (60 FPS)"
-                    : "AR 3D GLB FACE TRACKING (60 FPS)"}
+                      ? "AR 3D GLB HEAD TRACKING (60 FPS)"
+                      : "AR 3D GLB FACE TRACKING (60 FPS)"}
                 </span>
               </div>
             ) : (
@@ -723,13 +753,12 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
                 if (!isUploadMode) setViewMode("ar");
               }}
               disabled={isUploadMode}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all ${
-                isUploadMode
-                  ? "opacity-40 cursor-not-allowed text-slate-500 bg-slate-800/40"
-                  : viewMode === "ar"
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all ${isUploadMode
+                ? "opacity-40 cursor-not-allowed text-slate-500 bg-slate-800/40"
+                : viewMode === "ar"
                   ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 cursor-pointer"
                   : "text-slate-400 hover:text-white cursor-pointer"
-              }`}
+                }`}
             >
               {isUploadMode ? (
                 <Lock className="w-3.5 h-3.5 text-slate-400" />
@@ -740,8 +769,8 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
                 {isShirt
                   ? "Pasang ke Badan (AR 3D)"
                   : isHat
-                  ? "Pasang ke Kepala (AR 3D)"
-                  : "Pasang ke Wajah (AR 3D)"}
+                    ? "Pasang ke Kepala (AR 3D)"
+                    : "Pasang ke Wajah (AR 3D)"}
               </span>
             </button>
 
@@ -754,11 +783,10 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
           <button
             onClick={() => setViewMode("studio")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer ${
-              viewMode === "studio"
-                ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md shadow-purple-500/20"
-                : "text-slate-400 hover:text-white"
-            }`}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer ${viewMode === "studio"
+              ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md shadow-purple-500/20"
+              : "text-slate-400 hover:text-white"
+              }`}
           >
             <Move3d className="w-3.5 h-3.5" />
             <span>Putar 360°</span>
@@ -785,8 +813,8 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               {isShirt
                 ? "Posisi Baju:"
                 : isHat
-                ? "Posisi Topi:"
-                : "Posisi Kacamata:"}
+                  ? "Posisi Topi:"
+                  : "Posisi Kacamata:"}
             </span>
           </div>
 
