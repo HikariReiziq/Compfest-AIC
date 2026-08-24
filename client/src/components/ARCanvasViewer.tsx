@@ -12,10 +12,6 @@ import {
   Lock,
   RotateCw,
   Move,
-  ChevronLeft,
-  ChevronRight,
-  ChevronUp,
-  ChevronDown,
 } from "lucide-react";
 import { RecommendationItem } from "../lib/mockData";
 
@@ -1017,67 +1013,6 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
             >
               <Move className="w-3.5 h-3.5" />
               <span>Opsi 2: Posisi (Atas • Bawah • Kiri • Kanan)</span>
-            </button>
-          </div>
-
-          {/* Tombol Panahan Posisi Cepat */}
-          <div className="flex items-center space-x-1.5 bg-slate-900/60 p-1 rounded-2xl border border-white/5">
-            <span className="text-[11px] text-slate-400 px-1 font-medium">Posisi:</span>
-            <button
-              onClick={() => {
-                setOffsetX((prev) => {
-                  const next = Number((prev - 1).toFixed(1));
-                  offsetXRef.current = next;
-                  return next;
-                });
-              }}
-              className="px-2 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-white/10 font-bold text-xs transition-all cursor-pointer flex items-center gap-1"
-              title="Geser Kiri"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" />
-              <span>Kiri</span>
-            </button>
-            <button
-              onClick={() => {
-                setOffsetX((prev) => {
-                  const next = Number((prev + 1).toFixed(1));
-                  offsetXRef.current = next;
-                  return next;
-                });
-              }}
-              className="px-2 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-white/10 font-bold text-xs transition-all cursor-pointer flex items-center gap-1"
-              title="Geser Kanan"
-            >
-              <ChevronRight className="w-3.5 h-3.5" />
-              <span>Kanan</span>
-            </button>
-            <button
-              onClick={() => {
-                setOffsetY((prev) => {
-                  const next = Number((prev + 1).toFixed(1));
-                  offsetYRef.current = next;
-                  return next;
-                });
-              }}
-              className="px-2 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-white/10 font-bold text-xs transition-all cursor-pointer flex items-center gap-1"
-              title="Geser Naik"
-            >
-              <ChevronUp className="w-3.5 h-3.5" />
-              <span>Naik</span>
-            </button>
-            <button
-              onClick={() => {
-                setOffsetY((prev) => {
-                  const next = Number((prev - 1).toFixed(1));
-                  offsetYRef.current = next;
-                  return next;
-                });
-              }}
-              className="px-2 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-white/10 font-bold text-xs transition-all cursor-pointer flex items-center gap-1"
-              title="Geser Turun"
-            >
-              <ChevronDown className="w-3.5 h-3.5" />
-              <span>Turun</span>
             </button>
           </div>
 

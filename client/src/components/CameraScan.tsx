@@ -1382,23 +1382,12 @@ export const CameraScan: React.FC<CameraScanProps> = ({
               <div className="absolute bottom-2 left-2 w-3.5 h-3.5 border-b-2 border-l-2 border-white/60" />
               <div className="absolute bottom-2 right-2 w-3.5 h-3.5 border-b-2 border-r-2 border-white/60" />
 
-              {/* Central Futuristic Focus Shutter & Glowing Radial Countdown */}
+              {/* Countdown: Simpel angka besar tanpa card */}
               {countdown !== null && (
-                <div className="relative flex items-center justify-center pointer-events-none z-30">
-                  {/* Outer pulsing ring */}
-                  <div className="absolute w-20 h-20 rounded-full border border-sky-400/40 animate-ping" />
-                  
-                  {/* Glowing Glassmorphic Dial */}
-                  <div className="relative w-16 h-16 rounded-full bg-slate-950/85 backdrop-blur-xl border-2 border-sky-400/80 shadow-[0_0_30px_rgba(56,189,248,0.6)] flex flex-col items-center justify-center">
-                    {/* Rotating focus notch */}
-                    <div className="absolute inset-0 rounded-full border-t-2 border-r-2 border-[#FACC15] animate-spin" style={{ animationDuration: "1.5s" }} />
-                    <span className="text-2xl font-black text-white font-mono drop-shadow-[0_0_12px_#38BDF8]">
-                      {countdown}
-                    </span>
-                    <span className="text-[7px] font-mono font-bold text-sky-300 uppercase tracking-widest -mt-0.5">
-                      LOCK
-                    </span>
-                  </div>
+                <div className="relative flex items-center justify-center pointer-events-none z-30 animate-pulse">
+                  <span className="text-6xl sm:text-7xl font-black text-white font-mono drop-shadow-[0_4px_20px_rgba(0,0,0,0.95)] select-none">
+                    {countdown}
+                  </span>
                 </div>
               )}
 
