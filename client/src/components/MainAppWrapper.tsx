@@ -253,7 +253,7 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
       )}
 
       {/* Main Container */}
-      <div className="relative z-10 w-full px-6 sm:px-10 lg:px-14 pt-28 pb-10 flex-1 flex flex-col justify-center">
+      <div className="relative z-10 w-full px-6 sm:px-10 lg:px-14 pt-24 pb-12 flex-1 flex flex-col justify-start">
         {/* STEP 1: CATEGORY SELECTION */}
         {currentStep === 'CATEGORY' && (
           <CategorySelector onSelectCategory={handleCategorySelected} />

@@ -1139,14 +1139,14 @@ export const CameraScan: React.FC<CameraScanProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center pt-2">
         {/* Scanner Viewport — Kamera Live / Upload Foto */}
         <div className="lg:col-span-7 space-y-4">
           <div
             className={
               mode === "upload"
                 ? "relative bg-black rounded-3xl overflow-hidden border-2 border-slate-400/60 shadow-[0_0_0_1px_rgba(255,255,255,0.15),0_20px_60px_rgba(0,0,0,0.6)] flex items-center justify-center aspect-auto min-h-[480px] p-6"
-                : "relative w-full max-w-[720px] mx-auto"
+                : "relative w-full max-w-[860px] mx-auto drop-shadow-2xl"
             }
             style={mode === "upload" ? undefined : { aspectRatio: "553 / 404" }}
           >
@@ -1248,7 +1248,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
               </div>
             ) : (
               <>
-              {/* Layar LCD kamera — video diperkecil agar pas di tengah layar bingkai */}
+              {/* Layar LCD kamera — video diperbesar pas di tengah layar bingkai */}
               <div
                 className="absolute z-10 overflow-hidden rounded-[8px] bg-black shadow-[inset_0_0_25px_rgba(0,0,0,0.9)]"
                 style={{ left: "26%", top: "41%", width: "40.5%", height: "40%" }}
@@ -1338,123 +1338,53 @@ export const CameraScan: React.FC<CameraScanProps> = ({
 
             <canvas ref={canvasRef} className="hidden" />
 
-            {/* HUD Overlay Frame */}
-            <div className="absolute inset-0 pointer-events-none p-4">
-              <div className="hud-corner hud-tl" />
-              <div className="hud-corner hud-tr" />
-              <div className="hud-corner hud-bl" />
-              <div className="hud-corner hud-br" />
+            {/* Sleek Minimalist Viewfinder Reticle Frame */}
+            <div className="absolute inset-0 pointer-events-none p-2.5 flex items-center justify-center">
+              {/* Corner L-Brackets */}
+              <div className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 rounded-tl border-[#38BDF8]/70" />
+              <div className="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 rounded-tr border-[#38BDF8]/70" />
+              <div className="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 rounded-bl border-[#38BDF8]/70" />
+              <div className="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 rounded-br border-[#38BDF8]/70" />
 
-              {/* Center Target Guide */}
-              {subcategory === "shirts" ? (
-                <div
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[45%] h-[88%] aspect-[4/5] flex flex-col items-center justify-center transition-all duration-300 relative"
-                >
-                  {/* Soft guide zone — corner brackets (area pemandu, non-dashed) */}
-                  <div
-                    aria-hidden
-                    className="absolute inset-0 rounded-3xl pointer-events-none transition-all duration-300"
-                    style={{ background: `linear-gradient(${guideStyle.border}0D, ${guideStyle.border}0D)` }}
-                  />
-                  <div aria-hidden className="absolute top-0 left-0 w-10 h-10 border-t-2 border-l-2 rounded-tl-2xl pointer-events-none transition-all duration-300" style={{ borderColor: `${guideStyle.border}AA` }} />
-                  <div aria-hidden className="absolute top-0 right-0 w-10 h-10 border-t-2 border-r-2 rounded-tr-2xl pointer-events-none transition-all duration-300" style={{ borderColor: `${guideStyle.border}AA` }} />
-                  <div aria-hidden className="absolute bottom-0 left-0 w-10 h-10 border-b-2 border-l-2 rounded-bl-2xl pointer-events-none transition-all duration-300" style={{ borderColor: `${guideStyle.border}AA` }} />
-                  <div aria-hidden className="absolute bottom-0 right-0 w-10 h-10 border-b-2 border-r-2 rounded-br-2xl pointer-events-none transition-all duration-300" style={{ borderColor: `${guideStyle.border}AA` }} />
-
-                  {/* Countdown badge */}
-                  {countdown !== null && (
-                    <div className="w-14 h-14 rounded-full bg-[#0B1528]/95 border-2 border-[#38BDF8] flex flex-col items-center justify-center animate-pulse backdrop-blur-md z-10">
-                      <span className="text-2xl font-black text-white font-mono">{countdown}</span>
-                      <span className="text-[9px] font-mono text-[#FACC15] uppercase tracking-wider">Memindai</span>
-                    </div>
-                  )}
-                  {countdown === null && faceGuideState === "NO_FACE" && (
-                    <div className="px-3.5 py-1.5 rounded-full bg-[#0B1528]/90 border border-rose-400/50 backdrop-blur-md z-10">
-                      <span className="text-xs font-mono text-rose-200 font-semibold">Wajah belum terdeteksi</span>
-                    </div>
-                  )}
-                  {countdown === null && faceGuideState === "MISALIGNED" && (
-                    <div className="px-3.5 py-1.5 rounded-full bg-[#0B1528]/90 border border-yellow-400/50 backdrop-blur-md flex items-center gap-2 z-10">
-                      <AlertTriangle className="w-4 h-4 text-yellow-400 animate-pulse" />
-                      <span className="text-xs font-mono text-yellow-200 font-semibold">Posisikan Bahu &amp; Tubuh</span>
-                    </div>
-                  )}
-                  {countdown === null && faceGuideState === "ALIGNED" && !isScanning && (
-                    <div className="px-3.5 py-1.5 rounded-full bg-[#0B1528]/90 border border-[#38BDF8] backdrop-blur-md flex items-center gap-2 z-10">
-                      <Check className="w-4 h-4 text-[#38BDF8]" />
-                      <span className="text-xs font-mono text-[#93C5FD] font-semibold">Siluet Terkunci</span>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[52%] h-[92%] aspect-[13/16] rounded-[50%] flex items-center justify-center transition-all duration-300 relative"
-                >
-                  {/* Soft glowing oval guide zone (area pemandu, non-dashed) */}
-                  <div
-                    aria-hidden
-                    className="absolute inset-0 rounded-[50%] pointer-events-none transition-all duration-300"
-                    style={{
-                      background: `radial-gradient(ellipse at center, ${guideStyle.border}1A 0%, ${guideStyle.border}0A 60%, transparent 80%)`,
-                      boxShadow: `inset 0 0 50px ${guideStyle.border}26`,
-                      border: `1.5px solid ${guideStyle.border}73`,
-                    }}
-                  />
-
-                  {/* Countdown badge */}
-                  {countdown !== null && (
-                    <div className="w-14 h-14 rounded-full bg-[#0B1528]/95 border-2 border-[#38BDF8] flex flex-col items-center justify-center animate-pulse backdrop-blur-md">
-                      <span className="text-2xl font-black text-white font-mono">{countdown}</span>
-                      <span className="text-[9px] font-mono text-[#FACC15] uppercase tracking-wider">Memindai</span>
-                    </div>
-                  )}
-                  {countdown === null && faceGuideState === "NO_FACE" && (
-                    <div className="px-3.5 py-1.5 rounded-full bg-[#0B1528]/90 border border-rose-400/50 backdrop-blur-md">
-                      <span className="text-xs font-mono text-rose-200 font-semibold">Wajah belum terdeteksi</span>
-                    </div>
-                  )}
-                  {countdown === null && faceGuideState === "MISALIGNED" && (
-                    <div className="px-3.5 py-1.5 rounded-full bg-[#0B1528]/90 border border-yellow-400/50 backdrop-blur-md flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-yellow-400 animate-pulse" />
-                      <span className="text-xs font-mono text-yellow-200 font-semibold">Sesuaikan Posisi Wajah</span>
-                    </div>
-                  )}
-                  {countdown === null && faceGuideState === "ALIGNED" && !isScanning && (
-                    <div className="px-3.5 py-1.5 rounded-full bg-[#0B1528]/90 border border-[#38BDF8] backdrop-blur-md flex items-center gap-2">
-                      <Check className="w-4 h-4 text-[#38BDF8]" />
-                      <span className="text-xs font-mono text-[#93C5FD] font-semibold">Wajah Terkunci</span>
-                    </div>
-                  )}
+              {/* Central Countdown Indicator */}
+              {countdown !== null && (
+                <div className="w-14 h-14 rounded-full bg-[#0B1528]/95 border-2 border-[#38BDF8] flex flex-col items-center justify-center animate-pulse backdrop-blur-md shadow-2xl z-20">
+                  <span className="text-2xl font-black text-white font-mono">{countdown}</span>
+                  <span className="text-[8px] font-mono text-[#FACC15] uppercase tracking-wider">Memindai</span>
                 </div>
               )}
 
-              {/* Face guide status message pill */}
+              {/* Clean Bottom Status Pill */}
               {hasCamera && !scannedProfile && !isScanning && (
-                <div
-                  className="absolute bottom-2 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full bg-[#0B1528]/95 backdrop-blur-md border text-[10px] font-medium text-center transition-all duration-300 max-w-[94%] leading-snug shadow-xl"
-                  style={{
-                    borderColor: guideStyle.border + "80",
-                    color: guideStyle.text,
-                  }}
-                >
-                  {subcategory === "shirts" ? "Posisikan bahu dan dada dalam frame panduan tubuh" : guideMessage}
+                <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-[#0B1528]/90 backdrop-blur-md border border-white/10 text-[10px] font-mono flex items-center gap-1.5 shadow-lg whitespace-nowrap z-10">
+                  <span
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: guideStyle.border }}
+                  />
+                  <span style={{ color: guideStyle.text }}>
+                    {faceGuideState === "ALIGNED"
+                      ? (subcategory === "shirts" ? "Siluet Terkunci" : "Wajah Terkunci")
+                      : faceGuideState === "MISALIGNED"
+                      ? (subcategory === "shirts" ? "Posisikan Bahu & Tubuh" : "Posisikan Wajah ke Tengah")
+                      : (subcategory === "shirts" ? "Arahkan Tubuh ke Kamera" : "Arahkan Wajah ke Kamera")}
+                  </span>
                 </div>
               )}
 
               {/* Scanning Laser Line */}
               {isScanning && (
-                <div className="absolute left-4 right-4 h-0.5 bg-gradient-to-r from-transparent via-[#38BDF8] to-transparent shadow-[0_0_15px_#38BDF8] animate-scan-laser" />
+                <div className="absolute left-3 right-3 h-0.5 bg-gradient-to-r from-transparent via-[#38BDF8] to-transparent shadow-[0_0_15px_#38BDF8] animate-scan-laser" />
               )}
             </div>
 
             {/* Scan Progress Bar */}
             {isScanning && (
-              <div className="absolute bottom-2 left-2 right-2 bg-[#0B1528]/95 backdrop-blur-md rounded-xl p-2 border border-blue-500/20">
+              <div className="absolute bottom-2 left-2 right-2 bg-[#0B1528]/95 backdrop-blur-md rounded-xl p-2 border border-blue-500/20 z-20">
                 <div className="flex justify-between text-[9px] font-mono text-[#93C5FD] mb-1.5">
-                  <span>{subcategory === "shirts" ? "Mengekstraksi Siluet Tubuh & Postur..." : "Mengekstraksi Ciri Visual..."}</span>
+                  <span>{subcategory === "shirts" ? "Mengekstraksi Siluet Tubuh..." : "Mengekstraksi Ciri Visual..."}</span>
                   <span className="text-[#FACC15] font-bold">{scanProgress}%</span>
                 </div>
-                <div className="w-full bg-black/60 h-2.5 rounded-full overflow-hidden border border-blue-500/20 p-0.5">
+                <div className="w-full bg-black/60 h-2 rounded-full overflow-hidden border border-blue-500/20 p-0.5">
                   <div
                     className="h-full bg-gradient-to-r from-blue-600 via-sky-400 to-[#FACC15] rounded-full transition-all duration-300"
                     style={{ width: `${scanProgress}%` }}
