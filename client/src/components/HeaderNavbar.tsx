@@ -67,27 +67,29 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
   };
 
   return (
-    <header className="fixed top-5 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2.5rem)] max-w-6xl rounded-full border border-blue-500/20 bg-[#0B1528]/85 backdrop-blur-2xl px-5 sm:px-8 py-3 flex items-center justify-between transition-all shadow-2xl text-white">
-      {/* Left: Back Button to previous step + Brand Logo */}
-      <div className="flex items-center gap-2.5 sm:gap-3">
-        {currentStep !== 'CATEGORY' && (
-          <button
-            type="button"
-            onClick={handleBackPreviousStep}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-blue-500/30 bg-[#08101E] text-xs font-mono font-semibold text-[#93C5FD] hover:bg-blue-600 hover:text-white transition-all cursor-pointer shadow-md shrink-0"
-            title="Kembali ke Tahap Sebelumnya"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">
-              {currentStep === 'SCAN'
-                ? 'Kategori'
-                : currentStep === 'QUIZ'
-                ? 'Pindai'
-                : 'Kuesioner'}
-            </span>
-          </button>
-        )}
+    <>
+      {/* Standalone Floating Back Button at Top-Left (Exact Navbar Height Level) */}
+      {currentStep !== 'CATEGORY' && (
+        <button
+          type="button"
+          onClick={handleBackPreviousStep}
+          className="fixed top-5 left-4 sm:left-6 z-50 inline-flex items-center gap-2 px-4 py-3 rounded-full border border-blue-500/30 bg-[#0B1528]/90 backdrop-blur-2xl text-xs font-mono font-bold text-[#93C5FD] hover:bg-blue-600 hover:text-white transition-all cursor-pointer shadow-2xl hover:scale-105"
+          title="Kembali ke Tahap Sebelumnya"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>
+            {currentStep === 'SCAN'
+              ? 'Kategori'
+              : currentStep === 'QUIZ'
+              ? 'Pindai'
+              : 'Kuesioner'}
+          </span>
+        </button>
+      )}
 
+      {/* Main Centered Floating Header Navbar */}
+      <header className="fixed top-5 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-2.5rem)] max-w-6xl rounded-full border border-blue-500/20 bg-[#0B1528]/85 backdrop-blur-2xl px-5 sm:px-8 py-3 flex items-center justify-between transition-all shadow-2xl text-white">
+        {/* Left: Brand Logo */}
         <div
           onClick={onBackToLanding || onReset}
           className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group shrink-0"
@@ -112,52 +114,52 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
             </p>
           </div>
         </div>
-      </div>
 
-      {/* Step Flow Indicators (Interactive Floating Breadcrumbs) */}
-      <div className="hidden md:flex items-center gap-1.5 bg-[#08101E] p-1.5 rounded-full border border-blue-500/20 font-mono">
-        {steps.map((s) => {
-          const isActive = s.id === activeId;
-          const isCompleted = s.stepIndex < currentStepIndex;
-          const isClickable =
-            s.id === 'CATEGORY' ||
-            s.id === 'SCAN' ||
-            (s.id === 'QUIZ' && canNavigateToQuiz) ||
-            (s.id === 'TRYON' && canNavigateToTryon);
+        {/* Step Flow Indicators (Interactive Floating Breadcrumbs) */}
+        <div className="hidden md:flex items-center gap-1.5 bg-[#08101E] p-1.5 rounded-full border border-blue-500/20 font-mono">
+          {steps.map((s) => {
+            const isActive = s.id === activeId;
+            const isCompleted = s.stepIndex < currentStepIndex;
+            const isClickable =
+              s.id === 'CATEGORY' ||
+              s.id === 'SCAN' ||
+              (s.id === 'QUIZ' && canNavigateToQuiz) ||
+              (s.id === 'TRYON' && canNavigateToTryon);
 
-          return (
+            return (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => handleStepClicked(s.id)}
+                disabled={!isClickable}
+                className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all flex items-center gap-1.5 ${
+                  isActive
+                    ? 'bg-blue-600 text-white font-bold shadow-md'
+                    : isCompleted
+                    ? 'text-[#FACC15] hover:text-[#FDE047] hover:bg-white/5 cursor-pointer'
+                    : 'text-[#475569] cursor-not-allowed opacity-60'
+                }`}
+              >
+                <span>{s.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Right Actions: Back to Landing */}
+        <div className="flex items-center gap-2">
+          {onBackToLanding && (
             <button
-              key={s.id}
               type="button"
-              onClick={() => handleStepClicked(s.id)}
-              disabled={!isClickable}
-              className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all flex items-center gap-1.5 ${
-                isActive
-                  ? 'bg-blue-600 text-white font-bold shadow-md'
-                  : isCompleted
-                  ? 'text-[#FACC15] hover:text-[#FDE047] hover:bg-white/5 cursor-pointer'
-                  : 'text-[#475569] cursor-not-allowed opacity-60'
-              }`}
+              onClick={onBackToLanding}
+              className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full border border-blue-500/30 bg-[#08101E] text-xs font-mono font-semibold text-[#93C5FD] hover:bg-blue-600 hover:text-white transition-all cursor-pointer shadow-md"
             >
-              <span>{s.label}</span>
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">BERANDA</span>
             </button>
-          );
-        })}
-      </div>
-
-      {/* Right Actions: Back to Landing */}
-      <div className="flex items-center gap-2">
-        {onBackToLanding && (
-          <button
-            type="button"
-            onClick={onBackToLanding}
-            className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full border border-blue-500/30 bg-[#08101E] text-xs font-mono font-semibold text-[#93C5FD] hover:bg-blue-600 hover:text-white transition-all cursor-pointer shadow-md"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">BERANDA</span>
-          </button>
-        )}
-      </div>
-    </header>
+          )}
+        </div>
+      </header>
+    </>
   );
 };
