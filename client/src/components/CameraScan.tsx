@@ -1272,57 +1272,52 @@ export const CameraScan: React.FC<CameraScanProps> = ({
               <div className="relative w-full h-full bg-black flex items-center justify-center">
             {hasCamera ? (
               <>
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                onLoadedData={() => setIsVideoPlaying(true)}
-                onPlaying={() => setIsVideoPlaying(true)}
-                className="w-full h-full object-cover transform -scale-x-100"
-                style={{ filter: "brightness(1.35) contrast(1.05)" }}
-              />
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  onLoadedData={() => setIsVideoPlaying(true)}
+                  onPlaying={() => setIsVideoPlaying(true)}
+                  className="w-full h-full object-cover transform -scale-x-100"
+                  style={{ filter: "brightness(1.35) contrast(1.05)" }}
+                />
 
-              {/* Maskot Sesu-AI saat kamera sedang loading/menghubungkan */}
-              {!isVideoPlaying && (
-                <div className="absolute inset-0 bg-[#071120] z-20 flex flex-col items-center justify-center p-4 text-center">
-                  <div className="relative flex flex-col items-center justify-center">
-                    {/* Glow ambient halo */}
-                    <div className="absolute w-24 h-24 rounded-full bg-sky-500/20 blur-xl animate-pulse" />
-
-                    {/* Maskot dengan animasi atas-bawah lembut */}
-                    <div className="relative animate-bounce" style={{ animationDuration: "2s" }}>
+                {/* Maskot saat kamera sedang loading/menghubungkan */}
+                {(!isVideoPlaying || isModelLoading) && (
+                  <div className="absolute inset-0 z-30 bg-[#071120] flex flex-col items-center justify-center space-y-3 p-4 text-center">
+                    <div className="relative z-10 flex items-center justify-center">
                       <img
                         src="/images/mascot.png"
-                        alt="Sesu-AI Mascot"
-                        className="w-14 h-14 sm:w-16 sm:h-16 object-contain drop-shadow-[0_8px_20px_rgba(56,189,248,0.5)]"
+                        alt="COBA Mascot"
+                        className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-md animate-bounce"
+                        style={{ animationDuration: '2s' }}
                       />
                     </div>
 
-                    <div className="mt-2.5 flex items-center space-x-1.5 bg-slate-900/90 px-2.5 py-0.5 rounded-full border border-sky-400/30 shadow-lg">
-                      <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-ping" />
-                      <span className="text-[8px] sm:text-[9px] font-mono font-bold text-sky-200 uppercase tracking-wider">
-                        Memuat Sensor AI...
-                      </span>
+                    {/* Tulisan Loading Bergelombang */}
+                    <div className="flex items-center space-x-1 font-mono text-xs sm:text-sm font-bold tracking-[0.2em] text-[#38BDF8] uppercase">
+                      {['L', 'O', 'A', 'D', 'I', 'N', 'G', '.', '.', '.'].map((char, index) => (
+                        <span
+                          key={index}
+                          className="animate-text-wave inline-block text-white"
+                          style={{ animationDelay: `${index * 120}ms` }}
+                        >
+                          {char}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="w-36 sm:w-44 h-1 rounded-full bg-white/10 overflow-hidden">
+                      <div className="animate-loading-slide h-full w-1/3 rounded-full bg-blue-500" />
                     </div>
                   </div>
-                </div>
-              )}
-
-              {/* Lampu sorot lembut dari kanan-atas agar wajah tidak gelap */}
-              <div
-                aria-hidden
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background:
-                    "radial-gradient(ellipse 65% 55% at 78% 18%, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.07) 38%, rgba(255,255,255,0) 68%)",
-                }}
-              />
+                )}
               </>
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-gradient-to-br from-[#0E1A2E] via-[#0B1528] to-[#060B14]">
+              <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-[#071120]">
                 {cameraError ? (
-                  <div className="w-full max-w-xs rounded-2xl border border-white/10 bg-[#0B1528]/90 backdrop-blur-xl p-4 space-y-3 flex flex-col items-center z-20 shadow-2xl">
+                  <div className="w-full max-w-xs rounded-2xl border border-white/10 bg-[#0B1528] p-4 space-y-3 flex flex-col items-center z-20 shadow-xl">
                     <div className="w-10 h-10 rounded-xl bg-rose-500/15 border border-rose-400/25 flex items-center justify-center">
                       <VideoOff className="w-5 h-5 text-rose-300" />
                     </div>
@@ -1335,7 +1330,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                       <button
                         onClick={retryCamera}
                         type="button"
-                        className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-lg"
+                        className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md"
                       >
                         <RefreshCw className="w-3.5 h-3.5" />
                         <span>Coba Lagi</span>
@@ -1355,26 +1350,42 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                     </div>
                   </div>
                 ) : (
-                  <div className="w-full max-w-xs rounded-2xl border border-white/10 bg-[#0B1528]/90 backdrop-blur-xl p-4 space-y-3 flex flex-col items-center z-20 shadow-2xl">
-                    <div className="w-10 h-10 rounded-xl bg-blue-500/15 border border-blue-400/25 flex items-center justify-center">
-                      <Camera className="w-5 h-5 text-[#38BDF8]" />
+                  <div className="flex flex-col items-center justify-center space-y-3">
+                    <div className="relative z-10 flex items-center justify-center">
+                      <img
+                        src="/images/mascot.png"
+                        alt="COBA Mascot"
+                        className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-md animate-bounce"
+                        style={{ animationDuration: '2s' }}
+                      />
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-sm font-bold text-white">Mode Simulasi Aktif</p>
-                      <p className="text-[10px] text-[#94A3B8] leading-relaxed">
-                        Kamera fisik tidak terdeteksi. Sistem siap melanjutkan via profil simulasi.
-                      </p>
+
+                    <div className="flex items-center space-x-1 font-mono text-xs sm:text-sm font-bold tracking-[0.2em] text-[#38BDF8] uppercase">
+                      {['L', 'O', 'A', 'D', 'I', 'N', 'G', '.', '.', '.'].map((char, index) => (
+                        <span
+                          key={index}
+                          className="animate-text-wave inline-block text-white"
+                          style={{ animationDelay: `${index * 120}ms` }}
+                        >
+                          {char}
+                        </span>
+                      ))}
                     </div>
+
+                    <div className="w-36 sm:w-44 h-1 rounded-full bg-white/10 overflow-hidden">
+                      <div className="animate-loading-slide h-full w-1/3 rounded-full bg-blue-500" />
+                    </div>
+
                     <button
                       onClick={() => {
                         const defaultProfile = MOCK_PRESETS.indonesian_warm_sawo_matang.profile;
                         setScannedProfile(defaultProfile);
                       }}
                       type="button"
-                      className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-lg"
+                      className="mt-2 px-4 py-2 rounded-full text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md"
                     >
                       <UserCheck className="w-3.5 h-3.5" />
-                      <span>Lanjutkan Profil Simulasi</span>
+                      <span>Gunakan Profil Simulasi</span>
                     </button>
                   </div>
                 )}

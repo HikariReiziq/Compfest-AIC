@@ -959,6 +959,31 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
                 muted
               />
 
+              {!cameraReady && (
+                <div className="absolute inset-0 z-30 bg-[#071120] flex flex-col items-center justify-center space-y-2 p-2 text-center">
+                  <img
+                    src="/images/mascot.png"
+                    alt="COBA Mascot"
+                    className="w-12 h-12 object-contain drop-shadow-md animate-bounce"
+                    style={{ animationDuration: "2s" }}
+                  />
+                  <div className="flex items-center space-x-1 font-mono text-[9px] font-bold tracking-[0.2em] text-[#38BDF8] uppercase">
+                    {["L", "O", "A", "D", "I", "N", "G", ".", ".", "."].map((char, index) => (
+                      <span
+                        key={index}
+                        className="animate-text-wave inline-block text-white"
+                        style={{ animationDelay: `${index * 120}ms` }}
+                      >
+                        {char}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="w-24 h-1 rounded-full bg-white/10 overflow-hidden">
+                    <div className="animate-loading-slide h-full w-1/3 rounded-full bg-blue-500" />
+                  </div>
+                </div>
+              )}
+
               {isTrackingLive ? (
                 <div className="absolute top-2 left-2 inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[8px] font-mono z-30">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
