@@ -119,7 +119,7 @@ export default function LandingClient({ fontClass, onOpenStudio }: LandingClient
             <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <button
                 type="button"
-                onClick={() => onOpenStudio(activeAsset.kategori as any)}
+                onClick={() => onOpenStudio()}
                 className="group inline-flex min-h-[52px] items-center justify-center gap-3 rounded-full px-8 text-base font-bold tracking-wide text-white transition-all duration-200 bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 active:scale-[0.98] cursor-pointer shadow-md"
               >
                 <span>Mulai Fitting Virtual (Coba Produk Ini di AR)</span>
@@ -208,7 +208,7 @@ export default function LandingClient({ fontClass, onOpenStudio }: LandingClient
 
       {/* ============ Maskot COBA di Kanan Bawah (Bubble Chat & Maskot Naik Turun Bersama) ============ */}
       <div
-        onClick={() => onOpenStudio(activeAsset.kategori as any)}
+        onClick={() => onOpenStudio()}
         className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex flex-col items-center cursor-pointer group select-none animate-bounce"
         style={{ animationDuration: '2.8s' }}
         title="Mulai Fitting Virtual bersama Maskot COBA!"
