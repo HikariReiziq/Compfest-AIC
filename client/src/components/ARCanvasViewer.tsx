@@ -851,21 +851,13 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
   return (
     <div className="w-full h-full flex flex-col space-y-3.5">
-      {/* Top Header Bar: Mode Switcher [ AR | 360° ] diletakkan di LUAR Viewport */}
-      <div className="flex items-center justify-between gap-3 bg-[#081322]/90 backdrop-blur-xl px-4 py-2 rounded-2xl border border-white/10 shadow-lg">
-        <div className="flex items-center gap-2">
-          <Box className="w-4 h-4 text-sky-400" />
-          <span className="text-xs font-mono font-bold text-white uppercase tracking-wider">
-            {activeItem.name}
-          </span>
-        </div>
-
-        {/* Mode Switcher Pill (AR vs 360°) */}
-        <div className="flex items-center bg-[#071120] p-1 rounded-full border border-blue-500/20 shadow-inner">
+      {/* Mode Switcher Pill (AR vs 360°) — Berada di tengah tanpa card nama produk */}
+      <div className="flex justify-center w-full">
+        <div className="inline-flex items-center bg-[#071120] p-1 rounded-full border border-blue-500/20 shadow-xl backdrop-blur-xl">
           {!isUploadMode && (
             <button
               onClick={() => setViewMode("ar")}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer select-none ${
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer select-none ${
                 viewMode === "ar"
                   ? "bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-md shadow-blue-500/25 border border-blue-400/40"
                   : "text-slate-400 hover:text-white"
@@ -877,7 +869,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           )}
           <button
             onClick={() => setViewMode("studio")}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer select-none ${
+            className={`px-4 py-1.5 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer select-none ${
               viewMode === "studio"
                 ? "bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-md shadow-blue-500/25 border border-blue-400/40"
                 : "text-slate-400 hover:text-white"
