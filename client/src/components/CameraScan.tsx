@@ -1146,18 +1146,18 @@ export const CameraScan: React.FC<CameraScanProps> = ({
             className={
               mode === "upload"
                 ? "relative bg-black rounded-3xl overflow-hidden border-2 border-slate-400/60 shadow-[0_0_0_1px_rgba(255,255,255,0.15),0_20px_60px_rgba(0,0,0,0.6)] flex items-center justify-center aspect-auto min-h-[480px] p-6"
-                : "relative w-full max-w-[860px] mx-auto drop-shadow-2xl"
+                : "relative w-full max-w-[800px] mx-auto drop-shadow-2xl"
             }
-            style={mode === "upload" ? undefined : { aspectRatio: "553 / 404" }}
+            style={mode === "upload" ? undefined : { aspectRatio: "860 / 714" }}
           >
             {mode === "upload" ? null : (
-              /* Bingkai kamera ilustrasi — hanya untuk langkah 2 mode kamera live */
+              /* Bingkai kamera DSLR Canon EOS — hanya untuk langkah 2 mode kamera live */
               <img
                 src="/images/camera-frame.png"
-                alt=""
+                alt="Canon Camera Frame"
                 aria-hidden
                 draggable={false}
-                className="absolute inset-0 w-full h-full object-contain pointer-events-none z-20 select-none drop-shadow-[0_25px_45px_rgba(0,0,0,0.55)]"
+                className="absolute inset-0 w-full h-full object-contain pointer-events-none z-20 select-none drop-shadow-[0_25px_45px_rgba(0,0,0,0.65)]"
               />
             )}
             {mode === "upload" ? (
@@ -1248,10 +1248,10 @@ export const CameraScan: React.FC<CameraScanProps> = ({
               </div>
             ) : (
               <>
-              {/* Layar LCD kamera — video diperbesar pas di tengah layar bingkai */}
+              {/* Layar LCD kamera DSLR Canon — proporsi 16:9 pas di dalam bezel layar */}
               <div
-                className="absolute z-10 overflow-hidden rounded-[8px] bg-black shadow-[inset_0_0_25px_rgba(0,0,0,0.9)]"
-                style={{ left: "26%", top: "41%", width: "40.5%", height: "40%" }}
+                className="absolute z-10 overflow-hidden rounded-[3px] bg-black shadow-[inset_0_0_20px_rgba(0,0,0,0.95)]"
+                style={{ left: "16.51%", top: "42.58%", width: "53.14%", height: "35.99%" }}
               >
               <div className="relative w-full h-full bg-black flex items-center justify-center">
             {hasCamera ? (
@@ -1275,24 +1275,24 @@ export const CameraScan: React.FC<CameraScanProps> = ({
               />
               </>
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-[#0E1A2E] via-[#0B1528] to-[#060B14]">
+              <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-gradient-to-br from-[#0E1A2E] via-[#0B1528] to-[#060B14]">
                 {cameraError ? (
-                  <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-[#0B1528]/80 backdrop-blur-xl p-8 space-y-5 flex flex-col items-center z-20 shadow-2xl">
-                    <div className="w-14 h-14 rounded-2xl bg-rose-500/15 border border-rose-400/25 flex items-center justify-center">
-                      <VideoOff className="w-7 h-7 text-rose-300" />
+                  <div className="w-full max-w-xs rounded-2xl border border-white/10 bg-[#0B1528]/90 backdrop-blur-xl p-4 space-y-3 flex flex-col items-center z-20 shadow-2xl">
+                    <div className="w-10 h-10 rounded-xl bg-rose-500/15 border border-rose-400/25 flex items-center justify-center">
+                      <VideoOff className="w-5 h-5 text-rose-300" />
                     </div>
-                    <div className="space-y-1.5">
-                      <p className="text-lg font-bold text-white">Kamera tidak dapat diakses</p>
-                      <p className="text-xs text-[#94A3B8] leading-relaxed">{cameraError}</p>
+                    <div className="space-y-1">
+                      <p className="text-sm font-bold text-white">Kamera tidak dapat diakses</p>
+                      <p className="text-[10px] text-[#94A3B8] leading-relaxed">{cameraError}</p>
                     </div>
 
-                    <div className="flex flex-col gap-2.5 w-full pt-1">
+                    <div className="flex flex-col gap-2 w-full pt-1">
                       <button
                         onClick={retryCamera}
                         type="button"
-                        className="w-full px-5 py-3 rounded-2xl text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 flex items-center justify-center gap-2 transition-all cursor-pointer hover:scale-[1.02] active:scale-95 shadow-lg"
+                        className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-lg"
                       >
-                        <RefreshCw className="w-4 h-4" />
+                        <RefreshCw className="w-3.5 h-3.5" />
                         <span>Coba Lagi</span>
                       </button>
 
@@ -1302,22 +1302,22 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                           setScannedProfile(defaultProfile);
                         }}
                         type="button"
-                        className="w-full px-5 py-3 rounded-2xl text-sm font-medium text-[#93C5FD] bg-transparent hover:bg-white/5 border border-white/15 hover:border-blue-400/40 flex items-center justify-center gap-2 transition-all cursor-pointer"
+                        className="w-full px-3 py-2 rounded-xl text-xs font-medium text-[#93C5FD] bg-transparent hover:bg-white/5 border border-white/15 hover:border-blue-400/40 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                       >
-                        <UserCheck className="w-4 h-4 text-[#38BDF8]" />
-                        <span>Lanjut dengan Simulasi</span>
+                        <UserCheck className="w-3.5 h-3.5 text-[#38BDF8]" />
+                        <span>Lanjut Simulasi</span>
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-[#0B1528]/80 backdrop-blur-xl p-8 space-y-5 flex flex-col items-center z-20 shadow-2xl">
-                    <div className="w-14 h-14 rounded-2xl bg-blue-500/15 border border-blue-400/25 flex items-center justify-center">
-                      <Camera className="w-7 h-7 text-[#38BDF8]" />
+                  <div className="w-full max-w-xs rounded-2xl border border-white/10 bg-[#0B1528]/90 backdrop-blur-xl p-4 space-y-3 flex flex-col items-center z-20 shadow-2xl">
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/15 border border-blue-400/25 flex items-center justify-center">
+                      <Camera className="w-5 h-5 text-[#38BDF8]" />
                     </div>
-                    <div className="space-y-1.5">
-                      <p className="text-lg font-bold text-white">Mode Simulasi Aktif</p>
-                      <p className="text-xs text-[#94A3B8] leading-relaxed">
-                        Kamera fisik tidak terdeteksi. Sistem akan menggunakan data sensor presisi tinggi untuk evaluasi.
+                    <div className="space-y-1">
+                      <p className="text-sm font-bold text-white">Mode Simulasi Aktif</p>
+                      <p className="text-[10px] text-[#94A3B8] leading-relaxed">
+                        Kamera fisik tidak terdeteksi. Sistem siap melanjutkan via profil simulasi.
                       </p>
                     </div>
                     <button
@@ -1326,10 +1326,10 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                         setScannedProfile(defaultProfile);
                       }}
                       type="button"
-                      className="w-full px-5 py-3 rounded-2xl text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 flex items-center justify-center gap-2 transition-all cursor-pointer hover:scale-[1.02] active:scale-95 shadow-lg"
+                      className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-lg"
                     >
-                      <UserCheck className="w-4 h-4" />
-                      <span>Lanjutkan dengan Profil Simulasi</span>
+                      <UserCheck className="w-3.5 h-3.5" />
+                      <span>Lanjutkan Profil Simulasi</span>
                     </button>
                   </div>
                 )}
@@ -1338,15 +1338,15 @@ export const CameraScan: React.FC<CameraScanProps> = ({
 
             <canvas ref={canvasRef} className="hidden" />
 
-            {/* Sleek Minimalist Viewfinder Reticle Frame */}
-            <div className="absolute inset-0 pointer-events-none p-2.5 flex items-center justify-center">
+            {/* Viewfinder Reticle Frame — bersih tanpa kartu atau teks yang menutupi video */}
+            <div className="absolute inset-0 pointer-events-none p-2 flex items-center justify-center">
               {/* Corner L-Brackets */}
-              <div className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 rounded-tl border-[#38BDF8]/70" />
-              <div className="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 rounded-tr border-[#38BDF8]/70" />
-              <div className="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 rounded-bl border-[#38BDF8]/70" />
-              <div className="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 rounded-br border-[#38BDF8]/70" />
+              <div className="absolute top-2 left-2 w-3.5 h-3.5 border-t-2 border-l-2 border-white/60" />
+              <div className="absolute top-2 right-2 w-3.5 h-3.5 border-t-2 border-r-2 border-white/60" />
+              <div className="absolute bottom-2 left-2 w-3.5 h-3.5 border-b-2 border-l-2 border-white/60" />
+              <div className="absolute bottom-2 right-2 w-3.5 h-3.5 border-b-2 border-r-2 border-white/60" />
 
-              {/* Central Countdown Indicator */}
+              {/* Central Countdown Indicator (hanya muncul saat 3-2-1) */}
               {countdown !== null && (
                 <div className="w-14 h-14 rounded-full bg-[#0B1528]/95 border-2 border-[#38BDF8] flex flex-col items-center justify-center animate-pulse backdrop-blur-md shadow-2xl z-20">
                   <span className="text-2xl font-black text-white font-mono">{countdown}</span>
@@ -1354,37 +1354,20 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                 </div>
               )}
 
-              {/* Clean Bottom Status Pill */}
-              {hasCamera && !scannedProfile && !isScanning && (
-                <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-[#0B1528]/90 backdrop-blur-md border border-white/10 text-[10px] font-mono flex items-center gap-1.5 shadow-lg whitespace-nowrap z-10">
-                  <span
-                    className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: guideStyle.border }}
-                  />
-                  <span style={{ color: guideStyle.text }}>
-                    {faceGuideState === "ALIGNED"
-                      ? (subcategory === "shirts" ? "Siluet Terkunci" : "Wajah Terkunci")
-                      : faceGuideState === "MISALIGNED"
-                      ? (subcategory === "shirts" ? "Posisikan Bahu & Tubuh" : "Posisikan Wajah ke Tengah")
-                      : (subcategory === "shirts" ? "Arahkan Tubuh ke Kamera" : "Arahkan Wajah ke Kamera")}
-                  </span>
-                </div>
-              )}
-
               {/* Scanning Laser Line */}
               {isScanning && (
-                <div className="absolute left-3 right-3 h-0.5 bg-gradient-to-r from-transparent via-[#38BDF8] to-transparent shadow-[0_0_15px_#38BDF8] animate-scan-laser" />
+                <div className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-[#38BDF8] to-transparent shadow-[0_0_15px_#38BDF8] animate-scan-laser" />
               )}
             </div>
 
             {/* Scan Progress Bar */}
             {isScanning && (
-              <div className="absolute bottom-2 left-2 right-2 bg-[#0B1528]/95 backdrop-blur-md rounded-xl p-2 border border-blue-500/20 z-20">
-                <div className="flex justify-between text-[9px] font-mono text-[#93C5FD] mb-1.5">
+              <div className="absolute bottom-1.5 left-2 right-2 bg-[#0B1528]/95 backdrop-blur-md rounded-lg p-1.5 border border-blue-500/20 z-20">
+                <div className="flex justify-between text-[8px] font-mono text-[#93C5FD] mb-1">
                   <span>{subcategory === "shirts" ? "Mengekstraksi Siluet Tubuh..." : "Mengekstraksi Ciri Visual..."}</span>
                   <span className="text-[#FACC15] font-bold">{scanProgress}%</span>
                 </div>
-                <div className="w-full bg-black/60 h-2 rounded-full overflow-hidden border border-blue-500/20 p-0.5">
+                <div className="w-full bg-black/60 h-1.5 rounded-full overflow-hidden border border-blue-500/20 p-0.5">
                   <div
                     className="h-full bg-gradient-to-r from-blue-600 via-sky-400 to-[#FACC15] rounded-full transition-all duration-300"
                     style={{ width: `${scanProgress}%` }}
