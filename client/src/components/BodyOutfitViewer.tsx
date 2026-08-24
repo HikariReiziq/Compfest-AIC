@@ -53,6 +53,17 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
   const [garmentOpacity, setGarmentOpacity] = useState<number>(100);
   const [modelSource, setModelSource] = useState<string>("Memuat 3D GLB...");
 
+  // Visual Kerangka & Ghost Mannequin Toggles (Persis seperti di referensi)
+  const [showPose, setShowPose] = useState<boolean>(true);
+  const [showGhost, setShowGhost] = useState<boolean>(true);
+  const [showDebugPanel, setShowDebugPanel] = useState<boolean>(false);
+  const [detectedBonesList, setDetectedBonesList] = useState<string[]>([
+    "LeftArm", "LeftForeArm", "RightArm", "RightForeArm", "Neck", "Head", "LeftShoulder", "RightShoulder", "Spine", "Hips"
+  ]);
+
+  const skeletonCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const ghostGroupRef = useRef<THREE.Group | null>(null);
+
   const activeColorHex = activeItem.hex_colour || "#2563eb";
 
   /* ------------------------------------------------------------------ */
@@ -232,6 +243,70 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
 
     scene.add(occluderGroup);
 
+    // Green Wireframe Ghost Mannequin System (Persis seperti di referensi)
+    const ghostGroup = new THREE.Group();
+    ghostGroup.renderOrder = 2;
+    ghostGroupRef.current = ghostGroup;
+
+    const ghostWireframeMat = new THREE.MeshBasicMaterial({
+      color: 0x22c55e, // Neon Green
+      wireframe: true,
+      transparent: true,
+      opacity: 0.85,
+    });
+
+    // 1. Ghost Head (Icosahedron Wireframe)
+    const ghostHeadGeo = new THREE.IcosahedronGeometry(0.42, 3);
+    const ghostHeadMesh = new THREE.Mesh(ghostHeadGeo, ghostWireframeMat);
+    ghostHeadMesh.name = "Ghost_Head";
+    ghostGroup.add(ghostHeadMesh);
+
+    // 2. Ghost Neck
+    const ghostNeckGeo = new THREE.CylinderGeometry(0.20, 0.24, 0.55, 16, 6);
+    const ghostNeckMesh = new THREE.Mesh(ghostNeckGeo, ghostWireframeMat);
+    ghostNeckMesh.name = "Ghost_Neck";
+    ghostGroup.add(ghostNeckMesh);
+
+    // 3. Ghost Torso Core
+    const ghostTorsoGeo = new THREE.CylinderGeometry(0.68, 0.58, 1.8, 20, 10);
+    ghostTorsoGeo.scale(1.0, 1.0, 0.55);
+    const ghostTorsoMesh = new THREE.Mesh(ghostTorsoGeo, ghostWireframeMat);
+    ghostTorsoMesh.name = "Ghost_Torso";
+    ghostGroup.add(ghostTorsoMesh);
+
+    // 4. Ghost Left & Right Upper Arm (Biceps)
+    const ghostUpperArmGeo = new THREE.CylinderGeometry(0.18, 0.15, 0.9, 16, 8);
+    const ghostLeftUpperArmMesh = new THREE.Mesh(ghostUpperArmGeo, ghostWireframeMat);
+    ghostLeftUpperArmMesh.name = "Ghost_LeftUpperArm";
+    ghostGroup.add(ghostLeftUpperArmMesh);
+
+    const ghostRightUpperArmMesh = new THREE.Mesh(ghostUpperArmGeo, ghostWireframeMat);
+    ghostRightUpperArmMesh.name = "Ghost_RightUpperArm";
+    ghostGroup.add(ghostRightUpperArmMesh);
+
+    // 5. Ghost Left & Right Forearms
+    const ghostForearmGeo = new THREE.CylinderGeometry(0.15, 0.12, 0.85, 16, 8);
+    const ghostLeftForearmMesh = new THREE.Mesh(ghostForearmGeo, ghostWireframeMat);
+    ghostLeftForearmMesh.name = "Ghost_LeftForearm";
+    ghostGroup.add(ghostLeftForearmMesh);
+
+    const ghostRightForearmMesh = new THREE.Mesh(ghostForearmGeo, ghostWireframeMat);
+    ghostRightForearmMesh.name = "Ghost_RightForearm";
+    ghostGroup.add(ghostRightForearmMesh);
+
+    // 6. Ghost Left & Right Hands
+    const ghostHandGeo = new THREE.IcosahedronGeometry(0.20, 2);
+    ghostHandGeo.scale(0.8, 1.4, 0.4);
+    const ghostLeftHandMesh = new THREE.Mesh(ghostHandGeo, ghostWireframeMat);
+    ghostLeftHandMesh.name = "Ghost_LeftHand";
+    ghostGroup.add(ghostLeftHandMesh);
+
+    const ghostRightHandMesh = new THREE.Mesh(ghostHandGeo, ghostWireframeMat);
+    ghostRightHandMesh.name = "Ghost_RightHand";
+    ghostGroup.add(ghostRightHandMesh);
+
+    scene.add(ghostGroup);
+
     // Load Categorized Shirt / Baju Model (GLB preferred, OBJ fallback)
     loadCategorizedGarmentGLB(garmentGroup);
 
@@ -247,17 +322,28 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
         if (occluderGroup) {
           occluderGroup.visible = true;
         }
+        if (ghostGroup) {
+          ghostGroup.visible = showGhost;
+        }
         if (video.currentTime !== lastVideoTime) {
           lastVideoTime = video.currentTime;
           try {
             const result = landmarker.detectForVideo(video, performance.now());
             if (result && result.landmarks && result.landmarks.length > 0) {
               setIsTrackingLive(true);
-              applyPoseLandmarksTo3D(result.landmarks[0], garmentGroup, occluderGroup);
+              const landmarks = result.landmarks[0];
+              applyPoseLandmarksTo3D(landmarks, garmentGroup, occluderGroup, ghostGroup);
+              if (showPose) {
+                drawPoseSkeleton(landmarks);
+              } else if (skeletonCanvasRef.current) {
+                const ctx = skeletonCanvasRef.current.getContext("2d");
+                ctx?.clearRect(0, 0, skeletonCanvasRef.current.width, skeletonCanvasRef.current.height);
+              }
             } else {
               setIsTrackingLive(false);
               garmentGroup.position.lerp(new THREE.Vector3(0, -0.2, 0), 0.05);
               occluderGroup.position.lerp(new THREE.Vector3(0, -0.2, 0), 0.05);
+              ghostGroup.position.lerp(new THREE.Vector3(0, -0.2, 0), 0.05);
             }
           } catch {
             // Frame skip
@@ -265,8 +351,11 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
         }
       } else if (viewMode === "studio") {
         setIsTrackingLive(false);
-        if (occluderGroup) {
-          occluderGroup.visible = false;
+        if (occluderGroup) occluderGroup.visible = false;
+        if (ghostGroup) ghostGroup.visible = false;
+        if (skeletonCanvasRef.current) {
+          const ctx = skeletonCanvasRef.current.getContext("2d");
+          ctx?.clearRect(0, 0, skeletonCanvasRef.current.width, skeletonCanvasRef.current.height);
         }
         if (isRotating && garmentGroup) {
           garmentGroup.rotation.y += 0.015;
@@ -287,6 +376,10 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
       camera.aspect = newW / newH;
       camera.updateProjectionMatrix();
       renderer.setSize(newW, newH);
+      if (skeletonCanvasRef.current) {
+        skeletonCanvasRef.current.width = newW;
+        skeletonCanvasRef.current.height = newH;
+      }
     };
 
     window.addEventListener("resize", handleResize);
@@ -296,7 +389,7 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
       cancelAnimationFrame(rafRef.current);
       renderer.dispose();
     };
-  }, [viewMode, isRotating, offsetY, offsetZ, scaleMultiplier, activeItem, subcategory, garmentOpacity, fitStyle]);
+  }, [viewMode, isRotating, offsetY, offsetZ, scaleMultiplier, activeItem, subcategory, garmentOpacity, fitStyle, showGhost, showPose]);
 
   // Skeletal Armature Rigging References
   const skeletalRigRef = useRef<{
@@ -448,10 +541,116 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
   };
 
   /* ------------------------------------------------------------------ */
-  /*  5. Real-Time 3D Pose Landmark Anchoring & Skeletal Arm Kinematics */
+  /*  5. Real-Time 2D Skeleton Joint & Stick Bone Canvas Renderer       */
+  /* ------------------------------------------------------------------ */
+  const drawPoseSkeleton = useCallback((landmarks: any[]) => {
+    const canvas = skeletonCanvasRef.current;
+    const video = videoRef.current;
+    const container = containerRef.current;
+    if (!canvas || !video || !container) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const cw = container.clientWidth;
+    const ch = container.clientHeight;
+    if (canvas.width !== cw || canvas.height !== ch) {
+      canvas.width = cw;
+      canvas.height = ch;
+    }
+
+    ctx.clearRect(0, 0, cw, ch);
+
+    const vw = video.videoWidth || 1280;
+    const vh = video.videoHeight || 720;
+    const videoAspect = vw / vh;
+    const containerAspect = cw / ch;
+
+    let renderedWidth = cw;
+    let renderedHeight = ch;
+    let offsetX = 0;
+    let offsetYPixel = 0;
+
+    if (containerAspect > videoAspect) {
+      renderedHeight = ch;
+      renderedWidth = ch * videoAspect;
+      offsetX = (cw - renderedWidth) / 2;
+    } else {
+      renderedWidth = cw;
+      renderedHeight = cw / videoAspect;
+      offsetYPixel = (ch - renderedHeight) / 2;
+    }
+
+    const POSE_CONNECTIONS: [number, number][] = [
+      [0, 1], [1, 2], [2, 3], [3, 7], // Right face & ear
+      [0, 4], [4, 5], [5, 6], [6, 8], // Left face & ear
+      [9, 10], // Mouth
+      [11, 12], // Shoulder line
+      [11, 23], // Left torso
+      [12, 24], // Right torso
+      [23, 24], // Hip line
+      [11, 13], // Left upper arm
+      [13, 15], // Left forearm
+      [15, 17], [15, 19], [15, 21], [17, 19], // Left hand & fingers
+      [12, 14], // Right upper arm
+      [14, 16], // Right forearm
+      [16, 18], [16, 20], [16, 22], [18, 20], // Right hand & fingers
+      [23, 25], [25, 27], [27, 29], [27, 31], // Left leg
+      [24, 26], [26, 28], [28, 30], [28, 32], // Right leg
+    ];
+
+    // 1. Draw Stick Bones (Cyan Neon Glowing Lines)
+    ctx.lineWidth = 3.5;
+    ctx.strokeStyle = "#22d3ee";
+    ctx.shadowColor = "#06b6d4";
+    ctx.shadowBlur = 8;
+    ctx.lineCap = "round";
+
+    POSE_CONNECTIONS.forEach(([i, j]) => {
+      const p1 = landmarks[i];
+      const p2 = landmarks[j];
+      if (p1 && p2 && (p1.visibility ?? 1) > 0.35 && (p2.visibility ?? 1) > 0.35) {
+        const x1 = offsetX + (1 - p1.x) * renderedWidth;
+        const y1 = offsetYPixel + p1.y * renderedHeight;
+        const x2 = offsetX + (1 - p2.x) * renderedWidth;
+        const y2 = offsetYPixel + p2.y * renderedHeight;
+
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+    });
+
+    // 2. Draw Glowing Joint Dots (Points)
+    landmarks.forEach((p, idx) => {
+      if (!p || (p.visibility ?? 1) <= 0.35) return;
+      const x = offsetX + (1 - p.x) * renderedWidth;
+      const y = offsetYPixel + p.y * renderedHeight;
+
+      const isMainJoint = [11, 12, 13, 14, 15, 16, 23, 24].includes(idx);
+      const radius = isMainJoint ? 6 : 4;
+
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fillStyle = isMainJoint ? "#4ade80" : "#22d3ee"; // Neon green for major joints, cyan for fingers/face
+      ctx.shadowColor = isMainJoint ? "#22c55e" : "#06b6d4";
+      ctx.shadowBlur = 10;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    });
+  }, []);
+
+  /* ------------------------------------------------------------------ */
+  /*  6. Real-Time 3D Pose Landmark Anchoring & Skeletal Arm Kinematics */
   /* ------------------------------------------------------------------ */
   const applyPoseLandmarksTo3D = useCallback(
-    (landmarks: any[], garmentGroup: THREE.Group, occluderGroup?: THREE.Group) => {
+    (landmarks: any[], garmentGroup: THREE.Group, occluderGroup?: THREE.Group, ghostGroup?: THREE.Group) => {
       if (!videoRef.current || !containerRef.current) return;
 
       const nose = landmarks[0];
@@ -511,20 +710,18 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
       const worldY = ndcY * halfH + offsetY * 0.012 - 0.28;
       const worldZ = (((leftShoulder.z || 0) + (rightShoulder.z || 0)) / 2) * -3.2 + offsetZ * 0.015;
 
-      // Screen Positions of Both Shoulders:
-      // Left shoulder (frame x ~0.60) appears on SCREEN-LEFT (1 - 0.60 = 0.40)
-      // Right shoulder (frame x ~0.40) appears on SCREEN-RIGHT (1 - 0.40 = 0.60)
+      // Screen Positions of Both Shoulders
       const screenLeftShoulderX = offsetX + (1 - leftShoulder.x) * renderedWidth;
       const screenLeftShoulderY = offsetYPixel + leftShoulder.y * renderedHeight;
       const screenRightShoulderX = offsetX + (1 - rightShoulder.x) * renderedWidth;
       const screenRightShoulderY = offsetYPixel + rightShoulder.y * renderedHeight;
 
       // Vector pointing from Screen-Left to Screen-Right across the shoulders
-      const dx = screenRightShoulderX - screenLeftShoulderX; // Always positive
+      const dx = screenRightShoulderX - screenLeftShoulderX;
       const dy = screenRightShoulderY - screenLeftShoulderY;
       const pixelDist = Math.sqrt(dx * dx + dy * dy);
 
-      // 1. Roll: Shoulder slope (0 = perfectly straight/level)
+      // 1. Roll: Shoulder slope
       const rollAngle = Math.atan2(dy, dx);
       const safeRoll = THREE.MathUtils.clamp(rollAngle, -0.65, 0.65);
 
@@ -542,7 +739,7 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
         safePitch = THREE.MathUtils.clamp(pitchDelta, -0.45, 0.45);
       }
 
-      // World Space Scale (Baju scales proportionally with real shoulder width in pixels)
+      // World Space Scale
       const worldShoulderSpan = (pixelDist / cw) * (2 * halfW);
       const baseScale = worldShoulderSpan * 1.82 * (scaleMultiplier / 100);
 
@@ -564,11 +761,11 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
       if (skeletalRiggingActive && skeletalRigRef.current.isRigged) {
         const rig = skeletalRigRef.current;
 
-        // Left Arm Vector (Shoulder 11 -> Elbow 13 -> Wrist 15)
+        // Left Arm Vector
         if (leftElbow) {
           const ldx = (1 - leftElbow.x) - (1 - leftShoulder.x);
           const ldy = leftElbow.y - leftShoulder.y;
-          const leftArmAngle = Math.atan2(ldy, ldx); // Angle from horizontal
+          const leftArmAngle = Math.atan2(ldy, ldx);
           const leftElevation = THREE.MathUtils.clamp(-(leftArmAngle + Math.PI / 2), -1.2, 1.2);
 
           if (rig.leftArmPivot) {
@@ -580,7 +777,7 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
           }
         }
 
-        // Right Arm Vector (Shoulder 12 -> Elbow 14 -> Wrist 16)
+        // Right Arm Vector
         if (rightElbow) {
           const rdx = (1 - rightElbow.x) - (1 - rightShoulder.x);
           const rdy = rightElbow.y - rightShoulder.y;
@@ -597,27 +794,103 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
         }
       }
 
-      // Synchronize Invisible Occluder Group (Neck & Torso Core)
+      // Synchronize Invisible Occluder Group
       if (occluderGroup) {
-        occluderGroup.position.x = garmentGroup.position.x;
-        occluderGroup.position.y = garmentGroup.position.y;
-        occluderGroup.position.z = garmentGroup.position.z - 0.05;
-
-        occluderGroup.rotation.z = garmentGroup.rotation.z;
-        occluderGroup.rotation.y = garmentGroup.rotation.y;
-        occluderGroup.rotation.x = garmentGroup.rotation.x;
-
+        occluderGroup.position.copy(garmentGroup.position);
+        occluderGroup.position.z -= 0.05;
+        occluderGroup.rotation.copy(garmentGroup.rotation);
         occluderGroup.scale.lerp(new THREE.Vector3(finalScale * 0.95, finalScale * 0.95, finalScale * 0.95), 0.45);
+      }
+
+      // Synchronize 3D Green Wireframe Ghost Mannequin
+      if (ghostGroup) {
+        ghostGroup.position.copy(garmentGroup.position);
+        ghostGroup.rotation.copy(garmentGroup.rotation);
+        ghostGroup.scale.copy(garmentGroup.scale);
+
+        // Head Ghost
+        const ghostHead = ghostGroup.getObjectByName("Ghost_Head");
+        if (ghostHead) ghostHead.position.set(0, 0.92, 0.05);
+
+        // Neck Ghost
+        const ghostNeck = ghostGroup.getObjectByName("Ghost_Neck");
+        if (ghostNeck) ghostNeck.position.set(0, 0.50, 0);
+
+        // Torso Ghost
+        const ghostTorso = ghostGroup.getObjectByName("Ghost_Torso");
+        if (ghostTorso) ghostTorso.position.set(0, -0.65, -0.05);
+
+        // Left Upper Arm Ghost
+        const ghostLeftUpperArm = ghostGroup.getObjectByName("Ghost_LeftUpperArm");
+        if (ghostLeftUpperArm) {
+          ghostLeftUpperArm.position.set(0.65, 0.15, 0);
+          if (leftElbow) {
+            const ldx = (1 - leftElbow.x) - (1 - leftShoulder.x);
+            const ldy = leftElbow.y - leftShoulder.y;
+            const leftArmAngle = Math.atan2(ldy, ldx);
+            ghostLeftUpperArm.rotation.z = -(leftArmAngle + Math.PI / 2);
+          }
+        }
+
+        // Right Upper Arm Ghost
+        const ghostRightUpperArm = ghostGroup.getObjectByName("Ghost_RightUpperArm");
+        if (ghostRightUpperArm) {
+          ghostRightUpperArm.position.set(-0.65, 0.15, 0);
+          if (rightElbow) {
+            const rdx = (1 - rightElbow.x) - (1 - rightShoulder.x);
+            const rdy = rightElbow.y - rightShoulder.y;
+            const rightArmAngle = Math.atan2(rdy, rdx);
+            ghostRightUpperArm.rotation.z = rightArmAngle - Math.PI / 2;
+          }
+        }
+
+        // Left Forearm Ghost
+        const ghostLeftForearm = ghostGroup.getObjectByName("Ghost_LeftForearm");
+        if (ghostLeftForearm) {
+          ghostLeftForearm.position.set(0.95, -0.45, 0);
+          if (leftWrist && leftElbow) {
+            const lfdx = (1 - leftWrist.x) - (1 - leftElbow.x);
+            const lfdy = leftWrist.y - leftElbow.y;
+            const leftForearmAngle = Math.atan2(lfdy, lfdx);
+            ghostLeftForearm.rotation.z = -(leftForearmAngle + Math.PI / 2);
+          }
+        }
+
+        // Right Forearm Ghost
+        const ghostRightForearm = ghostGroup.getObjectByName("Ghost_RightForearm");
+        if (ghostRightForearm) {
+          ghostRightForearm.position.set(-0.95, -0.45, 0);
+          if (rightWrist && rightElbow) {
+            const rfdx = (1 - rightWrist.x) - (1 - rightElbow.x);
+            const rfdy = rightWrist.y - rightElbow.y;
+            const rightForearmAngle = Math.atan2(rfdy, rfdx);
+            ghostRightForearm.rotation.z = rightForearmAngle - Math.PI / 2;
+          }
+        }
+
+        // Hands Ghost
+        const ghostLeftHand = ghostGroup.getObjectByName("Ghost_LeftHand");
+        if (ghostLeftHand) ghostLeftHand.position.set(1.20, -1.05, 0);
+
+        const ghostRightHand = ghostGroup.getObjectByName("Ghost_RightHand");
+        if (ghostRightHand) ghostRightHand.position.set(-1.20, -1.05, 0);
       }
     },
     [fitStyle, offsetY, offsetZ, scaleMultiplier, skeletalRiggingActive]
   );
+
   return (
     <div className="w-full flex flex-col space-y-4">
       {/* 3D AR Body Fitting Viewport */}
       <div className="relative w-full h-[520px] sm:h-[580px] rounded-3xl overflow-hidden bg-[#060B14] border border-blue-500/20 shadow-2xl flex items-center justify-center">
         {/* 3D WebGL Canvas Layer */}
         <div ref={containerRef} className="absolute inset-0 w-full h-full z-10 pointer-events-none" />
+
+        {/* 2D Pose Skeleton Canvas Layer (Glowing Cyan Stick Bones & Dots) */}
+        <canvas
+          ref={skeletonCanvasRef}
+          className="absolute inset-0 w-full h-full z-15 pointer-events-none"
+        />
 
         {/* Mode 1: Live Video AR / Static Snapshot Body Feed */}
         {viewMode === "ar" ? (
@@ -638,6 +911,7 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
               />
             )}
 
+            {/* Left Top Status Badges */}
             {isTrackingLive && (
               <div className="absolute top-4 left-4 flex flex-col gap-1.5 z-30 pointer-events-none">
                 <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-blue-500/20 text-[#93C5FD] border border-blue-500/30 text-[10px] font-mono shadow-md backdrop-blur-md">
@@ -647,9 +921,35 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
                 {skeletalRiggingActive && (
                   <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono shadow-md backdrop-blur-md">
                     <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                    <span>SKELETAL RIGGING &amp; ARM KINEMATICS AKTIF</span>
+                    <span>SKELETAL RIGGING AKTIF</span>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Reference-Style Live Bones Debug Sidebar (Matching Screenshot) */}
+            {showDebugPanel && isTrackingLive && (
+              <div className="absolute top-16 left-4 z-30 w-52 bg-[#08101E]/90 backdrop-blur-xl border border-blue-500/30 rounded-2xl p-3 text-[10px] font-mono shadow-2xl space-y-2 pointer-events-auto max-h-[320px] overflow-y-auto">
+                <div className="flex items-center justify-between text-[#FACC15] font-bold border-b border-white/10 pb-1">
+                  <span>🦴 Body Bones (Live)</span>
+                  <span className="text-emerald-400">14/14</span>
+                </div>
+                <div className="grid grid-cols-1 gap-1 text-slate-300">
+                  {detectedBonesList.map((b) => (
+                    <div key={b} className="flex items-center justify-between">
+                      <span className="text-slate-400">{b}</span>
+                      <span className="text-emerald-400 font-bold">✓</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="pt-1.5 border-t border-white/10 flex items-center justify-between text-slate-400">
+                  <span>STATUS</span>
+                  <span className="text-emerald-400 font-bold">RUNNING</span>
+                </div>
+                <div className="flex items-center justify-between text-slate-400">
+                  <span>FPS</span>
+                  <span className="text-blue-400 font-bold">60</span>
+                </div>
               </div>
             )}
           </div>
@@ -702,9 +1002,53 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
         </div>
       </div>
 
-      {/* Interactive Micro-Adjustments & Fit Controls */}
+      {/* Interactive Micro-Adjustments & Visual Ghost / Skeleton Toggles */}
       <div className="p-4 sm:p-5 rounded-3xl border border-blue-500/20 bg-[#0B1528]/90 backdrop-blur-xl shadow-xl flex flex-wrap items-center justify-between gap-4">
-        {/* Fit Style & Skeletal Rigging Toggle */}
+        {/* Visual Skeleton & Ghost Mesh Toggles (Persis seperti di referensi) */}
+        <div className="flex items-center space-x-2 text-xs flex-wrap gap-2">
+          {/* Show Pose Stick Skeleton */}
+          <button
+            onClick={() => setShowPose((prev) => !prev)}
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer border ${
+              showPose
+                ? "bg-cyan-500/30 text-cyan-300 border-cyan-400/50 shadow-md shadow-cyan-500/20"
+                : "bg-[#071120] text-[#64748B] border-blue-500/20 hover:text-white"
+            }`}
+            title="Tampilkan Garis Tulang & Titik Sendi AI"
+          >
+            <span className="w-2 h-2 rounded-full bg-cyan-400" />
+            <span>Show Pose (Kerangka): {showPose ? "ON" : "OFF"}</span>
+          </button>
+
+          {/* Show Ghost 3D Wireframe */}
+          <button
+            onClick={() => setShowGhost((prev) => !prev)}
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer border ${
+              showGhost
+                ? "bg-emerald-500/30 text-emerald-300 border-emerald-400/50 shadow-md shadow-emerald-500/20"
+                : "bg-[#071120] text-[#64748B] border-blue-500/20 hover:text-white"
+            }`}
+            title="Tampilkan Wireframe 3D Manusia Hijau"
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            <span>Show Ghost (3D Wireframe): {showGhost ? "ON" : "OFF"}</span>
+          </button>
+
+          {/* Debug Panel Toggle */}
+          <button
+            onClick={() => setShowDebugPanel((prev) => !prev)}
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer border ${
+              showDebugPanel
+                ? "bg-amber-500/30 text-amber-300 border-amber-400/50 shadow-md shadow-amber-500/20"
+                : "bg-[#071120] text-[#64748B] border-blue-500/20 hover:text-white"
+            }`}
+            title="Tampilkan Panel Info Live Tulang & FPS"
+          >
+            <span>Debug Panel: {showDebugPanel ? "ON" : "OFF"}</span>
+          </button>
+        </div>
+
+        {/* Fit Style Siluet */}
         <div className="flex items-center space-x-3 text-xs flex-wrap gap-2">
           <div className="flex items-center space-x-2">
             <Sliders className="w-4 h-4 text-[#38BDF8]" />
@@ -725,19 +1069,6 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
               ))}
             </div>
           </div>
-
-          <button
-            onClick={() => setSkeletalRiggingActive((prev) => !prev)}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer border ${
-              skeletalRiggingActive
-                ? "bg-emerald-600/30 text-emerald-300 border-emerald-500/40 shadow-sm"
-                : "bg-[#071120] text-[#64748B] border-blue-500/20 hover:text-white"
-            }`}
-            title="Aktifkan/Nonaktifkan Pelacakan Lengan & Tulang Gerak"
-          >
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Skeletal Rig: {skeletalRiggingActive ? "ON" : "OFF"}</span>
-          </button>
         </div>
 
         {/* Vertical Position & Depth Controls */}
