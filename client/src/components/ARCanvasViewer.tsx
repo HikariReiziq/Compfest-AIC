@@ -985,42 +985,42 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
       </div>
 
       {/* AR Fine-Tuning Micro-Controls (Single Line Seamless Bar) */}
-      <div className="glass-panel py-2.5 px-3.5 rounded-2xl border border-white/10 bg-[#081322]/95 backdrop-blur-xl flex flex-nowrap items-center justify-between gap-3 text-xs overflow-x-auto no-scrollbar shadow-lg">
+      <div className="glass-panel py-2 px-3 rounded-2xl border border-white/10 bg-[#081322]/95 backdrop-blur-xl flex flex-nowrap items-center justify-between gap-2 text-xs overflow-x-auto no-scrollbar shadow-lg w-full min-w-0">
         {/* Left: 2 Opsi Interaksi, Koordinat Live, & Reset */}
-        <div className="flex flex-nowrap items-center gap-2 shrink-0">
+        <div className="flex flex-nowrap items-center gap-1.5 shrink-0">
           {/* 2 Opsi Interaksi Layar: Opsi 1 (Rotasi) vs Opsi 2 (Posisi) */}
-          <div className="inline-flex rounded-xl bg-slate-900/90 p-1 border border-white/10 gap-1 shadow-inner shrink-0">
+          <div className="inline-flex rounded-xl bg-slate-900/90 p-0.5 border border-white/10 gap-0.5 shadow-inner shrink-0">
             <button
               onClick={() => setDragMode("rotate")}
-              className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+              className={`px-2 py-1 rounded-lg text-xs font-mono font-bold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
                 dragMode === "rotate"
                   ? "bg-gradient-to-r from-blue-600 to-indigo-600 border border-blue-400 text-white shadow-sm"
                   : "text-slate-400 hover:text-white"
               }`}
               title="Opsi 1: Geser di layar untuk memutar model 3D (360°)"
             >
-              <RotateCw className="w-3.5 h-3.5" />
+              <RotateCw className="w-3 h-3" />
               <span>Opsi 1: Rotasi</span>
             </button>
             <button
               onClick={() => setDragMode("pan")}
-              className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+              className={`px-2 py-1 rounded-lg text-xs font-mono font-bold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
                 dragMode === "pan"
                   ? "bg-gradient-to-r from-sky-600 to-blue-600 border border-sky-400 text-white shadow-sm"
                   : "text-slate-400 hover:text-white"
               }`}
               title="Opsi 2: Geser di layar ke segala arah untuk memindahkan posisi (Atas, Bawah, Kiri, Kanan)"
             >
-              <Move className="w-3.5 h-3.5" />
+              <Move className="w-3 h-3" />
               <span>Opsi 2: Posisi</span>
             </button>
           </div>
 
           {/* Indikator Status Koordinat */}
-          <div className="flex items-center space-x-2 bg-slate-900/70 px-2.5 py-1 rounded-xl border border-white/5 text-[10px] font-mono text-slate-400 shrink-0 whitespace-nowrap">
-            <span>X: <strong className="text-white">{offsetX.toFixed(1)}</strong></span>
-            <span>Y: <strong className="text-white">{offsetY.toFixed(1)}</strong></span>
-            <span>Putar: <strong className="text-white">{Math.round((rotOffset * 180) / Math.PI)}°</strong></span>
+          <div className="flex items-center space-x-1.5 bg-slate-900/70 px-2 py-1 rounded-xl border border-white/5 text-[10px] font-mono text-slate-400 shrink-0 whitespace-nowrap">
+            <span>X:<strong className="text-white ml-0.5">{offsetX.toFixed(1)}</strong></span>
+            <span>Y:<strong className="text-white ml-0.5">{offsetY.toFixed(1)}</strong></span>
+            <span>∠:<strong className="text-white ml-0.5">{Math.round((rotOffset * 180) / Math.PI)}°</strong></span>
           </div>
 
           {/* Reset */}
@@ -1045,10 +1045,11 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           </button>
         </div>
 
-        {/* Right: Scale Slider */}
-        <div className="flex items-center space-x-2.5 text-xs bg-slate-900/70 px-2.5 py-1 rounded-xl border border-white/5 shrink-0 whitespace-nowrap">
-          <span className="text-slate-400 font-mono text-[11px]">
-            Ukuran: <strong className="text-blue-400">{scaleMultiplier}%</strong>
+        {/* Right: Scale Slider with Fixed-Width Percentage Label */}
+        <div className="flex flex-nowrap items-center space-x-2 text-xs bg-slate-900/70 px-2 py-1 rounded-xl border border-white/5 shrink-0 whitespace-nowrap">
+          <span className="text-slate-400 font-mono text-[11px] flex items-center">
+            <span>Ukuran:</span>
+            <strong className="text-blue-400 inline-block w-9 text-right ml-1 font-mono">{scaleMultiplier}%</strong>
           </span>
           <input
             type="range"
@@ -1060,7 +1061,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               scaleMultiplierRef.current = val;
               setScaleMultiplier(val);
             }}
-            className="w-20 sm:w-24 h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
+            className="w-16 sm:w-20 h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500 shrink-0"
           />
         </div>
       </div>
