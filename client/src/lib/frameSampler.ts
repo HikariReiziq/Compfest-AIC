@@ -39,7 +39,7 @@ export interface AggregatedSample {
   skin_lab: { l: number; a: number; b: number; std_l: number };
 }
 
-export const MIN_SAMPLES = 15;
+export const MIN_SAMPLES = 4;
 export const MAX_SAMPLES = 30;
 
 function median(values: number[]): number {

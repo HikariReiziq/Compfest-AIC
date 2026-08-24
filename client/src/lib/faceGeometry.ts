@@ -401,18 +401,33 @@ export interface GuideOval {
 /** Kontainment ellipse pemandu: true bila KEEMPAT landmark wajah inti masuk oval.
  *  Koordinat oval & landmark pada ruang normalisasi video TIDAK di-mirror
  *  (samakan transformasi sebelum memanggil). */
+/** Kontainment ellipse pemandu: true bila wajah (pusat & kontur) berada di area kamera. */
 export function ovalFit(
   lm: Landmark[],
   oval: GuideOval
 ): { inside: boolean; faceW: number; faceH: number } {
-  const pts = [lm[10], lm[152], lm[234], lm[454]]; // dahi, dagu, pipi kiri, pipi kanan
-  const inside = pts.every((p) => {
-    const nx = (p.x - oval.cx) / oval.rx;
-    const ny = (p.y - oval.cy) / oval.ry;
-    return nx * nx + ny * ny <= 1.0;
-  });
-  const faceW = Math.hypot(lm[234].x - lm[454].x, lm[234].y - lm[454].y);
-  const faceH = Math.hypot(lm[10].x - lm[152].x, lm[10].y - lm[152].y);
+  if (!lm || lm.length < 400) return { inside: false, faceW: 0, faceH: 0 };
+  const forehead = lm[10];
+  const chin = lm[152];
+  const rightCheek = lm[234] || lm[33];
+  const leftCheek = lm[454] || lm[263];
+  const nose = lm[1] || lm[4] || lm[168];
+
+  if (!forehead || !chin || !rightCheek || !leftCheek) {
+    return { inside: false, faceW: 0, faceH: 0 };
+  }
+
+  const faceCenterX = nose ? nose.x : (rightCheek.x + leftCheek.x) / 2;
+  const faceCenterY = nose ? nose.y : (forehead.y + chin.y) / 2;
+
+  const faceW = Math.hypot(rightCheek.x - leftCheek.x, rightCheek.y - leftCheek.y);
+  const faceH = Math.hypot(forehead.x - chin.x, forehead.y - chin.y);
+
+  // Normalisasi jarak pusat wajah terhadap oval pusat dengan batas yang luas & adaptif
+  const nx = (faceCenterX - oval.cx) / (oval.rx * 1.8);
+  const ny = (faceCenterY - oval.cy) / (oval.ry * 1.6);
+  const inside = (nx * nx + ny * ny <= 1.0 || (faceCenterX >= 0.15 && faceCenterX <= 0.85 && faceCenterY >= 0.15 && faceCenterY <= 0.85)) && faceW >= 0.08;
+
   return { inside, faceW, faceH };
 }
 

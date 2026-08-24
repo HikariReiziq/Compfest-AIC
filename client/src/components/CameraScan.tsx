@@ -61,7 +61,7 @@ const MST_HEX: Record<number, string> = {
 const GUIDE_OVAL = { cx: 0.5, cy: 0.49, rx: 0.15 * 1.1, ry: 0.25 * 1.1 };
 
 /** Durasi stabilitas HIJAU (ms) sebelum countdown otomatis dimulai. */
-const ALIGNED_STABLE_MS = 1500;
+const ALIGNED_STABLE_MS = 600;
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                             */
@@ -452,7 +452,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
     (landmarks: any[]) => {
       if (!landmarks || landmarks.length === 0) {
         setFaceGuideState("NO_FACE");
-        cancelCountdown("Bahu & tubuh belum berada di dalam area pemandu");
+        cancelCountdown("Bahu & tubuh belum berada di dalam area kamera");
         return;
       }
 
@@ -470,15 +470,17 @@ export const CameraScan: React.FC<CameraScanProps> = ({
       const shoulderSpan = Math.abs(leftShoulder.x - rightShoulder.x);
       const shoulderTilt = Math.abs(leftShoulder.y - rightShoulder.y);
 
-      // Check containment in upper-body guide box
-      const insideX = shoulderMidX >= 0.25 && shoulderMidX <= 0.75;
-      const insideY = shoulderMidY >= 0.15 && shoulderMidY <= 0.75;
-      const sizeOk = shoulderSpan >= 0.14;
-      const tiltOk = shoulderTilt <= 0.12;
+      lastAlignedPoseRef.current = landmarks;
+
+      // Check containment in upper-body guide box (forgiving)
+      const insideX = shoulderMidX >= 0.15 && shoulderMidX <= 0.85;
+      const insideY = shoulderMidY >= 0.10 && shoulderMidY <= 0.85;
+      const sizeOk = shoulderSpan >= 0.08;
+      const tiltOk = shoulderTilt <= 0.20;
 
       if (!insideX || !insideY) {
-        setFaceGuideState("NO_FACE");
-        cancelCountdown("Posisikan tubuh bagian atas (bahu & dada) di tengah area pemandu");
+        setFaceGuideState("MISALIGNED");
+        cancelCountdown("Posisikan tubuh bagian atas (bahu & dada) di tengah kamera");
         return;
       }
 
@@ -497,8 +499,6 @@ export const CameraScan: React.FC<CameraScanProps> = ({
       setGuideMessage("Posisi tubuh & bahu pas! Tetap stabil...");
       const now = performance.now();
       if (alignedSinceRef.current === 0) alignedSinceRef.current = now;
-
-      lastAlignedPoseRef.current = landmarks;
 
       const stableMs = now - alignedSinceRef.current;
       if (
@@ -529,44 +529,38 @@ export const CameraScan: React.FC<CameraScanProps> = ({
     (landmarks: any[]) => {
       if (!landmarks || landmarks.length === 0) {
         setFaceGuideState("NO_FACE");
-        cancelCountdown("Wajah belum berada di dalam area pemandu");
+        cancelCountdown("Wajah belum terdeteksi di depan kamera");
         return;
       }
 
-      // STAGE: kontainment oval — 4 landmark inti (dahi/dagu/pipi) wajib masuk oval
-      const { inside, faceW } = ovalFit(landmarks as Landmark[], GUIDE_OVAL);
       const vw = videoRef.current?.videoWidth || 1280;
       const vh = videoRef.current?.videoHeight || 720;
       const mlm = toMetricLandmarks(landmarks as Landmark[], vw, vh);
       const pose = computePose(mlm);
-      const poseOk =
-        Math.abs(pose.yaw_deg) <= 15 && Math.abs(pose.roll_deg) <= 15 && Math.abs(pose.pitch_deg) <= 15;
-      const sizeOk = faceW >= 0.18; // terlalu jauh dari kamera
 
-      if (!inside) {
+      const forehead = landmarks[10];
+      const chin = landmarks[152];
+      const rightCheek = landmarks[234] || landmarks[33];
+      const leftCheek = landmarks[454] || landmarks[263];
+      const noseTip = landmarks[1] || landmarks[4] || landmarks[168];
+
+      if (!forehead || !chin || !rightCheek || !leftCheek) {
         setFaceGuideState("NO_FACE");
-        cancelCountdown("Wajah belum berada di dalam area pemandu");
-        return;
-      }
-      if (!poseOk || !sizeOk) {
-        setFaceGuideState("MISALIGNED");
-        cancelCountdown(
-          !sizeOk
-            ? "Dekatkan wajah Anda ke arah kamera"
-            : Math.abs(pose.roll_deg) > 15
-              ? "Kepala miring — posisikan tegak lurus ke depan"
-              : "Hadapkan wajah lurus ke kamera"
-        );
+        cancelCountdown("Wajah belum terdeteksi jelas");
         return;
       }
 
-      // ---- HIJAU (ALIGNED): stabil berbasis waktu, bukan hitungan frame ----
-      setFaceGuideState("ALIGNED");
-      setGuideMessage("Posisi wajah pas! Tetap stabil...");
-      const now = performance.now();
-      if (alignedSinceRef.current === 0) alignedSinceRef.current = now;
+      const faceCenterX = noseTip ? noseTip.x : (rightCheek.x + leftCheek.x) / 2;
+      const faceCenterY = noseTip ? noseTip.y : (forehead.y + chin.y) / 2;
+      const faceW = Math.hypot(rightCheek.x - leftCheek.x, rightCheek.y - leftCheek.y);
 
-      // Akumulasi fitur temporal — hanya frame ALIGNED (ADR-019)
+      // In-frame containment (generous & adaptive)
+      const inside = faceCenterX >= 0.12 && faceCenterX <= 0.88 && faceCenterY >= 0.12 && faceCenterY <= 0.88;
+      const poseOk =
+        Math.abs(pose.yaw_deg) <= 30 && Math.abs(pose.roll_deg) <= 25 && Math.abs(pose.pitch_deg) <= 30;
+      const sizeOk = faceW >= 0.08 && faceW <= 0.95;
+
+      // Always sample skinLab and update lastAlignedLm whenever a face is detected in frame
       const video = videoRef.current;
       const skinLab = video ? sampleSkinLab(video, landmarks as Landmark[]) : null;
       if (skinLab) {
@@ -582,6 +576,30 @@ export const CameraScan: React.FC<CameraScanProps> = ({
         lastAlignedLmRef.current = mlm;
         lastImgHeightRef.current = vh;
       }
+
+      if (!inside) {
+        setFaceGuideState("MISALIGNED");
+        cancelCountdown("Arahkan wajah lebih ke tengah kamera");
+        return;
+      }
+
+      if (!poseOk || !sizeOk) {
+        setFaceGuideState("MISALIGNED");
+        cancelCountdown(
+          !sizeOk
+            ? (faceW < 0.08 ? "Dekatkan wajah Anda ke arah kamera" : "Mundurkan sedikit wajah dari kamera")
+            : Math.abs(pose.roll_deg) > 25
+              ? "Kepala miring — posisikan tegak lurus ke depan"
+              : "Hadapkan wajah lurus ke kamera"
+        );
+        return;
+      }
+
+      // ---- HIJAU (ALIGNED) ----
+      setFaceGuideState("ALIGNED");
+      setGuideMessage("Posisi wajah pas! Tetap stabil...");
+      const now = performance.now();
+      if (alignedSinceRef.current === 0) alignedSinceRef.current = now;
 
       const stableMs = now - alignedSinceRef.current;
       const enoughSamples = samplerRef.current.count >= MIN_SAMPLES;
@@ -1515,12 +1533,12 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                 <button
                   type="button"
                   onClick={handleStartScan}
-                  disabled={isScanning || (mode === "camera" && faceGuideState === "NO_FACE")}
+                  disabled={isScanning || (mode === "camera" && faceGuideState === "NO_FACE" && !lastAlignedLmRef.current && !lastAlignedPoseRef.current)}
                   className={`w-full py-4 rounded-full font-bold text-sm text-white transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
                     faceGuideState === "ALIGNED"
-                      ? "bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 border border-blue-400/30"
-                      : faceGuideState === "MISALIGNED"
-                      ? "bg-amber-600 hover:bg-amber-500 border border-amber-400/30"
+                      ? "bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 border border-blue-400/30 shadow-lg shadow-blue-500/20"
+                      : faceGuideState === "MISALIGNED" || lastAlignedLmRef.current || lastAlignedPoseRef.current
+                      ? "bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 border border-blue-400/30 text-white cursor-pointer shadow-md"
                       : "bg-[#071120] text-[#64748B] border border-blue-500/20"
                   }`}
                 >
@@ -1536,15 +1554,15 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                         {subcategory === "shirts" ? (
                           faceGuideState === "ALIGNED"
                             ? "Pindai Sekarang (Siluet Tubuh Pas)"
-                            : faceGuideState === "MISALIGNED"
-                            ? "Posisikan Bahu & Dada Tegak Lurus"
-                            : "Arahkan Bahu & Torso ke Area Pemandu"
+                            : faceGuideState === "MISALIGNED" || lastAlignedPoseRef.current
+                            ? "Pindai Sekarang (Tubuh Terdeteksi)"
+                            : "Arahkan Bahu & Torso ke Kamera"
                         ) : (
                           faceGuideState === "ALIGNED"
                             ? "Pindai Sekarang (Wajah Pas)"
-                            : faceGuideState === "MISALIGNED"
-                            ? "Posisikan Wajah Tegak Lurus"
-                            : "Arahkan Wajah ke Dalam Oval"
+                            : faceGuideState === "MISALIGNED" || lastAlignedLmRef.current
+                            ? "Pindai Sekarang (Wajah Terdeteksi)"
+                            : "Arahkan Wajah ke Kamera"
                         )}
                       </span>
                     </>
