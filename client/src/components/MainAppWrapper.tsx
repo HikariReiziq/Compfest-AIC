@@ -343,14 +343,23 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start pb-12">
-              {/* Left Column: Unified Real-Time 3D AR Canvas (Glasses, Hats & Shirts) */}
+              {/* Left Column: Real-Time 3D AR Canvas (BodyOutfitViewer with Full Skeletal Kinematics for Shirts, ARCanvasViewer for Glasses & Hats) */}
               <div className="lg:col-span-7 space-y-4">
-                <ARCanvasViewer
-                  activeItem={activeItem}
-                  subcategory={selectedSubcategory}
-                  mediaStream={mediaStream}
-                  inputMode={userProfile?.face_analysis_meta?.input_mode || (mediaStream ? 'camera' : 'upload')}
-                />
+                {selectedSubcategory === 'shirts' ? (
+                  <BodyOutfitViewer
+                    activeItem={activeItem}
+                    subcategory={selectedSubcategory}
+                    mediaStream={mediaStream}
+                    inputMode={userProfile?.face_analysis_meta?.input_mode || (mediaStream ? 'camera' : 'upload')}
+                  />
+                ) : (
+                  <ARCanvasViewer
+                    activeItem={activeItem}
+                    subcategory={selectedSubcategory}
+                    mediaStream={mediaStream}
+                    inputMode={userProfile?.face_analysis_meta?.input_mode || (mediaStream ? 'camera' : 'upload')}
+                  />
+                )}
               </div>
 
               {/* Right Column: Switch Controls */}
