@@ -15,9 +15,14 @@ from ai_engine.models.gender_estimator import GenderEstimator
 
 
 def _features(**over):
-    """Vektor fitur netral; override untuk vektor maskulin/feminin."""
+    """Vektor fitur netral; override untuk vektor maskulin/feminin.
+
+    jaw_to_cheek mengikuti NEUTRAL terkalibrasi 0.79 (populasi Asia/
+    Indonesia — pria lokal berahang relatif tirus dibanding populasi global
+    yang dipakai nilai lama 0.86).
+    """
     base = {
-        "jaw_to_cheek": 0.86,      # lebar rahang relatif pipi
+        "jaw_to_cheek": 0.79,      # lebar rahang relatif pipi (netral Asia/Tenggara)
         "brow_to_eye": 0.16,       # jarak puncak alis ke kelopak mata (relatif pipi)
         "lip_to_face_width": 0.42, # lebar bibir relatif lebar wajah
         "face_aspect": 0.75,       # lebar wajah / tinggi wajah
@@ -84,7 +89,7 @@ class TestGenderDeadband:
 
     def test_zona_ragu_tetap_melaporkan_kecondongan(self):
         """Ragu bukan berarti tidak tahu apa-apa; tandanya tetap informatif."""
-        out = GenderEstimator.classify(_features(jaw_to_cheek=0.87, face_aspect=0.755))
+        out = GenderEstimator.classify(_features(jaw_to_cheek=0.80, face_aspect=0.755))
         assert out["label_id"] == "uncertain"
         assert out["leaning"] == "male"
 
@@ -108,7 +113,7 @@ class TestGenderDeadband:
     def test_skor_dalam_deadband_tidak_dipaksa_berlabel(self):
         # Vektor yang skornya persis di sekitar nol.
         out = GenderEstimator.classify(
-            _features(jaw_to_cheek=0.87, face_aspect=0.755)
+            _features(jaw_to_cheek=0.80, face_aspect=0.755)
         )
         assert out["label_id"] == "uncertain"
         assert out["confidence"] == 0.50
@@ -171,3 +176,56 @@ class TestGenderDeadband:
         """Pemanggil lama tanpa argumen pose harus tetap jalan."""
         vec = _features(jaw_to_cheek=0.97, brow_to_eye=0.11, lip_to_face_width=0.36, face_aspect=0.80)
         assert GenderEstimator.classify(vec)["label_id"] == "male"
+
+
+class TestSmileDampening:
+    """Smile dampening — senyum lebar tidak boleh memicu klasifikasi feminin.
+
+    lip_to_face_width dihitung dari jarak sudut bibir; senyum merenggangkan
+    sudut bibir sehingga rasio naik palsu. Tanpa redaman, pria yang tersenyum
+    lebar terdorong skor feminin (laporan bug "false female").
+    """
+
+    def test_pria_tersenyum_tetap_male(self):
+        """Vektor maskulin + senyum lebar (rasio bibir tinggi) tetap Pria."""
+        neutral_lip = GenderEstimator.classify(
+            _features(jaw_to_cheek=0.88, brow_to_eye=0.12, lip_to_face_width=0.40, face_aspect=0.78)
+        )
+        smiling = GenderEstimator.classify(
+            _features(jaw_to_cheek=0.88, brow_to_eye=0.12, lip_to_face_width=0.49, face_aspect=0.78)
+        )
+        assert neutral_lip["label_id"] == "male"
+        assert smiling["label_id"] == "male", (
+            "senyum lebar tidak boleh mengubah label pria menjadi wanita"
+        )
+
+    def test_senyum_meredam_bukan_membalik(self):
+        """Skor dengan senyum tidak boleh LEBIH feminin daripada tanpa senyum
+        pada wajah yang sama (dilihat dari label dan confidence)."""
+        smiling = GenderEstimator.classify(
+            _features(jaw_to_cheek=0.88, brow_to_eye=0.12, lip_to_face_width=0.49, face_aspect=0.78)
+        )
+        assert smiling["label_id"] != "female"
+
+    def test_ambang_senyum_konsisten_dengan_konstanta(self):
+        assert GenderEstimator.SMILE_LIP_THRESHOLD == 0.44
+        assert 0 < GenderEstimator.SMILE_DAMPENING < 1
+
+
+class TestKalibrasiAsia:
+    """Netral jaw_to_cheek 0.79 — pria Asia berahang tirus bukan "wanita"."""
+
+    def test_pria_asia_rahang_tirus_male(self):
+        """Rahang 0.78-0.80 khas pria Asia tidak boleh jatuh feminin."""
+        out = GenderEstimator.classify(
+            _features(jaw_to_cheek=0.78, brow_to_eye=0.13, lip_to_face_width=0.40, face_aspect=0.77)
+        )
+        assert out["label_id"] in ("male", "uncertain")
+        assert out["label_id"] != "female"
+
+    def test_vektor_wanita_tetap_female(self):
+        """Kalibrasi tidak boleh menggeser wanita keluar dari labelnya."""
+        out = GenderEstimator.classify(
+            _features(jaw_to_cheek=0.74, brow_to_eye=0.22, lip_to_face_width=0.49, face_aspect=0.71)
+        )
+        assert out["label_id"] == "female"

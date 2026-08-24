@@ -446,6 +446,16 @@ export interface GenderFeatures {
   face_aspect: number;
 }
 
+/**
+ * Ambang senyum untuk lip_to_face_width: di atas nilai ini kenaikan rasio
+ * berasal dari sudut bibir yang merenggang karena senyum, bukan dimorfisme.
+ * Server (GenderEstimator) memakai nilai yang sama untuk smile dampening;
+ * netral jaw_to_cheek server juga sudah dikalibrasi ke 0.79 untuk populasi
+ * Asia/Indonesia (sebelumnya 0.86 — memicu salah deteksi "Wanita" pada pria
+ * berahang tirus).
+ */
+export const SMILE_LIP_THRESHOLD = 0.44;
+
 /** Fitur dimorfisme seksual untuk GenderEstimator server (rule engine). */
 export function computeGenderFeatures(lm: Landmark[]): GenderFeatures {
   const cheek = dist2(lm[234], lm[454]);

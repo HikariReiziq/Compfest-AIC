@@ -728,7 +728,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
     try {
       // Agregat temporal (median rasio + mean LAB) — fitur biometrik nyata dari FaceLandmarker
       let payload: Record<string, unknown>;
-      const imgW = lastImgWidthRef.current || videoRef.current?.videoWidth || 640;
+      const imgW = videoRef.current?.videoWidth || 640;
 
       if (samplerRef.current.count >= MIN_SAMPLES) {
         const agg = samplerRef.current.aggregate();
@@ -1427,6 +1427,43 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                           ? `Condong ${scannedProfile.gender.leaning === "female" ? "Wanita" : "Pria"} — dikonfirmasi lewat kuesioner`
                           : "Dikonfirmasi lewat kuesioner"}
                   </p>
+                  {/* Koreksi manual gender — override prioritas utama untuk
+                      modul rekomendasi: hasil scan hanya estimasi, kata user
+                      selalu menang. Mengubah di sini mengubah scannedProfile
+                      yang dikirim onScanComplete, sehingga downstream
+                      (rekomendasi pakaian/topi) mengikuti nilai ini. */}
+                  <div className="flex items-center gap-1.5 pt-1.5">
+                    <span className="text-[10px] text-[#64748B] font-mono">Koreksi manual:</span>
+                    {(["male", "female"] as const).map((gid) => (
+                      <button
+                        key={gid}
+                        type="button"
+                        onClick={() =>
+                          setScannedProfile((prev) =>
+                            prev
+                              ? {
+                                  ...prev,
+                                  gender: {
+                                    label: gid === "male" ? "Pria (Male)" : "Wanita (Female)",
+                                    label_id: gid,
+                                    confidence: 1.0,
+                                    method: "manual_correction",
+                                    rule: "dikonfirmasi oleh pengguna di UI",
+                                  },
+                                }
+                              : prev
+                          )
+                        }
+                        className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold border transition-colors cursor-pointer ${
+                          scannedProfile.gender?.label_id === gid
+                            ? "bg-blue-600 border-blue-400 text-white"
+                            : "bg-[#071120] border-white/15 text-[#94A3B8] hover:text-white"
+                        }`}
+                      >
+                        {gid === "male" ? "Pria" : "Wanita"}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 

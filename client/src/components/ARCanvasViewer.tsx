@@ -732,7 +732,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               muted
             />
 
-            {isTrackingFace && (
+            {isTrackingFace ? (
               <div className="absolute top-4 left-4 inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-[#0B1528] text-[#93C5FD] border border-blue-500/30 text-[11px] font-mono z-20 shadow-lg">
                 <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />
                 <span>6-DoF FACE &amp; HEAD TRACKING (60 FPS)</span>

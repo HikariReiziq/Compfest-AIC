@@ -61,12 +61,32 @@ class GenderEstimator:
     DEADBAND = 0.025
 
     # Threshold netral — rata-rata antropometrik populasi dewasa.
+    #
+    # jaw_to_cheek awalnya 0.86 (rata-rata populasi global), namun pria Asia
+    # Tenggara/Indonesia memiliki rahang relatif lebih tirus (rahang bawah
+    # tidak sekotak populasi Kaukasian). Akibatnya pria lokal yang rasionya
+    # ~0.78-0.80 jatuh jauh di bawah netral lama dan skorsinya terdorong
+    # feminin — sumber utama salah deteksi "Wanita" untuk pengguna pria.
+    # Netral digeser ke 0.79 agar titik tengahnya representatif untuk populasi
+    # pengguna target (kalibrasi langkah integrasi 2026-08-24).
     NEUTRAL = {
-        "jaw_to_cheek": 0.86,
+        "jaw_to_cheek": 0.79,
         "brow_to_eye": 0.16,
         "lip_to_face_width": 0.42,
         "face_aspect": 0.75,
     }
+
+    # Smile Dampening Factor.
+    #
+    # Rasio lip_to_face_width dihitung dari jarak sudut bibir (61-291)
+    # terhadap lebar pipi. Senyum lebar MERENGGANG sudut bibir ke samping,
+    # menaikkan rasio melewati 0.44 tanpa perubahan dimorfisme apa pun.
+    # Suku skor lip yang seharusnya netral itu bernilai negatif (mendorong
+    # feminin), sehingga tersenyum di depan kamera memicu salah klasifikasi
+    # "Wanita" untuk pria. Di atas ambang 0.44, kontribusi negatif suku lip
+    # diredam setengahnya agar ekspresi tidak mengubah hasil.
+    SMILE_LIP_THRESHOLD = 0.44
+    SMILE_DAMPENING = 0.5
 
     # Dua dari empat rasio bersifat pose-invariant, dua lainnya tidak.
     # Menoleh (yaw) memperkecil seluruh jarak MENDATAR sebesar cos(yaw);
@@ -147,11 +167,16 @@ class GenderEstimator:
         aspect = corrected["face_aspect"]
 
         n = GenderEstimator.NEUTRAL
+        # Suku lip dengan smile dampening: senyum lebar (rasio > 0.44)
+        # merenggang sudut bibir dan membuat suku ini berubah negatif palsu.
+        lip_term = (n["lip_to_face_width"] - lip) / n["lip_to_face_width"]
+        if lip > GenderEstimator.SMILE_LIP_THRESHOLD and lip_term < 0:
+            lip_term *= GenderEstimator.SMILE_DAMPENING
         # Skor aditif ter-normalisasi: > 0 maskulin, < 0 feminin.
         score = (
             (jaw - n["jaw_to_cheek"]) / n["jaw_to_cheek"]
             + (n["brow_to_eye"] - brow) / n["brow_to_eye"]
-            + (n["lip_to_face_width"] - lip) / n["lip_to_face_width"]
+            + lip_term
             + (aspect - n["face_aspect"]) / n["face_aspect"]
         )
         confidence = round(min(0.78, 0.55 + 0.23 * min(1.0, abs(score))), 2)
