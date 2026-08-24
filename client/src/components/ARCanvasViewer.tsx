@@ -869,17 +869,6 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           }}
         />
 
-        {/* Maskot Sesu-AI di Samping Kiri Bawah Kamera */}
-        <div className="absolute -bottom-2 -left-2 sm:-bottom-4 sm:-left-3 z-30 flex items-end pointer-events-none select-none">
-          <div className="relative animate-bounce" style={{ animationDuration: "2.8s" }}>
-            <img
-              src="/images/mascot.png"
-              alt="Sesu-AI Mascot"
-              className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-[0_10px_25px_rgba(56,189,248,0.6)]"
-            />
-          </div>
-        </div>
-
         {/* Layar LCD Kamera DSLR Canon — proporsi pas di dalam bezel layar */}
         <div
           className="absolute z-10 overflow-hidden rounded-[3px] bg-black shadow-[inset_0_0_20px_rgba(0,0,0,0.95)]"
