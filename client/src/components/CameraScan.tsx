@@ -1105,15 +1105,6 @@ export const CameraScan: React.FC<CameraScanProps> = ({
   return (
     <div className="w-full space-y-8 animate-fadeIn text-white">
       <div className="text-center space-y-3">
-        {onBack && (
-          <button
-            onClick={onBack}
-            className="inline-flex items-center gap-1.5 text-xs font-mono text-[#93C5FD] hover:text-white transition-colors mb-1 cursor-pointer"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Kembali ke Pilihan Kategori</span>
-          </button>
-        )}
         <div className="flex items-center justify-center">
           <div className="inline-flex items-center gap-3 px-6 py-2.5 rounded-full bg-[#0B1528] border border-blue-500/30 text-[#93C5FD] text-sm sm:text-base font-mono font-bold shadow-xl tracking-wider">
             <Scan className="w-4 h-4 text-[#38BDF8]" />
