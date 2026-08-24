@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Glasses, Crown, Shirt, ArrowRight, Check } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 interface CategorySelectorProps {
   onSelectCategory: (
@@ -37,11 +37,16 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
         >
           <div className="space-y-5">
             <div className="flex items-center justify-between">
-              <div className="w-16 h-16 rounded-2xl bg-[#071120] border border-blue-500/20 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
-                <Glasses className="w-8 h-8 text-[#38BDF8]" />
+              {/* 3D Real Model Image Preview */}
+              <div className="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl bg-[#071120] border border-blue-500/30 p-2 flex items-center justify-center shadow-inner overflow-hidden">
+                <img
+                  src="/images/products/preview/glass-01.png"
+                  alt="3D Kacamata"
+                  className="w-full h-full object-contain drop-shadow-md group-hover:scale-110 transition-transform duration-300"
+                />
               </div>
-              <span className="text-xs font-mono px-3 py-1 rounded-full bg-blue-500/20 text-[#93C5FD] border border-blue-500/30 font-bold flex items-center gap-1">
-                <Check className="w-3 h-3" />
+              <span className="text-xs font-mono px-3 py-1 rounded-full bg-blue-500/20 text-[#93C5FD] border border-blue-500/30 font-bold flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
                 <span>7 Model 3D</span>
               </span>
             </div>
@@ -73,11 +78,16 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
         >
           <div className="space-y-5">
             <div className="flex items-center justify-between">
-              <div className="w-16 h-16 rounded-2xl bg-[#071120] border border-blue-500/20 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
-                <Crown className="w-8 h-8 text-[#60A5FA] fill-current" />
+              {/* 3D Real Model Image Preview */}
+              <div className="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl bg-[#071120] border border-blue-500/30 p-2 flex items-center justify-center shadow-inner overflow-hidden">
+                <img
+                  src="/images/products/preview/hat-01.png"
+                  alt="3D Topi"
+                  className="w-full h-full object-contain drop-shadow-md group-hover:scale-110 transition-transform duration-300"
+                />
               </div>
-              <span className="text-xs font-mono px-3 py-1 rounded-full bg-blue-500/20 text-[#93C5FD] border border-blue-500/30 font-bold flex items-center gap-1">
-                <Check className="w-3 h-3" />
+              <span className="text-xs font-mono px-3 py-1 rounded-full bg-blue-500/20 text-[#93C5FD] border border-blue-500/30 font-bold flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
                 <span>11 Model 3D</span>
               </span>
             </div>
@@ -109,11 +119,16 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
         >
           <div className="space-y-5">
             <div className="flex items-center justify-between">
-              <div className="w-16 h-16 rounded-2xl bg-[#071120] border border-blue-500/20 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
-                <Shirt className="w-8 h-8 text-[#38BDF8] fill-current" />
+              {/* 3D Real Model Image Preview */}
+              <div className="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl bg-[#071120] border border-blue-500/30 p-2 flex items-center justify-center shadow-inner overflow-hidden">
+                <img
+                  src="/images/products/preview/shirt-pria-01.png"
+                  alt="3D Pakaian"
+                  className="w-full h-full object-contain drop-shadow-md group-hover:scale-110 transition-transform duration-300"
+                />
               </div>
-              <span className="text-xs font-mono px-3 py-1 rounded-full bg-blue-500/20 text-[#93C5FD] border border-blue-500/30 font-bold flex items-center gap-1">
-                <Check className="w-3 h-3" />
+              <span className="text-xs font-mono px-3 py-1 rounded-full bg-blue-500/20 text-[#93C5FD] border border-blue-500/30 font-bold flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
                 <span>19 Model 3D</span>
               </span>
             </div>
