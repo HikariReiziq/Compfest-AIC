@@ -12,6 +12,7 @@ import {
   Lock,
   RotateCw,
   Move,
+  Camera,
 } from "lucide-react";
 import { RecommendationItem } from "../lib/mockData";
 
@@ -54,15 +55,17 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   const [offsetX, setOffsetX] = useState<number>(0);
   const [offsetY, setOffsetY] = useState<number>(0);
   const [offsetZ, setOffsetZ] = useState<number>(0);
-  // Manual yaw rotation (radians) so the user can rotate the model themselves in camera AR mode
-  const [rotOffset, setRotOffset] = useState<number>(0);
+  // Manual 360° Omnidirectional rotation (Yaw around Y, Pitch around X)
+  const [rotOffsetY, setRotOffsetY] = useState<number>(0);
+  const [rotOffsetX, setRotOffsetX] = useState<number>(0);
   const [scaleMultiplier, setScaleMultiplier] = useState<number>(100);
   const [dragMode, setDragMode] = useState<"pan" | "rotate">("pan");
 
   const offsetXRef = useRef<number>(0);
   const offsetYRef = useRef<number>(0);
   const offsetZRef = useRef<number>(0);
-  const rotOffsetRef = useRef<number>(0);
+  const rotOffsetYRef = useRef<number>(0);
+  const rotOffsetXRef = useRef<number>(0);
   const scaleMultiplierRef = useRef<number>(100);
   const dragModeRef = useRef<"pan" | "rotate">("pan");
   const dragStateRef = useRef<{
@@ -70,7 +73,8 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     startY: number;
     startOffsetX: number;
     startOffsetY: number;
-    startRot: number;
+    startRotX: number;
+    startRotY: number;
   } | null>(null);
 
   useEffect(() => {
@@ -86,8 +90,12 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   }, [offsetZ]);
 
   useEffect(() => {
-    rotOffsetRef.current = rotOffset;
-  }, [rotOffset]);
+    rotOffsetYRef.current = rotOffsetY;
+  }, [rotOffsetY]);
+
+  useEffect(() => {
+    rotOffsetXRef.current = rotOffsetX;
+  }, [rotOffsetX]);
 
   useEffect(() => {
     scaleMultiplierRef.current = scaleMultiplier;
@@ -646,8 +654,8 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     group.position.z = THREE.MathUtils.lerp(group.position.z, worldZ, 0.45);
 
     group.rotation.z = THREE.MathUtils.lerp(group.rotation.z, safeRoll, 0.45);
-    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw + rotOffsetRef.current, 0.45);
-    group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, safePitch, 0.45);
+    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw + rotOffsetYRef.current, 0.45);
+    group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, safePitch + rotOffsetXRef.current, 0.45);
 
     group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.45);
   };
@@ -745,8 +753,8 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     group.position.z = THREE.MathUtils.lerp(group.position.z, worldZ, 0.45);
 
     group.rotation.z = THREE.MathUtils.lerp(group.rotation.z, safeRoll, 0.45);
-    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw + rotOffsetRef.current, 0.45);
-    group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, safePitch, 0.45);
+    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw + rotOffsetYRef.current, 0.45);
+    group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, safePitch + rotOffsetXRef.current, 0.45);
 
     group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.45);
   };
@@ -838,8 +846,8 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     group.position.z = THREE.MathUtils.lerp(group.position.z, worldZ, 0.45);
 
     group.rotation.z = THREE.MathUtils.lerp(group.rotation.z, safeRoll, 0.45);
-    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw + rotOffsetRef.current, 0.45);
-    group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, safePitch, 0.45);
+    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw + rotOffsetYRef.current, 0.45);
+    group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, safePitch + rotOffsetXRef.current, 0.45);
 
     group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.45);
   };
@@ -861,7 +869,8 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
                 startY: e.clientY,
                 startOffsetX: offsetXRef.current,
                 startOffsetY: offsetYRef.current,
-                startRot: rotOffsetRef.current,
+                startRotX: rotOffsetXRef.current,
+                startRotY: rotOffsetYRef.current,
               };
               (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
             }}
@@ -869,9 +878,15 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               const ds = dragStateRef.current;
               if (!ds) return;
               if (dragModeRef.current === "rotate") {
-                const newRot = ds.startRot + (e.clientX - ds.startX) * 0.012;
-                rotOffsetRef.current = newRot;
-                setRotOffset(newRot);
+                // Omnidirectional 360° Rotation: horizontal (Yaw) + vertical (Pitch) + diagonal
+                const deltaYaw = (e.clientX - ds.startX) * 0.012;
+                const deltaPitch = (e.clientY - ds.startY) * 0.012;
+                const newRotY = ds.startRotY + deltaYaw;
+                const newRotX = ds.startRotX + deltaPitch;
+                rotOffsetYRef.current = newRotY;
+                rotOffsetXRef.current = newRotX;
+                setRotOffsetY(newRotY);
+                setRotOffsetX(newRotX);
               } else {
                 // Free 2D position pan across screen in all directions (X, Y)
                 const deltaX = (e.clientX - ds.startX) * 0.15;
@@ -910,66 +925,45 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
             ) : (
               <div className="absolute top-4 left-4 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-mono z-30">
                 <span className="w-2 h-2 rounded-full bg-amber-400" />
-                <span>
-                  {isShirt
-                    ? "BADAN TIDAK TERDETEKSI — MUNDUR SEDIKIT AGAR BAHU & DADA TERLIHAT"
-                    : "WAJAH TIDAK TERDETEKSI — MUNDUR SEDIKIT & MASUKKAN SELURUH KEPALA"}
-                </span>
+                <span>MEMINDAI GEOMETRI AR...</span>
               </div>
             )}
           </div>
         ) : (
-          /* Mode 2: 3D Studio 360 Turntable */
-          <div className="relative w-full h-full flex items-center justify-center bg-gradient-to-b from-surface-200/50 via-surface-100/40 to-slate-950">
-            <div className="absolute top-4 left-4 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10px] font-mono z-20">
-              <Sparkles className="w-3 h-3 text-indigo-400" />
-              <span>STUDIO 3D INSPECTION 360°</span>
+          /* Mode 2: Studio 3D Inspection Viewer */
+          <div className="relative w-full h-full flex items-center justify-center bg-gradient-to-b from-slate-900 via-[#0a0f1d] to-black">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.12)_0%,transparent_70%)] pointer-events-none" />
+            <div className="absolute top-4 left-4 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-mono z-30">
+              <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+              <span>3D STUDIO 360° INSPECTION</span>
             </div>
           </div>
         )}
 
-        {/* Top Floating Action Pill: Mode Selector */}
-        <div className="absolute top-4 right-4 z-30 flex items-center space-x-1.5 bg-slate-900/90 backdrop-blur-md p-1 rounded-2xl border border-white/15 shadow-2xl">
-          <div className="relative group">
+        {/* Top-Right Toggle Mode: AR vs Studio View */}
+        <div className="absolute top-4 right-4 z-30 flex items-center bg-slate-900/80 backdrop-blur-md p-1 rounded-2xl border border-white/10 shadow-lg">
+          {!isUploadMode && (
             <button
-              onClick={() => {
-                if (!isUploadMode) setViewMode("ar");
-              }}
-              disabled={isUploadMode}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all ${isUploadMode
-                ? "opacity-40 cursor-not-allowed text-slate-500 bg-slate-800/40"
-                : viewMode === "ar"
-                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 cursor-pointer"
-                  : "text-slate-400 hover:text-white cursor-pointer"
-                }`}
+              onClick={() => setViewMode("ar")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer ${
+                viewMode === "ar"
+                  ? "bg-blue-600 text-white shadow-md"
+                  : "text-slate-400 hover:text-white"
+              }`}
             >
-              {isUploadMode ? (
-                <Lock className="w-3.5 h-3.5 text-slate-400" />
-              ) : null}
-              <span>
-                {isShirt
-                  ? "Pasang ke Badan (AR 3D)"
-                  : isHat
-                    ? "Pasang ke Kepala (AR 3D)"
-                    : "Pasang ke Wajah (AR 3D)"}
-              </span>
+              <Camera className="w-3.5 h-3.5" />
+              <span>AR Live</span>
             </button>
-
-            {isUploadMode && (
-              <div className="absolute right-0 top-full mt-2 w-64 p-2.5 rounded-xl bg-slate-900/95 border border-amber-500/30 text-[11px] text-amber-200/90 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-40 backdrop-blur-md">
-                <Lock className="w-3.5 h-3.5 inline mr-1 text-amber-400" /> <strong>Mode AR Terkunci:</strong> Live AR membutuhkan pemindaian video langsung. Gunakan mode <strong>Studio 360°</strong> untuk melihat detail 3D produk.
-              </div>
-            )}
-          </div>
-
+          )}
           <button
             onClick={() => setViewMode("studio")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer ${viewMode === "studio"
-              ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md shadow-purple-500/20"
-              : "text-slate-400 hover:text-white"
-              }`}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer ${
+              viewMode === "studio"
+                ? "bg-blue-600 text-white shadow-md"
+                : "text-slate-400 hover:text-white"
+            }`}
           >
-            <Move3d className="w-3.5 h-3.5" />
+            <Sparkles className="w-3.5 h-3.5" />
             <span>Putar 360°</span>
           </button>
         </div>
@@ -997,7 +991,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
                   ? "bg-gradient-to-r from-blue-600 to-indigo-600 border border-blue-400 text-white shadow-sm"
                   : "text-slate-400 hover:text-white"
               }`}
-              title="Opsi 1: Geser di layar untuk memutar model 3D (360°)"
+              title="Opsi 1: Geser di layar ke segala arah untuk memutar model 3D (360° Horizontal, Vertikal & Diagonal)"
             >
               <RotateCw className="w-3 h-3" />
               <span>Opsi 1: Rotasi</span>
@@ -1020,7 +1014,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           <div className="flex items-center space-x-1.5 bg-slate-900/70 px-2 py-1 rounded-xl border border-white/5 text-[10px] font-mono text-slate-400 shrink-0 whitespace-nowrap">
             <span>X:<strong className="text-white ml-0.5">{offsetX.toFixed(1)}</strong></span>
             <span>Y:<strong className="text-white ml-0.5">{offsetY.toFixed(1)}</strong></span>
-            <span>∠:<strong className="text-white ml-0.5">{Math.round((rotOffset * 180) / Math.PI)}°</strong></span>
+            <span>Putar:<strong className="text-white ml-0.5">{Math.round((rotOffsetY * 180) / Math.PI)}°</strong></span>
           </div>
 
           {/* Reset */}
@@ -1032,8 +1026,10 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               offsetYRef.current = 0;
               setOffsetZ(0);
               offsetZRef.current = 0;
-              setRotOffset(0);
-              rotOffsetRef.current = 0;
+              setRotOffsetY(0);
+              rotOffsetYRef.current = 0;
+              setRotOffsetX(0);
+              rotOffsetXRef.current = 0;
               setScaleMultiplier(100);
               scaleMultiplierRef.current = 100;
             }}
@@ -1070,4 +1066,3 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 };
 
 export default ARCanvasViewer;
-
