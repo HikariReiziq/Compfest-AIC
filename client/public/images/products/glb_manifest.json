@@ -1,17 +1,17 @@
 {
   "_version": "2.0.0",
-  "_description": "Clean standardized calibration manifest for 37 active GLB products.",
+  "_description": "Clean standardized calibration manifest for 37 active GLB products. Glasses entries use nasion_pupil mesh anchoring with audited absolute rotation_correction and pivot_offset (from fix-kacamata).",
   "glasses_01_khronos_pbr.glb": {
     "category": "glasses",
     "pivot_offset": [
-      0.0,
-      0.0,
-      0.0
+      0,
+      0,
+      0
     ],
     "rotation_correction": [
-      0.0,
-      0.0,
-      0.0
+      0,
+      0,
+      0
     ],
     "scale_factor": 1.0,
     "anchor_type": "nasion_pupil"
@@ -19,44 +19,44 @@
   "glasses_02_rayban_pilot.glb": {
     "category": "glasses",
     "pivot_offset": [
-      0.0,
-      0.0,
-      0.0
+      0,
+      0,
+      0.02
     ],
     "rotation_correction": [
-      0.0,
-      0.0,
-      0.0
+      0,
+      0,
+      0
     ],
-    "scale_factor": 1.0,
+    "scale_factor": 0.95,
     "anchor_type": "nasion_pupil"
   },
   "glasses_03_facefit_geometric.glb": {
     "category": "glasses",
     "pivot_offset": [
-      0.0,
-      0.0,
-      0.0
+      0,
+      0,
+      0
     ],
     "rotation_correction": [
-      0.0,
+      0,
       -1.5708,
-      0.0
+      0
     ],
-    "scale_factor": 1.0,
+    "scale_factor": 1.05,
     "anchor_type": "nasion_pupil"
   },
   "glasses_04_facefit_browline.glb": {
     "category": "glasses",
     "pivot_offset": [
-      0.0,
-      0.0,
-      0.0
+      0,
+      0.01,
+      0
     ],
     "rotation_correction": [
-      0.0,
-      0.0,
-      0.0
+      0,
+      0,
+      0
     ],
     "scale_factor": 1.0,
     "anchor_type": "nasion_pupil"
@@ -64,29 +64,29 @@
   "glasses_05_facefit_slim_aviator.glb": {
     "category": "glasses",
     "pivot_offset": [
-      0.0,
-      0.0,
-      0.0
+      0,
+      -0.01,
+      0
     ],
     "rotation_correction": [
-      0.0,
+      0,
       1.5708,
-      0.0
+      0
     ],
-    "scale_factor": 1.0,
+    "scale_factor": 1.1,
     "anchor_type": "nasion_pupil"
   },
   "glasses_06_facefit_hornrimmed.glb": {
     "category": "glasses",
     "pivot_offset": [
-      0.0,
-      0.0,
-      0.0
+      0,
+      0,
+      0
     ],
     "rotation_correction": [
-      0.0,
-      0.0,
-      0.0
+      0,
+      0,
+      0
     ],
     "scale_factor": 1.0,
     "anchor_type": "nasion_pupil"
@@ -94,16 +94,16 @@
   "glasses_07_sunfit_sport.glb": {
     "category": "glasses",
     "pivot_offset": [
-      0.0,
-      0.0,
-      0.0
+      0,
+      0,
+      0
     ],
     "rotation_correction": [
-      0.0,
-      0.0,
-      0.0
+      0,
+      3.14159,
+      0
     ],
-    "scale_factor": 1.0,
+    "scale_factor": 1.05,
     "anchor_type": "nasion_pupil"
   },
   "bicorn_hat.glb": {

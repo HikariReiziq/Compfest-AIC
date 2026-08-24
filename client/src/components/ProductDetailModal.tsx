@@ -99,7 +99,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               <strong className="text-[#93C5FD]">1. Analisis Spektrum Rona Kulit:</strong> Warna <strong>{item.base_colour}</strong> melengkapi rona kulit tropis Monk Scale Anda, menghindari efek wash-out dan memancarkan kilau rona alami.
             </p>
             <p>
-              <strong className="text-[#60A5FA]">2. Proporsi Geometris 3D:</strong> Potongan siluet produk ini dirancang proporsional terhadap kontur wajah ({userProfile?.face_shape?.shape || 'Oval'}) dan postur torso Anda.
+              <strong className="text-[#60A5FA]">2. Proporsi Geometris 3D:</strong> Potongan siluet produk ini dirancang proporsional terhadap kontur wajah ({userProfile?.face_shape?.shape || 'Oval'}) dan postur torso Anda{userProfile?.gender?.label_id === "female"
+                ? ", dengan aksen yang melengkapi gaya feminin Anda"
+                : userProfile?.gender?.label_id === "male"
+                  ? ", dengan aksen yang melengkapi gaya maskulin Anda"
+                  : ""} sehingga menciptakan keseimbangan visual yang flattering.
             </p>
             <p>
               <strong className="text-[#93C5FD]">3. Konteks Acara &amp; Fit:</strong> Disesuaikan untuk skenario penggunaan <strong>{item.usage}</strong> dengan siluet bahan yang jatuh rapi.

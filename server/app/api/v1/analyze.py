@@ -5,8 +5,22 @@ import os
 from typing import Optional
 from fastapi import APIRouter, Header, HTTPException
 
-# Ensure ai_engine is importable
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+# Ensure ai_engine is importable.
+# ai_engine/ berada di akar repo, sejajar dengan server/, sehingga dari berkas
+# ini harus naik lima tingkat: v1 -> api -> app -> server -> akar repo. Versi
+# sebelumnya hanya naik empat dan berhenti di server/, jadi baris ini tidak
+# pernah benar-benar menolong. Kesalahannya tertutup selama ini karena pytest
+# dan Docker sama-sama dijalankan dari akar repo, yang sudah menaruh akar itu
+# di sys.path lebih dulu; ia baru terlihat saat uvicorn dijalankan dari server/.
+BASE_DIR = os.path.dirname(  # akar repo
+    os.path.dirname(  # server/
+        os.path.dirname(  # server/app/
+            os.path.dirname(  # server/app/api/
+                os.path.dirname(os.path.abspath(__file__))  # server/app/api/v1/
+            )
+        )
+    )
+)
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 

@@ -22,6 +22,7 @@ import RepositionTool from "./RepositionTool";
 import BodyRepositionTool from "./BodyRepositionTool";
 import {
   buildAnalysisPayload,
+  toMetricLandmarks,
   collectQualityIssues,
   computeBrowFeatures,
   computeEyeFeatures,
@@ -195,7 +196,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
   // Temporal smoothing (ADR-019) — agregat hanya frame ALIGNED
   const samplerRef = useRef<FrameSampler>(new FrameSampler());
   const lastAlignedLmRef = useRef<Landmark[] | null>(null);
-  const lastImgWidthRef = useRef<number>(640);
+  const lastImgHeightRef = useRef<number>(480);
   const startScanRef = useRef<() => void>(() => {});
 
   /* ---- Dual-mode state (ADR-013: webcam live vs upload foto) ---- */
@@ -421,9 +422,15 @@ export const CameraScan: React.FC<CameraScanProps> = ({
         return;
       }
 
-      // STAGE: kontainment oval / area pemandu
+      // STAGE: kontainment oval — 4 landmark inti (dahi/dagu/pipi) wajib masuk oval
+      // (ovalFit tetap koordinat mentah: ia membandingkan dengan oval di layar)
       const { inside, faceW } = ovalFit(landmarks as Landmark[], GUIDE_OVAL);
-      const pose = computePose(landmarks as Landmark[]);
+      const vw = videoRef.current?.videoWidth || 1280;
+      const vh = videoRef.current?.videoHeight || 720;
+      // Rasio dan sudut dihitung di ruang metrik; tanpa ini semua perbandingan
+      // lebar-per-tinggi ikut rasio aspek kamera (lihat toMetricLandmarks).
+      const mlm = toMetricLandmarks(landmarks as Landmark[], vw, vh);
+      const pose = computePose(mlm);
       const poseOk =
         Math.abs(pose.yaw_deg) <= 15 && Math.abs(pose.roll_deg) <= 15 && Math.abs(pose.pitch_deg) <= 15;
       const sizeOk = faceW >= 0.18; // terlalu jauh dari kamera
@@ -456,15 +463,18 @@ export const CameraScan: React.FC<CameraScanProps> = ({
       const skinLab = video ? sampleSkinLab(video, landmarks as Landmark[]) : null;
       if (skinLab) {
         samplerRef.current.push({
-          ratios: computeFaceRatios(landmarks as Landmark[]),
-          nose: computeNoseFeatures(landmarks as Landmark[]),
-          eye: computeEyeFeatures(landmarks as Landmark[]),
-          brow: computeBrowFeatures(landmarks as Landmark[]),
-          gender: computeGenderFeatures(landmarks as Landmark[]),
+          ratios: computeFaceRatios(mlm),
+          nose: computeNoseFeatures(mlm),
+          eye: computeEyeFeatures(mlm),
+          brow: computeBrowFeatures(mlm),
+          gender: computeGenderFeatures(mlm),
           pose: { roll_deg: pose.roll_deg, yaw_deg: pose.yaw_deg, pitch_deg: pose.pitch_deg },
           skinLab,
         });
-        lastAlignedLmRef.current = landmarks as Landmark[];
+        // Simpan versi METRIK: satu-satunya konsumen ref ini adalah
+        // computeMeasurementsCm, yang berkontrak metrik.
+        lastAlignedLmRef.current = mlm;
+        lastImgHeightRef.current = vh;
       }
 
       const stableMs = now - alignedSinceRef.current;
@@ -598,7 +608,9 @@ export const CameraScan: React.FC<CameraScanProps> = ({
 
         // 3. Fitur + quality gates
         const luminance = await computeLuminance(snapshotDataUrl);
-        const payload = buildAnalysisPayload(lms, img.naturalWidth || 640, luminance);
+        const imgW = img.naturalWidth || 640;
+        const imgH = img.naturalHeight || 640;
+        const payload = buildAnalysisPayload(lms, imgW, imgH, luminance);
         const issues = collectQualityIssues(payload.quality);
         if (issues.length > 0 && !ignoreQuality) {
           setQualityIssues(issues);
@@ -615,7 +627,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
         const fullPayload = {
           ...payload,
           ...(skinLab ? { skin_lab: skinLab } : {}),
-          gender_features: computeGenderFeatures(lms),
+          gender_features: computeGenderFeatures(toMetricLandmarks(lms, imgW, imgH)),
         };
         const analysis = await analyzeLandmarks(fullPayload as unknown as Record<string, unknown>);
         setScanProgress(90);
@@ -721,9 +733,11 @@ export const CameraScan: React.FC<CameraScanProps> = ({
       if (samplerRef.current.count >= MIN_SAMPLES) {
         const agg = samplerRef.current.aggregate();
         const lm = lastAlignedLmRef.current;
+        // Tinggi frame untuk konversi pinhole ke sentimeter (fix-kacamata).
+        const imgH = lastImgHeightRef.current || videoRef.current?.videoHeight || 480;
         payload = {
           face_ratios: agg.ratios,
-          measurements_cm: lm ? computeMeasurementsCm(lm, imgW) : {},
+          measurements_cm: lm ? computeMeasurementsCm(lm, imgH) : {},
           nose_features: agg.nose,
           eye_features: agg.eye,
           brow_features: agg.brow,
@@ -1392,16 +1406,27 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                 </div>
 
                 {/* 3. Gender */}
-                <div className="bg-[#0B1528] p-3.5 rounded-xl border border-white/10 flex items-center justify-between">
-                  <div>
-                    <span className="text-[#94A3B8] font-mono text-[10px] uppercase tracking-wider block">GENDER</span>
-                    <span className="font-bold text-white text-sm">
-                      {scannedProfile.gender?.label_id === "female" ? "Wanita" : "Pria"}
-                    </span>
+                <div className="bg-[#0B1528] p-3.5 rounded-xl border border-white/10 space-y-1">
+                  <span className="text-[#94A3B8] font-mono text-[10px] uppercase tracking-wider block">GENDER</span>
+                  {/* Tiga nilai, bukan dua. Menuliskan ini sebagai ternary
+                      "female ? Wanita : Pria" akan menampilkan hasil yang ragu
+                      sebagai "Pria" — persis bias yang dihapus oleh deadband. */}
+                  <div className="font-bold text-white text-sm">
+                    {scannedProfile.gender?.label_id === "female"
+                      ? "Wanita"
+                      : scannedProfile.gender?.label_id === "male"
+                        ? "Pria"
+                        : "Belum Pasti"}
                   </div>
-                  <span className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/15 text-xs font-mono text-[#94A3B8]">
-                    {scannedProfile.gender?.label_id === "female" ? "Female" : "Male"}
-                  </span>
+                  <p className="text-[10px] text-[#94A3B8]">
+                    {scannedProfile.gender?.label_id === "female"
+                      ? "Female"
+                      : scannedProfile.gender?.label_id === "male"
+                        ? "Male"
+                        : scannedProfile.gender?.leaning
+                          ? `Condong ${scannedProfile.gender.leaning === "female" ? "Wanita" : "Pria"} — dikonfirmasi lewat kuesioner`
+                          : "Dikonfirmasi lewat kuesioner"}
+                  </p>
                 </div>
               </div>
 

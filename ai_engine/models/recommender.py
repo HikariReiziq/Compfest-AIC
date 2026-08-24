@@ -187,7 +187,9 @@ class StyleRecommender:
                 return default
             return str(val) if val is not None else default
 
-        gender = extract_profile_str(user_profile.get("gender"), "label_id", "male").lower()
+        # Default "uncertain", bukan "male". Profil tanpa gender bukan berarti
+        # laki-laki, dan estimator kini memang boleh mengembalikan nilai ketiga.
+        gender = extract_profile_str(user_profile.get("gender"), "label_id", "uncertain").lower()
 
         # For shirts, filter by gender affinity if available
         if subcat == "shirts":
@@ -207,7 +209,6 @@ class StyleRecommender:
         face_shape = extract_profile_str(user_profile.get("face_shape"), "shape", "Oval")
         mst_code = extract_profile_str(user_profile.get("monk_tone"), "code", "MST-06")
         skin_tone = extract_profile_str(user_profile.get("skin_tone"), "tone", "Tan")
-        gender = extract_profile_str(user_profile.get("gender"), "label_id", "male").lower()
 
         # Extract quiz attributes with robust fallback signal detection
         def extract_quiz_signals(q_data: Dict[str, Any]) -> Tuple[str, str, str, List[str]]:

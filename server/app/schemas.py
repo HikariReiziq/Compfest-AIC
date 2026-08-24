@@ -188,11 +188,21 @@ class SkinToneOut(BaseModel):
 
 
 class GenderOut(BaseModel):
-    """Output terstandarisasi 3 dari 3: gender dari rasio landmark."""
-    label: str  # "Pria (Male)" | "Wanita (Female)"
-    label_id: str  # male | female
+    """Output terstandarisasi 3 dari 3: gender dari rasio landmark.
+
+    `label_id` bernilai tiga, bukan dua. "uncertain" dikembalikan saat skor
+    dimorfisme berada di dalam deadband, yaitu ketika perbedaannya tidak bisa
+    dibedakan dari sekadar arah hadap kepala. Konsumen wajib menangani nilai
+    ketiga ini; memperlakukannya sebagai "bukan female" akan mengembalikan bias
+    ke laki-laki yang justru dihapus oleh deadband.
+    """
+    label: str  # "Pria (Male)" | "Wanita (Female)" | "Belum Pasti (Uncertain)"
+    label_id: str  # male | female | uncertain
     confidence: float
     method: str = "landmark_ratio"
+    # Arah kecondongan saat label_id "uncertain". Diisi hanya bila ada dasarnya:
+    # payload tanpa fitur sama sekali tidak punya kecondongan untuk dilaporkan.
+    leaning: Optional[str] = None  # male | female | None
     rule: Optional[str] = None
 
 

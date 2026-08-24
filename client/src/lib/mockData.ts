@@ -45,10 +45,22 @@ export interface SkinToneProfile {
 
 /** Output biometrik terstandarisasi 3 dari 3: gender dari rasio landmark. */
 export interface GenderProfile {
-  label: string; // "Pria (Male)" | "Wanita (Female)"
-  label_id: "male" | "female" | string;
+  label: string; // "Pria (Male)" | "Wanita (Female)" | "Belum Pasti (Uncertain)"
+  // Tiga nilai, bukan dua. "uncertain" dikirim server saat skor dimorfisme
+  // berada di dalam deadband, yaitu ketika bedanya tidak bisa dipisahkan dari
+  // arah hadap kepala. Memperlakukannya sebagai "bukan female" akan
+  // mengembalikan bias ke laki-laki yang justru dihapus deadband.
+  label_id: "male" | "female" | "uncertain" | string;
   confidence: number;
   method?: string;
+  /**
+   * Arah kecondongan saat label_id "uncertain". Tidak yakin bukan berarti tidak
+   * tahu apa-apa: skornya tetap punya tanda, dan menampilkannya jauh lebih
+   * berguna bagi pengguna daripada kartu yang terlihat kosong.
+   */
+  leaning?: "male" | "female" | string;
+  // Penjelasan keputusan dari server; berguna saat menelusuri hasil aneh.
+  rule?: string;
 }
 
 /** Ukuran antropometrik wajah terkalibrasi (ADR-014). Null bila mode ratio_only. */

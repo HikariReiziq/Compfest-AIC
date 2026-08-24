@@ -3,6 +3,83 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+
+/**
+ * Cari bidang brim topi: ketinggian Y dengan penampang mendatar TERLEBAR.
+ *
+ * Inilah lubang tempat kepala masuk, dan satu-satunya titik jangkar yang masuk
+ * akal untuk topi. Versi sebelumnya menjangkarkan dasar bounding box, yang
+ * untuk topi bertepi lebar berarti ujung tepi yang menjuntai — sehingga
+ * seluruh badan topi melayang di atas dahi.
+ *
+ * Diukur dari mesh, bukan dari angka manual, karena letak brim sangat berbeda
+ * antar model: audit katalog memberi rentang 0,013 (cowboy hat) sampai 0,636
+ * (propeller hat) satuan ternormalisasi dari dasar. Konstanta tunggal apa pun
+ * pasti salah untuk sebagian besar aset.
+ */
+function findBrimPlaneY(object: THREE.Object3D): number | null {
+  const box = new THREE.Box3().setFromObject(object);
+  const lo = box.min.y;
+  const span = box.max.y - lo;
+  if (!(span > 0)) return null;
+
+  const SLICES = 24;
+  const minX = new Float64Array(SLICES).fill(Infinity);
+  const maxX = new Float64Array(SLICES).fill(-Infinity);
+  const minZ = new Float64Array(SLICES).fill(Infinity);
+  const maxZ = new Float64Array(SLICES).fill(-Infinity);
+  const counts = new Uint32Array(SLICES);
+  const v = new THREE.Vector3();
+
+  object.updateWorldMatrix(true, true);
+  object.traverse((child) => {
+    const mesh = child as THREE.Mesh;
+    if (!mesh.isMesh || !mesh.geometry) return;
+    const pos = mesh.geometry.getAttribute("position");
+    if (!pos) return;
+    // Sampling jarang sudah cukup: yang dicari letak brim, bukan bentuk presisi.
+    const step = Math.max(1, Math.floor(pos.count / 4000));
+    for (let i = 0; i < pos.count; i += step) {
+      v.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld);
+      let k = Math.floor(((v.y - lo) / span) * SLICES);
+      if (k < 0) k = 0;
+      else if (k >= SLICES) k = SLICES - 1;
+      if (v.x < minX[k]) minX[k] = v.x;
+      if (v.x > maxX[k]) maxX[k] = v.x;
+      if (v.z < minZ[k]) minZ[k] = v.z;
+      if (v.z > maxZ[k]) maxZ[k] = v.z;
+      counts[k]++;
+    }
+  });
+
+  let bestWidth = -1;
+  let bestSlice = -1;
+  for (let k = 0; k < SLICES; k++) {
+    if (counts[k] < 20) continue; // irisan terlalu jarang, statistiknya tidak dipercaya
+    const w = Math.max(maxX[k] - minX[k], maxZ[k] - minZ[k]);
+    if (w > bestWidth) {
+      bestWidth = w;
+      bestSlice = k;
+    }
+  }
+  if (bestSlice < 0) return null;
+  return lo + (span * (bestSlice + 0.5)) / SLICES;
+}
+
+/** Lebar topi setelah normalisasi, kira-kira selebar kepala di ruang scene. */
+const HAT_TARGET_WIDTH = 1.35;
+
+/**
+ * Seberapa jauh bidang brim duduk di bawah landmark dahi (10), sebagai pecahan
+ * lebar kepala.
+ *
+ * Kini nilainya kecil dan bermakna sempit: landmark 10 ada di batas dahi,
+ * sedangkan brim topi biasanya bertumpu sedikit di bawahnya. Sebelumnya angka
+ * ini besar (0,35) karena harus menebus jangkar yang salah — dasar bounding
+ * box, bukan bidang brim. Setelah jangkarnya benar, koreksi yang tersisa jauh
+ * lebih kecil dan tidak lagi berbeda-beda per model.
+ */
+const HAT_BRIM_BELOW_BROW = 0.08;
 import {
   Move3d,
   Box,
@@ -260,11 +337,19 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
             const result = landmarker.detectForVideo(video, performance.now());
             if (result && result.faceLandmarks && result.faceLandmarks.length > 0) {
               setIsTrackingFace(true);
+              modelGroup.visible = true;
               applyLandmarksTo3DModel(result.faceLandmarks[0], modelGroup, occluderGroup);
             } else {
+              // Wajah hilang dari deteksi (keluar frame, terpotong tepi atas,
+              // cahaya kurang). Dulu model malah dihanyutkan ke tengah layar,
+              // sehingga tampak menempel diam menutupi wajah — persis yang
+              // dilaporkan sebagai "kaku, tidak mengikuti pergerakan".
+              // Menyembunyikannya jauh lebih jujur: yang hilang pelacakannya,
+              // bukan modelnya yang salah tempat.
               setIsTrackingFace(false);
-              modelGroup.position.lerp(new THREE.Vector3(0, 0.2, 0), 0.05);
-              occluderGroup.position.lerp(new THREE.Vector3(0, 0.2, -0.22), 0.05);
+              // Wajah hilang dari deteksi: sembunyikan model secara jujur
+              // (dari fix-kacamata) daripada menghanyutkannya ke tengah layar.
+              modelGroup.visible = false;
             }
           } catch {
             // Frame skip
@@ -276,6 +361,9 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           occluderGroup.visible = false;
         }
         if (modelGroup) {
+          // Mode studio tidak bergantung pelacakan wajah; pastikan model
+          // kembali terlihat setelah sesi AR yang kehilangan wajah.
+          modelGroup.visible = true;
           modelGroup.rotation.y += 0.015;
           modelGroup.position.lerp(new THREE.Vector3(0, 0, 0), 0.08);
           modelGroup.scale.lerp(new THREE.Vector3(1.2, 1.2, 1.2), 0.08);
@@ -341,79 +429,73 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
         (gltf) => {
           const model = gltf.scene;
 
-          // 1. Universal Geometric Auto-Orientation
-          const initialBox = new THREE.Box3().setFromObject(model);
-          const rawSize = initialBox.getSize(new THREE.Vector3());
-
-          // Glasses lying flat on floor (Z is lens height, much smaller than X width and Y temple depth)
-          if (!isHat) {
-            // Check if model is lying flat on ground (Z is thickness/height)
-            if (rawSize.z < rawSize.x * 0.75 && rawSize.z < rawSize.y * 0.75) {
-              model.rotation.x = -Math.PI / 2;
-            }
-            // Check if model was exported with Y as thickness/height lying down
-            else if (rawSize.y < rawSize.x * 0.75 && rawSize.y < rawSize.z * 0.75) {
-              // already in X-Z orientation, no X flip needed
-            }
-          } else {
-            // For Hats: ensure crown points upward along Y
-            if (rawSize.z < rawSize.x * 0.6 && rawSize.z < rawSize.y * 0.6) {
-              model.rotation.x = -Math.PI / 2;
-            }
+          // 1. Orientasi model dari manifest — hasil audit geometri, bukan tebakan.
+          //
+          // Heuristik bounding box sudah terbukti salah arah untuk kacamata;
+          // audit vertex per model (scripts/audit_glb_orientation.py)
+          // memverifikasi orientasi tiap model. Entri manifest dipakai apa
+          // adanya — nol berarti "terverifikasi benar", bukan "tidak tahu".
+          const manifestRotation = modelConfig?.rotation_correction as
+            | [number, number, number]
+            | undefined;
+          if (manifestRotation) {
+            const [rx, ry, rz] = manifestRotation;
+            model.rotation.set(rx, ry, rz);
+          } else if (modelConfig == null) {
+            console.info(`GLB tanpa kalibrasi manifest, orientasi asli dipakai: ${filename}`);
           }
 
-          // Apply per-model manifest fine-tune rotations if specified
-          if (modelConfig?.rotation_correction) {
-            const [rx, ry, rz] = modelConfig.rotation_correction;
-            model.rotation.x += rx;
-            model.rotation.y += ry;
-            model.rotation.z += rz;
-          }
-
-          // 2. Check oriented bounds to ensure front of model faces +Z (user camera)
-          model.updateMatrixWorld(true);
-          const checkOrientedBox = new THREE.Box3().setFromObject(model);
-          const checkSize = checkOrientedBox.getSize(new THREE.Vector3());
-
-          // If depth (Z) is significantly larger than width (X), rotate 90 deg around Y
-          if (!isHat && checkSize.z > checkSize.x * 1.25) {
-            model.rotation.y += Math.PI / 2;
-            model.updateMatrixWorld(true);
-          }
-
-          // 2. Scale model vertices to universal standard scale BEFORE centering
-          const orientedBox = new THREE.Box3().setFromObject(model);
-          const orientedSize = orientedBox.getSize(new THREE.Vector3());
-          const maxDimension = isHat 
-            ? Math.max(orientedSize.x, orientedSize.y, orientedSize.z)
-            : (orientedSize.x > 0 ? orientedSize.x : 1.0);
-          const targetUnit = isHat ? 1.40 : 1.45;
-          const baseNormScale = targetUnit / (maxDimension || 1.0);
-          const customScaleFactor = modelConfig?.scale_factor || 1.0;
-          const normalizeScale = baseNormScale * customScaleFactor;
-          model.scale.set(normalizeScale, normalizeScale, normalizeScale);
-
-          // Force world matrix update so bounding box reflects scaled vertices
-          model.updateMatrixWorld(true);
-
-          // 3. Wrap in wrapper group and center in world space at exact (0, 0, 0)
+          // 2. Wrap in wrapper group to ensure clean normalized transforms
           const wrapper = new THREE.Group();
           wrapper.add(model);
-          wrapper.updateMatrixWorld(true);
 
-          const worldBox = new THREE.Box3().setFromObject(wrapper);
-          const worldCenter = worldBox.getCenter(new THREE.Vector3());
-          wrapper.position.sub(worldCenter);
+          const boxAfter = new THREE.Box3().setFromObject(wrapper);
+          const center = boxAfter.getCenter(new THREE.Vector3());
+          const sizeAfter = boxAfter.getSize(new THREE.Vector3());
 
-          // Apply manifest pivot offset to fine-tune exact anchor point
-          if (modelConfig?.pivot_offset) {
-            const [ox, oy, oz] = modelConfig.pivot_offset;
-            wrapper.position.x += ox;
-            wrapper.position.y += oy;
-            wrapper.position.z += oz;
+          // Center X and Y, but align Z/Y anchor so glasses temples extend
+          // backward into -Z (ears) and hats rest on the forehead.
+          //
+          // Nilai-nilai di bawah berada dalam SATUAN MENTAH model, karena
+          // boxAfter diukur saat wrapper masih berskala 1. Karena itu
+          // normalisasi di bawah WAJIB dipasang pada wrapper, bukan model.
+          if (!isHat) {
+            model.position.x -= center.x;
+            model.position.y -= center.y;
+            // Align front frame to Z = 0 so temples point backwards into -Z.
+            model.position.z -= boxAfter.max.z;
+          } else {
+            model.position.x -= center.x;
+            model.position.z -= center.z;
+            // Jangkar topi = bidang brim (lubang kepala), diukur dari mesh.
+            const brimY = findBrimPlaneY(wrapper);
+            model.position.y -= brimY ?? boxAfter.min.y;
           }
 
-          // 3. Apply Ultra-Realistic PBR Lighting & Preserve Authentic GLTF Textures
+          // Normalize model width (sizeAfter.x) to ~1.45 standard units.
+          //
+          // Skala dipasang di wrapper, bukan di model: `position` sebuah objek
+          // hidup di ruang koordinat induknya dan TIDAK ikut terskalakan oleh
+          // `scale` objek itu sendiri. Katalog berisi GLB dengan satuan author
+          // yang berbeda-beda, jadi dipasang di wrapper agar model.position
+          // ikut terskalakan bersama geometri.
+          const targetWidth = sizeAfter.x > 0 ? sizeAfter.x : 1.0;
+          const baseNormScale = (isHat ? HAT_TARGET_WIDTH : 1.45) / targetWidth;
+          const customScaleFactor = modelConfig?.scale_factor || 1.0;
+          const normalizeScale = baseNormScale * customScaleFactor;
+          wrapper.scale.setScalar(normalizeScale);
+
+          // Apply manifest pivot offset (normalized space) to fine-tune anchor.
+          const pivot = modelConfig?.pivot_offset ?? [0, 0, 0];
+
+          // Topi: turunkan agar mahkotanya menelan kepala — jangkar topi adalah
+          // landmark dahi (10), dinyatakan relatif terhadap lebar kepala agar
+          // topi jangkung tidak ikut terbenam lebih dalam.
+          const hatSink = isHat ? HAT_BRIM_BELOW_BROW * HAT_TARGET_WIDTH : 0;
+
+          wrapper.position.set(pivot[0], pivot[1] - hatSink, pivot[2]);
+
+          // 3. Ultra-Realistic Optical Materials (clean matte, preserve GLTF textures)
           const opticalLensMat = new THREE.MeshPhysicalMaterial({
             color: new THREE.Color(0x0f172a),
             transparent: true,
@@ -472,7 +554,6 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           });
 
           group.add(wrapper);
-          const filename = modelPath.split("/").pop();
           setModelSource(`3D GLB (${filename})`);
         },
         undefined,
@@ -563,8 +644,11 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const halfW = halfH * (cw / ch);
 
     const worldX = ndcX * halfW;
-    const worldY = ndcY * halfH + (isHat ? 0.32 : -0.01) + offsetY * 0.012;
-    const worldZ = (nasion.z || 0) * -1.8 + offsetZ * 0.015;
+    // Penempatan vertikal topi ditangani di ruang ternormalisasi (hatSink di
+    // loadCategorized3DModel) yang ikut terskalakan bersama kepala — bukan
+    // konstanta dunia yang hanya pas pada satu jarak kamera.
+    const worldY = ndcY * halfH + (isHat ? 0 : -0.01) + offsetY * 0.012;
+    const worldZ = (nasion.z || 0) * -1.8;
 
     // Screen Positions of Both Eyes for Angle & Scale
     const screenLX = offsetX + (1 - eyeLX) * renderedWidth;
@@ -652,6 +736,11 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               <div className="absolute top-4 left-4 inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-[#0B1528] text-[#93C5FD] border border-blue-500/30 text-[11px] font-mono z-20 shadow-lg">
                 <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />
                 <span>6-DoF FACE &amp; HEAD TRACKING (60 FPS)</span>
+              </div>
+            ) : (
+              <div className="absolute top-4 left-4 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-mono z-30">
+                <span className="w-2 h-2 rounded-full bg-amber-400" />
+                <span>WAJAH TIDAK TERDETEKSI — MUNDUR SEDIKIT & MASUKKAN SELURUH KEPALA</span>
               </div>
             )}
           </div>
