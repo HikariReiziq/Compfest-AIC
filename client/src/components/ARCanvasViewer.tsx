@@ -737,13 +737,10 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     if (leftHip && rightHip) {
       const midHipZ = ((leftHip.z || 0) + (rightHip.z || 0)) / 2;
       safePitch = THREE.MathUtils.clamp((midShoulderZ - midHipZ) * 1.5, -0.45, 0.45);
-    }
-
-    // World Space Scale (Shirt fits user shoulder span accurately)
+    }    // World Space Scale (Shirt fits user shoulder span accurately)
     const worldShoulderSpan = (shoulderSpanPx / cw) * (2 * halfW);
     const baseScale = worldShoulderSpan * 1.30;
     const finalScale = baseScale * (scaleMultiplierRef.current / 100);
-
     // Shirt model is now fully centered (like glasses & hats): drop its center
     // to mid-torso, half a shirt-height below the shoulder/neck anchor line.
     const worldY = ndcY * halfH - 0.55 * finalScale + offsetYRef.current * 0.012;
@@ -854,127 +851,157 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
   return (
     <div className="w-full h-full flex flex-col space-y-4">
-      {/* 3D AR & Studio Viewport */}
-      <div className="relative w-full h-[520px] sm:h-[580px] rounded-3xl overflow-hidden bg-slate-950 border-2 border-slate-400/60 shadow-[0_0_0_1px_rgba(255,255,255,0.15),0_20px_60px_rgba(0,0,0,0.6)] flex items-center justify-center">
-        {/* 3D WebGL Canvas Layer Overlay */}
-        <div ref={containerRef} className="absolute inset-0 w-full h-full z-10 pointer-events-none" />
+      {/* 3D AR & Studio Viewport with DSLR Camera Frame */}
+      <div
+        className="relative w-full max-w-[800px] mx-auto drop-shadow-2xl flex items-center justify-center select-none"
+        style={{ aspectRatio: "548 / 455" }}
+      >
+        {/* Bingkai kamera DSLR Canon EOS 4K Ultra HD — tajam & jernih */}
+        <img
+          src="/images/camera-frame.png"
+          alt="Canon Camera Frame"
+          aria-hidden
+          draggable={false}
+          className="absolute inset-0 w-full h-full object-contain pointer-events-none z-20 select-none"
+          style={{
+            filter: "drop-shadow(0 25px 50px rgba(0,0,0,0.85)) contrast(1.04) brightness(1.02)",
+            imageRendering: "auto",
+          }}
+        />
 
-        {/* Mode 1: Live Video AR Feed */}
-        {viewMode === "ar" ? (
-          <div
-            className="relative w-full h-full flex items-center justify-center bg-black overflow-hidden select-none cursor-grab active:cursor-grabbing touch-none"
-            onPointerDown={(e) => {
-              dragStateRef.current = {
-                startX: e.clientX,
-                startY: e.clientY,
-                startOffsetX: offsetXRef.current,
-                startOffsetY: offsetYRef.current,
-                startRotX: rotOffsetXRef.current,
-                startRotY: rotOffsetYRef.current,
-              };
-              (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-            }}
-            onPointerMove={(e) => {
-              const ds = dragStateRef.current;
-              if (!ds) return;
-              if (dragModeRef.current === "rotate") {
-                // Omnidirectional 360° Rotation: horizontal (Yaw) + vertical (Pitch) + diagonal
-                const deltaYaw = (e.clientX - ds.startX) * 0.012;
-                const deltaPitch = (e.clientY - ds.startY) * 0.012;
-                const newRotY = ds.startRotY + deltaYaw;
-                const newRotX = ds.startRotX + deltaPitch;
-                rotOffsetYRef.current = newRotY;
-                rotOffsetXRef.current = newRotX;
-                setRotOffsetY(newRotY);
-                setRotOffsetX(newRotX);
-              } else {
-                // Free 2D position pan across screen in all directions (X, Y)
-                const deltaX = (e.clientX - ds.startX) * 0.15;
-                const deltaY = -(e.clientY - ds.startY) * 0.15;
-                const newX = Number((ds.startOffsetX + deltaX).toFixed(1));
-                const newY = Number((ds.startOffsetY + deltaY).toFixed(1));
-                offsetXRef.current = newX;
-                offsetYRef.current = newY;
-                setOffsetX(newX);
-                setOffsetY(newY);
-              }
-            }}
-            onPointerUp={() => { dragStateRef.current = null; }}
-            onPointerLeave={() => { dragStateRef.current = null; }}
-            onPointerCancel={() => { dragStateRef.current = null; }}
-          >
-            <video
-              ref={videoRef}
-              className="w-full h-full object-contain -scale-x-100"
-              autoPlay
-              playsInline
-              muted
+        {/* Maskot Sesu-AI di Samping Kiri Bawah Kamera */}
+        <div className="absolute -bottom-2 -left-2 sm:-bottom-4 sm:-left-3 z-30 flex items-end pointer-events-none select-none">
+          <div className="relative animate-bounce" style={{ animationDuration: "2.8s" }}>
+            <img
+              src="/images/mascot.png"
+              alt="Sesu-AI Mascot"
+              className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-[0_10px_25px_rgba(56,189,248,0.6)]"
             />
-
-            {isTrackingLive ? (
-              <div className="absolute top-4 left-4 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono z-30">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                <span>
-                  {isShirt
-                    ? "AR 3D BODY POSE TRACKING (60 FPS)"
-                    : isHat
-                      ? "AR 3D GLB HEAD TRACKING (60 FPS)"
-                      : "AR 3D GLB FACE TRACKING (60 FPS)"}
-                </span>
-              </div>
-            ) : (
-              <div className="absolute top-4 left-4 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-mono z-30">
-                <span className="w-2 h-2 rounded-full bg-amber-400" />
-                <span>MEMINDAI GEOMETRI AR...</span>
-              </div>
-            )}
           </div>
-        ) : (
-          /* Mode 2: Studio 3D Inspection Viewer */
-          <div className="relative w-full h-full flex items-center justify-center bg-gradient-to-b from-slate-900 via-[#0a0f1d] to-black">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.12)_0%,transparent_70%)] pointer-events-none" />
-            <div className="absolute top-4 left-4 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-mono z-30">
-              <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-              <span>3D STUDIO 360° INSPECTION</span>
+        </div>
+
+        {/* Layar LCD Kamera DSLR Canon — proporsi pas di dalam bezel layar */}
+        <div
+          className="absolute z-10 overflow-hidden rounded-[3px] bg-black shadow-[inset_0_0_20px_rgba(0,0,0,0.95)]"
+          style={{ left: "16.42%", top: "42.20%", width: "45.07%", height: "36.26%" }}
+        >
+          {/* 3D WebGL Canvas Layer Overlay */}
+          <div ref={containerRef} className="absolute inset-0 w-full h-full z-10 pointer-events-none" />
+
+          {/* Mode 1: Live Video AR Feed */}
+          {viewMode === "ar" ? (
+            <div
+              className="relative w-full h-full flex items-center justify-center bg-black overflow-hidden select-none cursor-grab active:cursor-grabbing touch-none"
+              onPointerDown={(e) => {
+                dragStateRef.current = {
+                  startX: e.clientX,
+                  startY: e.clientY,
+                  startOffsetX: offsetXRef.current,
+                  startOffsetY: offsetYRef.current,
+                  startRotX: rotOffsetXRef.current,
+                  startRotY: rotOffsetYRef.current,
+                };
+                (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+              }}
+              onPointerMove={(e) => {
+                const ds = dragStateRef.current;
+                if (!ds) return;
+                if (dragModeRef.current === "rotate") {
+                  // Omnidirectional 360° Rotation: horizontal (Yaw) + vertical (Pitch) + diagonal
+                  const deltaYaw = (e.clientX - ds.startX) * 0.012;
+                  const deltaPitch = (e.clientY - ds.startY) * 0.012;
+                  const newRotY = ds.startRotY + deltaYaw;
+                  const newRotX = ds.startRotX + deltaPitch;
+                  rotOffsetYRef.current = newRotY;
+                  rotOffsetXRef.current = newRotX;
+                  setRotOffsetY(newRotY);
+                  setRotOffsetX(newRotX);
+                } else {
+                  // Free 2D position pan across screen in all directions (X, Y)
+                  const deltaX = (e.clientX - ds.startX) * 0.15;
+                  const deltaY = -(e.clientY - ds.startY) * 0.15;
+                  const newX = Number((ds.startOffsetX + deltaX).toFixed(1));
+                  const newY = Number((ds.startOffsetY + deltaY).toFixed(1));
+                  offsetXRef.current = newX;
+                  offsetYRef.current = newY;
+                  setOffsetX(newX);
+                  setOffsetY(newY);
+                }
+              }}
+              onPointerUp={() => { dragStateRef.current = null; }}
+              onPointerLeave={() => { dragStateRef.current = null; }}
+              onPointerCancel={() => { dragStateRef.current = null; }}
+            >
+              <video
+                ref={videoRef}
+                className="w-full h-full object-contain -scale-x-100"
+                autoPlay
+                playsInline
+                muted
+              />
+
+              {isTrackingLive ? (
+                <div className="absolute top-2 left-2 inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[8px] font-mono z-30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                  <span>
+                    {isShirt
+                      ? "AR 3D BODY (60 FPS)"
+                      : isHat
+                        ? "AR 3D HEAD (60 FPS)"
+                        : "AR 3D FACE (60 FPS)"}
+                  </span>
+                </div>
+              ) : (
+                <div className="absolute top-2 left-2 inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[8px] font-mono z-30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                  <span>MEMINDAI AR...</span>
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          ) : (
+            /* Mode 2: Studio 3D Inspection Viewer */
+            <div className="relative w-full h-full flex items-center justify-center bg-gradient-to-b from-slate-900 via-[#0a0f1d] to-black">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.12)_0%,transparent_70%)] pointer-events-none" />
+              <div className="absolute top-2 left-2 inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[8px] font-mono z-30">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                <span>STUDIO 360°</span>
+              </div>
+            </div>
+          )}
 
-        {/* Top-Right Toggle Mode: AR vs Studio View */}
-        <div className="absolute top-4 right-4 z-30 flex items-center bg-slate-900/80 backdrop-blur-md p-1 rounded-2xl border border-white/10 shadow-lg">
-          {!isUploadMode && (
+          {/* Top-Right Toggle Mode: AR vs Studio View */}
+          <div className="absolute top-2 right-2 z-30 flex items-center bg-slate-900/85 backdrop-blur-md p-0.5 rounded-xl border border-white/10 shadow-lg scale-90 origin-top-right">
+            {!isUploadMode && (
+              <button
+                onClick={() => setViewMode("ar")}
+                className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold flex items-center space-x-1 transition-all cursor-pointer ${
+                  viewMode === "ar"
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <Camera className="w-3 h-3" />
+                <span>AR</span>
+              </button>
+            )}
             <button
-              onClick={() => setViewMode("ar")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer ${
-                viewMode === "ar"
-                  ? "bg-blue-600 text-white shadow-md"
+              onClick={() => setViewMode("studio")}
+              className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold flex items-center space-x-1 transition-all cursor-pointer ${
+                viewMode === "studio"
+                  ? "bg-blue-600 text-white shadow-sm"
                   : "text-slate-400 hover:text-white"
               }`}
             >
-              <Camera className="w-3.5 h-3.5" />
-              <span>AR Live</span>
+              <Sparkles className="w-3 h-3" />
+              <span>360°</span>
             </button>
-          )}
-          <button
-            onClick={() => setViewMode("studio")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer ${
-              viewMode === "studio"
-                ? "bg-blue-600 text-white shadow-md"
-                : "text-slate-400 hover:text-white"
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Putar 360°</span>
-          </button>
-        </div>
+          </div>
 
-        {/* Bottom Floating Info Badge */}
-        <div className="absolute bottom-4 left-4 z-20 hidden sm:flex items-center space-x-2.5 px-3.5 py-1.5 rounded-2xl bg-slate-900/85 backdrop-blur-md border border-white/10 text-xs shadow-lg">
-          <Box className="w-3.5 h-3.5 text-blue-400" />
-          <span className="font-semibold text-white">{activeItem.name}</span>
-          <span className="text-emerald-400 text-[11px] font-mono font-bold">
-            [{modelSource}]
-          </span>
+          {/* Bottom Floating Info Badge */}
+          <div className="absolute bottom-2 left-2 z-20 hidden sm:flex items-center space-x-1.5 px-2 py-0.5 rounded-xl bg-slate-900/90 backdrop-blur-md border border-white/10 text-[9px] shadow-lg scale-90 origin-bottom-left">
+            <Box className="w-3 h-3 text-blue-400" />
+            <span className="font-semibold text-white max-w-[120px] truncate">{activeItem.name}</span>
+          </div>
         </div>
       </div>
 

@@ -143,6 +143,88 @@ export const SwitchControls: React.FC<SwitchControlsProps> = ({
           <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
         </button>
       </div>
+
+      {/* 3. Panel Analisis Biometrik & Spektrum Spekulatif (Mengisi Kolom Kanan secara Elegan & Padat) */}
+      <div className="grid grid-cols-3 gap-2 pt-0.5">
+        {/* Metric 1: Undertone */}
+        <div className="bg-[#081322]/85 rounded-xl p-3 border border-white/10 backdrop-blur-md flex flex-col justify-between space-y-1.5 shadow-md">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Undertone</span>
+            <span className="text-[9px] font-mono font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-400/20 px-1 py-0.2 rounded">
+              96%
+            </span>
+          </div>
+          <div>
+            <p className="text-[11px] font-bold text-white truncate">
+              {currentItem.base_colour || 'Harmonis'}
+            </p>
+            <p className="text-[9px] text-slate-400">Spektrum Selaras</p>
+          </div>
+          <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
+            <div className="h-full bg-emerald-500 rounded-full" style={{ width: '96%' }} />
+          </div>
+        </div>
+
+        {/* Metric 2: Geometri Siluet */}
+        <div className="bg-[#081322]/85 rounded-xl p-3 border border-white/10 backdrop-blur-md flex flex-col justify-between space-y-1.5 shadow-md">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Siluet 3D</span>
+            <span className="text-[9px] font-mono font-bold text-sky-400 bg-sky-500/15 border border-sky-400/20 px-1 py-0.2 rounded">
+              94%
+            </span>
+          </div>
+          <div>
+            <p className="text-[11px] font-bold text-white truncate">
+              Proporsional
+            </p>
+            <p className="text-[9px] text-slate-400">Keseimbangan Rasio</p>
+          </div>
+          <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
+            <div className="h-full bg-sky-500 rounded-full" style={{ width: '94%' }} />
+          </div>
+        </div>
+
+        {/* Metric 3: Presisi Acara */}
+        <div className="bg-[#081322]/85 rounded-xl p-3 border border-white/10 backdrop-blur-md flex flex-col justify-between space-y-1.5 shadow-md">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Gaya Acara</span>
+            <span className="text-[9px] font-mono font-bold text-indigo-400 bg-indigo-500/15 border border-indigo-400/20 px-1 py-0.2 rounded">
+              92%
+            </span>
+          </div>
+          <div>
+            <p className="text-[11px] font-bold text-white truncate">
+              Presisi Profil
+            </p>
+            <p className="text-[9px] text-slate-400">Sesuai Rekomendasi</p>
+          </div>
+          <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
+            <div className="h-full bg-indigo-500 rounded-full" style={{ width: '92%' }} />
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Saran Padu-Padan AI Stylist & Panduan Material */}
+      <div className="bg-[#081322]/75 rounded-2xl p-3.5 border border-white/10 backdrop-blur-md space-y-2 shadow-lg">
+        <div className="flex items-center justify-between border-b border-white/5 pb-2">
+          <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-sky-400">
+            Saran Padu-Padan AI Stylist
+          </span>
+          <span className="text-[10px] font-mono text-slate-400">
+            Koleksi Pilihan
+          </span>
+        </div>
+        <p className="text-xs text-slate-300 leading-relaxed">
+          Padukan dengan kemeja warna netral atau kaos polos berkerah untuk menonjolkan aksen {currentItem.base_colour}. Siluet ini dirancang untuk memaksimalkan kontur wajah dan postur natural Anda.
+        </p>
+        <div className="flex items-center justify-between pt-1 text-[10px] font-mono text-slate-400">
+          <span className="flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            Zero Persistent Biometrics (UU PDP No. 27/2022)
+          </span>
+          <span className="text-slate-500">60 FPS Real-Time AR</span>
+        </div>
+      </div>
     </div>
   );
 };
