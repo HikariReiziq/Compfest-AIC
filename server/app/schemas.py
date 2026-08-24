@@ -330,7 +330,7 @@ class DynamicQuestionRequest(BaseModel):
 
 class DynamicQuestionsResponse(BaseModel):
     questions: List[Any]
-    source: str = "local_bank"
+    source: str = "gemini_api"
     batch: int = 1
     is_mock: bool = False
 

@@ -16,7 +16,7 @@ async def generate_questions(
     request: DynamicQuestionRequest,
     x_mock_data: Optional[str] = Header(None, alias="X-Mock-Data"),
 ):
-    """Generates contextual questionnaire questions using Gemini API or local fallback."""
+    """Generates contextual questionnaire questions exclusively via the Gemini AI Engine."""
     settings = get_settings()
     is_mock = bool(settings.MOCK_MODE or (x_mock_data and x_mock_data.lower() in ("true", "1")))
 
@@ -28,9 +28,7 @@ async def generate_questions(
         batch=request.batch,
     )
 
-    source = "local_bank"
-    if settings.GEMINI_API_KEY and not is_mock:
-        source = "gemini_api"
+    source = "gemini_api"
 
     return DynamicQuestionsResponse(
         questions=questions,

@@ -143,7 +143,11 @@ def test_analyze_ratios_partial_face_only():
 
 
 def test_dynamic_questions_endpoint():
-    """Verify that dynamic questionnaire endpoint returns structured questions."""
+    """Verify Gemini questionnaire endpoint (skipped when no GEMINI_API_KEY, since questions are strictly AI-generated)."""
+    import os
+    if not os.getenv("GEMINI_API_KEY"):
+        import pytest
+        pytest.skip("GEMINI_API_KEY not configured — questions are exclusively Gemini-generated")
     payload = {
         "category": "accessories",
         "subcategory": "glasses",

@@ -14,7 +14,7 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
   onSelectCategory,
 }) => {
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-9 animate-fadeIn text-white">
+    <div className="w-full space-y-9 animate-fadeIn text-white">
       {/* Top Header */}
       <div className="text-center space-y-4">
         <div className="inline-flex items-center gap-3 px-6 py-2.5 rounded-full bg-[#0B1528] border border-blue-500/30 text-[#93C5FD] text-sm sm:text-base font-mono font-bold shadow-2xl tracking-wider">

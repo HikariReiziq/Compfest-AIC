@@ -59,6 +59,17 @@ export const ProcessingLoadingScreen: React.FC<ProcessingLoadingScreenProps> = (
           </span>
         ))}
       </div>
+
+      {/* Konteks proses agar pengguna tahu apa yang terjadi */}
+      <div className="relative z-10 flex flex-col items-center gap-4 px-6 text-center">
+        <p className="text-sm sm:text-base text-[#94A3B8] max-w-md leading-relaxed">
+          AI Stylist COBA sedang mencocokkan jawaban kuesioner Anda dengan analisis biometrik
+          untuk menyusun rekomendasi Top-4.
+        </p>
+        <div className="w-64 sm:w-80 h-1.5 rounded-full bg-white/10 overflow-hidden">
+          <div className="animate-loading-slide h-full w-1/3 rounded-full bg-gradient-to-r from-blue-600 via-sky-400 to-blue-600" />
+        </div>
+      </div>
     </div>
   );
 };

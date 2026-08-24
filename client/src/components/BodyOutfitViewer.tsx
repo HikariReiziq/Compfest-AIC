@@ -762,20 +762,7 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
 
           <div className="flex items-center space-x-2">
             <span className="text-[#94A3B8] font-semibold">Kedalaman:</span>
-            <button
-              onClick={() => setOffsetZ((prev) => prev - 2)}
-              className="px-3 py-1 rounded-full bg-[#071120] hover:bg-blue-600 text-white border border-blue-500/30 font-semibold text-xs transition-colors"
-              title="Maju ke Depan"
-            >
-              + Maju
-            </button>
-            <button
-              onClick={() => setOffsetZ((prev) => prev + 2)}
-              className="px-3 py-1 rounded-full bg-[#071120] hover:bg-blue-600 text-white border border-blue-500/30 font-semibold text-xs transition-colors"
-              title="Mundur ke Belakang"
-            >
-              - Mundur
-            </button>
+            <span className="text-[11px] text-[#64748B] font-mono">Otomatis (AI Pose)</span>
           </div>
 
           <button

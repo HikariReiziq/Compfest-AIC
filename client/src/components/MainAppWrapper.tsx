@@ -14,7 +14,7 @@ import { ProductDetailModal } from './ProductDetailModal';
 import UniversalLoading3D from './UniversalLoading3D';
 import { UserPersonalProfile, RecommendationItem, MOCK_PRESETS } from '../lib/mockData';
 import { fetchTop4Recommendations } from '../lib/api';
-import { RotateCcw, Camera, Undo2, ArrowLeft } from 'lucide-react';
+import { RotateCcw, Camera, Undo2, ArrowLeft, AlertCircle } from 'lucide-react';
 
 interface MainAppWrapperProps {
   fontClass: string;
@@ -47,6 +47,10 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
   // Recommendation Output
   const [isLoadingRecommendations, setIsLoadingRecommendations] = useState<boolean>(false);
   const [recommendations, setRecommendations] = useState<RecommendationItem[]>([]);
+  const [recommendationError, setRecommendationError] = useState<string | null>(null);
+
+  // Quiz initial Gemini loading — navbar must stay hidden behind the fullscreen loader
+  const [isQuizLoading, setIsQuizLoading] = useState<boolean>(false);
   const [currentRecIndex, setCurrentRecIndex] = useState<number>(0);
 
   // Modal State
@@ -115,6 +119,7 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
 
     // Fetch recommendations in background while cinematic telemetry displays
     setIsLoadingRecommendations(true);
+    setRecommendationError(null);
     try {
       const activeProfile = userProfile || {
         face_shape: { shape: 'Oval', confidence: 0.95 },
@@ -133,8 +138,9 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
         setRecommendations(items);
         setCurrentRecIndex(0);
       }
-    } catch (err) {
-      console.warn('Recommendation fetch fallback active:', err);
+    } catch (err: any) {
+      console.warn('Recommendation fetch failed:', err);
+      setRecommendationError(err?.message || 'Rekomendasi API tidak dapat dihubungi.');
     } finally {
       setIsLoadingRecommendations(false);
     }
@@ -224,7 +230,7 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
       </div>
 
       {/* Navigation Header */}
-      {currentStep !== 'PROCESSING' && (
+      {currentStep !== 'PROCESSING' && !(currentStep === 'QUIZ' && isQuizLoading) && (
         <HeaderNavbar
           currentStep={currentStep}
           onReset={handleResetFlow}
@@ -247,7 +253,7 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
       )}
 
       {/* Main Container */}
-      <div className="relative z-10 max-w-[1560px] mx-auto w-full px-6 sm:px-10 lg:px-14 pt-28 pb-10 flex-1 flex flex-col justify-center">
+      <div className="relative z-10 w-full px-6 sm:px-10 lg:px-14 pt-28 pb-10 flex-1 flex flex-col justify-center">
         {/* STEP 1: CATEGORY SELECTION */}
         {currentStep === 'CATEGORY' && (
           <CategorySelector onSelectCategory={handleCategorySelected} />
@@ -271,6 +277,7 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
             onSubmitQuiz={handleQuizSubmit}
             onBack={() => setCurrentStep('SCAN')}
             isLoading={isLoadingRecommendations}
+            onLoadingChange={setIsQuizLoading}
           />
         )}
 
@@ -286,8 +293,45 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
         )}
 
         {/* STEP 4: VIRTUAL TRY-ON & SWITCH NAVIGATION STUDIO */}
+        {currentStep === 'TRYON' && !activeItem && (
+          <div className="w-full max-w-xl mx-auto text-center space-y-6 py-16 animate-fadeIn">
+            <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-mono">
+              <AlertCircle className="w-4 h-4" />
+              <span>REKOMENDASI BELUM TERSEDIA</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-white">Rekomendasi belum berhasil dimuat</h2>
+            <p className="text-sm sm:text-base text-[#94A3B8] leading-relaxed">
+              AI Stylist belum menerima Top-4 rekomendasi untuk sesi ini. Silakan ulangi kuesioner atau pindai ulang.
+            </p>
+            <div className="flex items-center justify-center gap-3 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setCurrentStep('QUIZ')}
+                className="px-6 py-3 rounded-full bg-gradient-to-r from-blue-600 to-sky-500 text-white font-semibold text-sm shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer"
+              >
+                Ulangi Kuesioner
+              </button>
+              <button
+                type="button"
+                onClick={handleResetFlow}
+                className="px-6 py-3 rounded-full bg-slate-800 border border-white/10 text-slate-300 font-semibold text-sm hover:text-white transition-all cursor-pointer"
+              >
+                Mulai Ulang
+              </button>
+            </div>
+          </div>
+        )}
+
         {currentStep === 'TRYON' && activeItem && (
-          <div className="w-full max-w-[1560px] mx-auto space-y-7 animate-fadeIn">
+          <div className="w-full space-y-7 animate-fadeIn">
+            {recommendationError && (
+              <div className="p-4 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-sm flex items-center gap-2.5">
+                <AlertCircle className="w-5 h-5 shrink-0" />
+                <span>
+                  Rekomendasi gagal dimuat dari server: <span className="font-mono text-xs">{recommendationError}</span> — kembali ke kuesioner dan coba lagi.
+                </span>
+              </div>
+            )}
             {/* Header: All aligned in 1 single clean row */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-blue-500/20 pb-4">
               <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
@@ -295,19 +339,19 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
                   <span>TAHAP 4: VALIDASI VISUAL TRY-ON</span>
                 </div>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white tracking-tight">
-                  Studio Try-On &amp; Rekomendasi Top-4 ({selectedSubcategory.toUpperCase()})
+                  Studio Try-On Top-4
                 </h2>
               </div>
 
-              <div className="flex items-center gap-3 flex-wrap shrink-0">
+              <div className="flex items-center gap-2.5 flex-wrap shrink-0">
                 <button
                   type="button"
                   onClick={() => setCurrentStep('QUIZ')}
-                  className="px-6 py-2.5 rounded-full text-xs sm:text-sm font-semibold text-[#93C5FD] bg-[#08101E] hover:bg-blue-600 hover:text-white border border-blue-500/30 flex items-center gap-2 transition-all cursor-pointer shadow-md hover:scale-105 active:scale-95"
+                  className="px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold text-[#93C5FD] bg-[#08101E] hover:bg-blue-600 hover:text-white border border-blue-500/30 flex items-center gap-2 transition-all cursor-pointer shadow-md hover:scale-105 active:scale-95"
                   title="Kembali ke Kuesioner"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  <span>Ubah Kuesioner</span>
+                  <span className="hidden sm:inline">Ubah Kuesioner</span>
                 </button>
 
                 <button
@@ -319,10 +363,10 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
                     }
                     setCurrentStep('SCAN');
                   }}
-                  className="px-6 py-2.5 rounded-full text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 border border-blue-400/30 flex items-center gap-2 transition-all cursor-pointer hover:scale-105 active:scale-95"
+                  className="px-5 py-2.5 rounded-full text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 border border-blue-400/30 flex items-center gap-2 transition-all cursor-pointer hover:scale-105 active:scale-95"
                 >
                   <Camera className="w-4 h-4" />
-                  <span>Scan Ulang {selectedDomain === 'apparel' ? 'Tubuh' : 'Wajah'}</span>
+                  <span>Scan Ulang</span>
                 </button>
 
                 <button
@@ -334,10 +378,11 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
                     }
                     setCurrentStep('CATEGORY');
                   }}
-                  className="px-6 py-2.5 rounded-full text-xs sm:text-sm font-semibold text-[#93C5FD] bg-[#08101E] hover:bg-blue-600 hover:text-white border border-blue-500/30 flex items-center gap-2 transition-all cursor-pointer hover:scale-105 active:scale-95"
+                  className="px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold text-[#93C5FD] bg-[#08101E] hover:bg-blue-600 hover:text-white border border-blue-500/30 flex items-center gap-2 transition-all cursor-pointer hover:scale-105 active:scale-95"
+                  title="Ganti Kategori"
                 >
                   <Undo2 className="w-4 h-4" />
-                  <span>Ganti Kategori</span>
+                  <span className="hidden sm:inline">Ganti Kategori</span>
                 </button>
               </div>
             </div>

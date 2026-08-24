@@ -10,6 +10,7 @@ import {
   ArrowRight,
   AlertTriangle,
   XCircle,
+  VideoOff,
   Eye,
   Check,
   ImagePlus,
@@ -1082,7 +1083,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
   const subcatLabel = subcategory === "hats" ? "Topi (Hats)" : subcategory === "shirts" ? "Pakaian (Shirts)" : "Kacamata (Glasses)";
 
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-8 animate-fadeIn text-white">
+    <div className="w-full space-y-8 animate-fadeIn text-white">
       <div className="text-center space-y-3">
         {onBack && (
           <button
@@ -1142,10 +1143,23 @@ export const CameraScan: React.FC<CameraScanProps> = ({
         {/* Scanner Viewport — Kamera Live / Upload Foto */}
         <div className="lg:col-span-7 space-y-4">
           <div
-            className={`relative bg-[#0B1528]/90 rounded-3xl overflow-hidden border border-blue-500/20 shadow-2xl flex items-center justify-center backdrop-blur-xl ${
-              mode === "upload" ? "aspect-auto min-h-[480px] p-6" : "aspect-[4/3] min-h-[480px]"
-            }`}
+            className={
+              mode === "upload"
+                ? "relative bg-black rounded-3xl overflow-hidden border-2 border-slate-400/60 shadow-[0_0_0_1px_rgba(255,255,255,0.15),0_20px_60px_rgba(0,0,0,0.6)] flex items-center justify-center aspect-auto min-h-[480px] p-6"
+                : "relative w-full max-w-[720px] mx-auto"
+            }
+            style={mode === "upload" ? undefined : { aspectRatio: "553 / 404" }}
           >
+            {mode === "upload" ? null : (
+              /* Bingkai kamera ilustrasi — hanya untuk langkah 2 mode kamera live */
+              <img
+                src="/images/camera-frame.png"
+                alt=""
+                aria-hidden
+                draggable={false}
+                className="absolute inset-0 w-full h-full object-contain pointer-events-none z-20 select-none drop-shadow-[0_25px_45px_rgba(0,0,0,0.55)]"
+              />
+            )}
             {mode === "upload" ? (
               /* ---------- Mode Upload Foto ---------- */
               <div className="w-full max-w-xl mx-auto space-y-4">
@@ -1234,32 +1248,52 @@ export const CameraScan: React.FC<CameraScanProps> = ({
               </div>
             ) : (
               <>
+              {/* Layar LCD kamera — video diperkecil agar pas di tengah layar bingkai */}
+              <div
+                className="absolute z-10 overflow-hidden rounded-[8px] bg-black shadow-[inset_0_0_25px_rgba(0,0,0,0.9)]"
+                style={{ left: "26%", top: "41%", width: "40.5%", height: "40%" }}
+              >
+              <div className="relative w-full h-full bg-black flex items-center justify-center">
             {hasCamera ? (
+              <>
               <video
                 ref={videoRef}
                 autoPlay
                 playsInline
                 muted
                 className="w-full h-full object-cover transform -scale-x-100"
+                style={{ filter: "brightness(1.35) contrast(1.05)" }}
               />
+              {/* Lampu sorot lembut dari kanan-atas agar wajah tidak gelap */}
+              <div
+                aria-hidden
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background:
+                    "radial-gradient(ellipse 65% 55% at 78% 18%, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.07) 38%, rgba(255,255,255,0) 68%)",
+                }}
+              />
+              </>
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-[#071120]">
+              <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-[#0E1A2E] via-[#0B1528] to-[#060B14]">
                 {cameraError ? (
-                  <div className="max-w-sm space-y-4 flex flex-col items-center z-20">
-                    <div className="w-16 h-16 rounded-full bg-rose-600/20 border border-rose-500/30 flex items-center justify-center mb-1">
-                      <XCircle className="w-8 h-8 text-rose-400" />
+                  <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-[#0B1528]/80 backdrop-blur-xl p-8 space-y-5 flex flex-col items-center z-20 shadow-2xl">
+                    <div className="w-14 h-14 rounded-2xl bg-rose-500/15 border border-rose-400/25 flex items-center justify-center">
+                      <VideoOff className="w-7 h-7 text-rose-300" />
                     </div>
-                    <p className="text-base font-semibold text-rose-300">Kamera Tidak Tersedia</p>
-                    <p className="text-xs text-[#94A3B8] leading-relaxed">{cameraError}</p>
+                    <div className="space-y-1.5">
+                      <p className="text-lg font-bold text-white">Kamera tidak dapat diakses</p>
+                      <p className="text-xs text-[#94A3B8] leading-relaxed">{cameraError}</p>
+                    </div>
 
-                    <div className="flex flex-col gap-2.5 w-full pt-2">
+                    <div className="flex flex-col gap-2.5 w-full pt-1">
                       <button
                         onClick={retryCamera}
                         type="button"
-                        className="px-5 py-3 rounded-full text-xs font-semibold text-white bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 border border-blue-400/30 flex items-center justify-center gap-2 transition-all cursor-pointer"
+                        className="w-full px-5 py-3 rounded-2xl text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 flex items-center justify-center gap-2 transition-all cursor-pointer hover:scale-[1.02] active:scale-95 shadow-lg"
                       >
                         <RefreshCw className="w-4 h-4" />
-                        <span>Coba Hubungkan Ulang Kamera</span>
+                        <span>Coba Lagi</span>
                       </button>
 
                       <button
@@ -1268,31 +1302,33 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                           setScannedProfile(defaultProfile);
                         }}
                         type="button"
-                        className="px-5 py-2.5 rounded-full text-xs font-medium text-[#93C5FD] bg-[#071120] hover:bg-blue-600/20 border border-blue-500/30 flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                        className="w-full px-5 py-3 rounded-2xl text-sm font-medium text-[#93C5FD] bg-transparent hover:bg-white/5 border border-white/15 hover:border-blue-400/40 flex items-center justify-center gap-2 transition-all cursor-pointer"
                       >
                         <UserCheck className="w-4 h-4 text-[#38BDF8]" />
-                        <span>Gunakan Simulasi Wajah Indonesia</span>
+                        <span>Lanjut dengan Simulasi</span>
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div className="max-w-sm space-y-4 flex flex-col items-center z-20">
-                    <div className="w-16 h-16 rounded-full bg-[#071120] border border-blue-500/20 flex items-center justify-center mb-1">
-                      <Camera className="w-8 h-8 text-[#38BDF8]" />
+                  <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-[#0B1528]/80 backdrop-blur-xl p-8 space-y-5 flex flex-col items-center z-20 shadow-2xl">
+                    <div className="w-14 h-14 rounded-2xl bg-blue-500/15 border border-blue-400/25 flex items-center justify-center">
+                      <Camera className="w-7 h-7 text-[#38BDF8]" />
                     </div>
-                    <p className="text-base font-semibold text-white">Mode Simulasi Kamera Aktif</p>
-                    <p className="text-xs text-[#94A3B8] mt-1 max-w-xs leading-relaxed">
-                      Kamera fisik tidak terdeteksi. Sistem akan menggunakan data sensor presisi tinggi untuk evaluasi.
-                    </p>
+                    <div className="space-y-1.5">
+                      <p className="text-lg font-bold text-white">Mode Simulasi Aktif</p>
+                      <p className="text-xs text-[#94A3B8] leading-relaxed">
+                        Kamera fisik tidak terdeteksi. Sistem akan menggunakan data sensor presisi tinggi untuk evaluasi.
+                      </p>
+                    </div>
                     <button
                       onClick={() => {
                         const defaultProfile = MOCK_PRESETS.indonesian_warm_sawo_matang.profile;
                         setScannedProfile(defaultProfile);
                       }}
                       type="button"
-                      className="px-5 py-2.5 rounded-full text-xs font-medium text-[#93C5FD] bg-[#071120] hover:bg-blue-600/20 border border-blue-500/30 flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                      className="w-full px-5 py-3 rounded-2xl text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 flex items-center justify-center gap-2 transition-all cursor-pointer hover:scale-[1.02] active:scale-95 shadow-lg"
                     >
-                      <UserCheck className="w-4 h-4 text-[#38BDF8]" />
+                      <UserCheck className="w-4 h-4" />
                       <span>Lanjutkan dengan Profil Simulasi</span>
                     </button>
                   </div>
@@ -1312,30 +1348,30 @@ export const CameraScan: React.FC<CameraScanProps> = ({
               {/* Center Target Guide */}
               {subcategory === "shirts" ? (
                 <div
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[45%] w-64 h-80 rounded-3xl flex flex-col items-center justify-center transition-all duration-300 relative"
-                  style={{
-                    border: `3px ${faceGuideState === "ALIGNED" ? "solid" : "dashed"} ${guideStyle.border}`,
-                  }}
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[45%] h-[88%] aspect-[4/5] flex flex-col items-center justify-center transition-all duration-300 relative"
                 >
-                  {/* Visual Shoulder & Torso Lines */}
-                  <div className="absolute top-8 left-4 right-4 h-0.5 border-t border-dashed border-sky-400/40 flex justify-between text-[9px] font-mono text-[#93C5FD] px-2">
-                    <span>GARIS BAHU</span>
-                    <span>SHOULDER LINE</span>
-                  </div>
-                  <div className="absolute top-28 left-8 right-8 h-0.5 border-t border-dashed border-sky-400/40 flex justify-between text-[9px] font-mono text-[#93C5FD] px-2">
-                    <span>DADA / CHEST</span>
-                    <span>TORSO FIT</span>
-                  </div>
+                  {/* Soft guide zone — corner brackets (area pemandu, non-dashed) */}
+                  <div
+                    aria-hidden
+                    className="absolute inset-0 rounded-3xl pointer-events-none transition-all duration-300"
+                    style={{ background: `linear-gradient(${guideStyle.border}0D, ${guideStyle.border}0D)` }}
+                  />
+                  <div aria-hidden className="absolute top-0 left-0 w-10 h-10 border-t-2 border-l-2 rounded-tl-2xl pointer-events-none transition-all duration-300" style={{ borderColor: `${guideStyle.border}AA` }} />
+                  <div aria-hidden className="absolute top-0 right-0 w-10 h-10 border-t-2 border-r-2 rounded-tr-2xl pointer-events-none transition-all duration-300" style={{ borderColor: `${guideStyle.border}AA` }} />
+                  <div aria-hidden className="absolute bottom-0 left-0 w-10 h-10 border-b-2 border-l-2 rounded-bl-2xl pointer-events-none transition-all duration-300" style={{ borderColor: `${guideStyle.border}AA` }} />
+                  <div aria-hidden className="absolute bottom-0 right-0 w-10 h-10 border-b-2 border-r-2 rounded-br-2xl pointer-events-none transition-all duration-300" style={{ borderColor: `${guideStyle.border}AA` }} />
 
                   {/* Countdown badge */}
                   {countdown !== null && (
-                    <div className="w-20 h-20 rounded-full bg-[#0B1528]/95 border-2 border-[#38BDF8] flex flex-col items-center justify-center animate-pulse backdrop-blur-md z-10">
-                      <span className="text-4xl font-black text-white font-mono">{countdown}</span>
+                    <div className="w-14 h-14 rounded-full bg-[#0B1528]/95 border-2 border-[#38BDF8] flex flex-col items-center justify-center animate-pulse backdrop-blur-md z-10">
+                      <span className="text-2xl font-black text-white font-mono">{countdown}</span>
                       <span className="text-[9px] font-mono text-[#FACC15] uppercase tracking-wider">Memindai</span>
                     </div>
                   )}
                   {countdown === null && faceGuideState === "NO_FACE" && (
-                    <div className="w-3 h-3 rounded-full bg-rose-500 animate-ping z-10" />
+                    <div className="px-3.5 py-1.5 rounded-full bg-[#0B1528]/90 border border-rose-400/50 backdrop-blur-md z-10">
+                      <span className="text-xs font-mono text-rose-200 font-semibold">Wajah belum terdeteksi</span>
+                    </div>
                   )}
                   {countdown === null && faceGuideState === "MISALIGNED" && (
                     <div className="px-3.5 py-1.5 rounded-full bg-[#0B1528]/90 border border-yellow-400/50 backdrop-blur-md flex items-center gap-2 z-10">
@@ -1352,20 +1388,30 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                 </div>
               ) : (
                 <div
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[52%] w-52 h-64 rounded-[50%] flex items-center justify-center transition-all duration-300"
-                  style={{
-                    border: `3px ${faceGuideState === "ALIGNED" ? "solid" : "dashed"} ${guideStyle.border}`,
-                  }}
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[52%] h-[92%] aspect-[13/16] rounded-[50%] flex items-center justify-center transition-all duration-300 relative"
                 >
+                  {/* Soft glowing oval guide zone (area pemandu, non-dashed) */}
+                  <div
+                    aria-hidden
+                    className="absolute inset-0 rounded-[50%] pointer-events-none transition-all duration-300"
+                    style={{
+                      background: `radial-gradient(ellipse at center, ${guideStyle.border}1A 0%, ${guideStyle.border}0A 60%, transparent 80%)`,
+                      boxShadow: `inset 0 0 50px ${guideStyle.border}26`,
+                      border: `1.5px solid ${guideStyle.border}73`,
+                    }}
+                  />
+
                   {/* Countdown badge */}
                   {countdown !== null && (
-                    <div className="w-20 h-20 rounded-full bg-[#0B1528]/95 border-2 border-[#38BDF8] flex flex-col items-center justify-center animate-pulse backdrop-blur-md">
-                      <span className="text-4xl font-black text-white font-mono">{countdown}</span>
+                    <div className="w-14 h-14 rounded-full bg-[#0B1528]/95 border-2 border-[#38BDF8] flex flex-col items-center justify-center animate-pulse backdrop-blur-md">
+                      <span className="text-2xl font-black text-white font-mono">{countdown}</span>
                       <span className="text-[9px] font-mono text-[#FACC15] uppercase tracking-wider">Memindai</span>
                     </div>
                   )}
                   {countdown === null && faceGuideState === "NO_FACE" && (
-                    <div className="w-3 h-3 rounded-full bg-rose-500 animate-ping" />
+                    <div className="px-3.5 py-1.5 rounded-full bg-[#0B1528]/90 border border-rose-400/50 backdrop-blur-md">
+                      <span className="text-xs font-mono text-rose-200 font-semibold">Wajah belum terdeteksi</span>
+                    </div>
                   )}
                   {countdown === null && faceGuideState === "MISALIGNED" && (
                     <div className="px-3.5 py-1.5 rounded-full bg-[#0B1528]/90 border border-yellow-400/50 backdrop-blur-md flex items-center gap-2">
@@ -1385,7 +1431,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
               {/* Face guide status message pill */}
               {hasCamera && !scannedProfile && !isScanning && (
                 <div
-                  className="absolute bottom-5 left-1/2 -translate-x-1/2 px-5 py-2 rounded-full bg-[#0B1528]/95 backdrop-blur-md border text-xs font-medium text-center transition-all duration-300 whitespace-nowrap shadow-xl"
+                  className="absolute bottom-2 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full bg-[#0B1528]/95 backdrop-blur-md border text-[10px] font-medium text-center transition-all duration-300 max-w-[94%] leading-snug shadow-xl"
                   style={{
                     borderColor: guideStyle.border + "80",
                     color: guideStyle.text,
@@ -1403,8 +1449,8 @@ export const CameraScan: React.FC<CameraScanProps> = ({
 
             {/* Scan Progress Bar */}
             {isScanning && (
-              <div className="absolute bottom-4 left-6 right-6 bg-[#0B1528]/95 backdrop-blur-md rounded-2xl p-4 border border-blue-500/20">
-                <div className="flex justify-between text-xs font-mono text-[#93C5FD] mb-2">
+              <div className="absolute bottom-2 left-2 right-2 bg-[#0B1528]/95 backdrop-blur-md rounded-xl p-2 border border-blue-500/20">
+                <div className="flex justify-between text-[9px] font-mono text-[#93C5FD] mb-1.5">
                   <span>{subcategory === "shirts" ? "Mengekstraksi Siluet Tubuh & Postur..." : "Mengekstraksi Ciri Visual..."}</span>
                   <span className="text-[#FACC15] font-bold">{scanProgress}%</span>
                 </div>
@@ -1416,6 +1462,8 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                 </div>
               </div>
             )}
+              </div>
+              </div>
               </>
             )}
           </div>

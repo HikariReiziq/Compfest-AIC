@@ -6,7 +6,6 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import {
   Sparkles,
   Move3d,
-  Zap,
   Box,
   RotateCcw,
   Sliders,
@@ -14,10 +13,7 @@ import {
 } from "lucide-react";
 import { RecommendationItem } from "../lib/mockData";
 
-/** Lebar topi setelah normalisasi, kira-kira selebar kepala di ruang scene. */
-const HAT_TARGET_WIDTH = 1.35;
-/** Lebar baju setelah normalisasi di ruang scene. */
-const SHIRT_TARGET_WIDTH = 1.45;
+/** Semua GLB dinormalisasi berbasis lebar (X) ke 1.0 unit scene agar ukuran konsisten. */
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                             */
@@ -55,6 +51,9 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   const [modelSource, setModelSource] = useState<string>("Memuat 3D Model...");
   const [offsetY, setOffsetY] = useState<number>(0);
   const [offsetZ, setOffsetZ] = useState<number>(0);
+  // Manual yaw rotation (radians) so the user can rotate the model themselves in camera AR mode
+  const [rotOffset, setRotOffset] = useState<number>(0);
+  const dragStateRef = useRef<{ startX: number; startRot: number } | null>(null);
   const [scaleMultiplier, setScaleMultiplier] = useState<number>(100);
 
   const isUploadMode = inputMode === "upload";
@@ -243,12 +242,19 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     renderer.domElement.style.pointerEvents = "none";
 
     // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 2.4);
     scene.add(ambientLight);
 
     const dirLight = new THREE.DirectionalLight(0xffffff, 2.8);
     dirLight.position.set(3, 4, 5);
     scene.add(dirLight);
+
+    // Key spotlight from the TOP-RIGHT (studio lampu sorot) for a bright, gallery-like look
+    const spotLight = new THREE.SpotLight(0xffffff, 4.0, 30, Math.PI / 5, 0.45, 1.1);
+    spotLight.position.set(6, 7, 4);
+    spotLight.target.position.set(0, 0, 0);
+    scene.add(spotLight);
+    scene.add(spotLight.target);
 
     const rimLight = new THREE.DirectionalLight(0x60a5fa, 1.8);
     rimLight.position.set(-3, -2, 2);
@@ -421,10 +427,11 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           const sizeAfter = boxAfter.getSize(new THREE.Vector3());
 
           if (isShirt) {
-            // Shirts: Center X and Z, align collar top to origin Y = 0
+            // Shirts: fully centered (X, Y, Z) like glasses & hats — AR anchor applies
+            // the torso drop below the neck line instead of a model-space pivot.
             model.position.x -= center.x;
+            model.position.y -= center.y;
             model.position.z -= center.z;
-            model.position.y -= boxAfter.max.y;
           } else if (isHat) {
             // Hats: Center X and Z, align base to origin Y = 0
             model.position.x -= center.x;
@@ -437,10 +444,10 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
             model.position.z -= boxAfter.max.z;
           }
 
-          // Normalize model dimensions to category standard units
-          const maxHoriz = Math.max(sizeAfter.x, sizeAfter.z) > 0 ? Math.max(sizeAfter.x, sizeAfter.z) : 1.0;
+          // Normalize model dimensions: uniform width-based scaling across ALL GLBs
+          // so every product of the same category renders at the same relative size.
           const targetWidth = sizeAfter.x > 0 ? sizeAfter.x : 1.0;
-          const baseNormScale = isHat ? (1.0 / maxHoriz) : isShirt ? (1.0 / targetWidth) : (1.0 / targetWidth);
+          const baseNormScale = 1.0 / targetWidth;
           const customScaleFactor = modelConfig?.scale_factor || 1.0;
           const normalizeScale = baseNormScale * customScaleFactor;
           wrapper.scale.setScalar(normalizeScale);
@@ -474,22 +481,6 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           });
 
           group.add(wrapper);
-
-          // Create Invisible AR Depth Occluder for hats
-          if (isHat) {
-            // Head Occluder: Writes to Z-depth buffer so the back brim & interior of the hat
-            // is culled behind the user's real head and hair, creating true 3D head immersion!
-            const headGeom = new THREE.SphereGeometry(0.48, 32, 24);
-            headGeom.scale(1.0, 1.35, 1.15);
-            headGeom.translate(0, -0.25, -0.08);
-            const occluderMat = new THREE.MeshBasicMaterial({
-              colorWrite: false,
-              depthWrite: true,
-            });
-            const occluderMesh = new THREE.Mesh(headGeom, occluderMat);
-            occluderMesh.renderOrder = -1;
-            group.add(occluderMesh);
-          }
 
           setModelSource(`3D GLB (${filename})`);
         },
@@ -596,7 +587,9 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
         // Natural slight forward pitch (+0.04 rad ~ 2.5 deg) so the hat faces the camera straight on and crown is visible
         safePitch = 0.04 + THREE.MathUtils.clamp(-vertDepth * 0.4, -0.2, 0.2);
       } else {
-        safePitch = THREE.MathUtils.clamp(vertDepth, -0.45, 0.45);
+        // Glasses: temples must extend straight BACKWARD (natural over-the-ear line).
+        // Lock pitch to near-zero so the frame never tilts and the temples stay level.
+        safePitch = THREE.MathUtils.clamp(vertDepth * 0.12, -0.04, 0.06);
       }
     } else if (isHat) {
       safePitch = 0.04;
@@ -612,7 +605,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     group.position.z = THREE.MathUtils.lerp(group.position.z, worldZ, 0.45);
 
     group.rotation.z = THREE.MathUtils.lerp(group.rotation.z, safeRoll, 0.45);
-    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw, 0.45);
+    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw + rotOffset, 0.45);
     group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, safePitch, 0.45);
 
     group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.45);
@@ -679,8 +672,6 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const halfW = halfH * (cw / ch);
 
     const worldX = ndcX * halfW;
-    // Align neckline with collar base right at base of neck
-    const worldY = ndcY * halfH + 0.04 + offsetY * 0.012;
     const midShoulderZ = ((leftShoulder.z || 0) + (rightShoulder.z || 0)) / 2;
     const worldZ = midShoulderZ * -2.0 - 0.02 + offsetZ * 0.015;
 
@@ -704,12 +695,16 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const baseScale = worldShoulderSpan * 1.30;
     const finalScale = baseScale * (scaleMultiplier / 100);
 
+    // Shirt model is now fully centered (like glasses & hats): drop its center
+    // to mid-torso, half a shirt-height below the shoulder/neck anchor line.
+    const worldY = ndcY * halfH - 0.55 * finalScale + offsetY * 0.012;
+
     group.position.x = THREE.MathUtils.lerp(group.position.x, worldX, 0.45);
     group.position.y = THREE.MathUtils.lerp(group.position.y, worldY, 0.45);
     group.position.z = THREE.MathUtils.lerp(group.position.z, worldZ, 0.45);
 
     group.rotation.z = THREE.MathUtils.lerp(group.rotation.z, safeRoll, 0.45);
-    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw, 0.45);
+    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw + rotOffset, 0.45);
     group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, safePitch, 0.45);
 
     group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.45);
@@ -802,7 +797,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     group.position.z = THREE.MathUtils.lerp(group.position.z, worldZ, 0.45);
 
     group.rotation.z = THREE.MathUtils.lerp(group.rotation.z, safeRoll, 0.45);
-    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw, 0.45);
+    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw + rotOffset, 0.45);
     group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, safePitch, 0.45);
 
     group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.45);
@@ -811,13 +806,27 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   return (
     <div className="w-full h-full flex flex-col space-y-4">
       {/* 3D AR & Studio Viewport */}
-      <div className="relative w-full h-[520px] sm:h-[580px] rounded-3xl overflow-hidden bg-slate-950 border border-white/10 shadow-2xl flex items-center justify-center">
+      <div className="relative w-full h-[520px] sm:h-[580px] rounded-3xl overflow-hidden bg-slate-950 border-2 border-slate-400/60 shadow-[0_0_0_1px_rgba(255,255,255,0.15),0_20px_60px_rgba(0,0,0,0.6)] flex items-center justify-center">
         {/* 3D WebGL Canvas Layer Overlay */}
         <div ref={containerRef} className="absolute inset-0 w-full h-full z-10 pointer-events-none" />
 
         {/* Mode 1: Live Video AR Feed */}
         {viewMode === "ar" ? (
-          <div className="relative w-full h-full flex items-center justify-center bg-black overflow-hidden select-none">
+          <div
+            className="relative w-full h-full flex items-center justify-center bg-black overflow-hidden select-none cursor-grab active:cursor-grabbing touch-none"
+            onPointerDown={(e) => {
+              dragStateRef.current = { startX: e.clientX, startRot: rotOffset };
+              (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+            }}
+            onPointerMove={(e) => {
+              const ds = dragStateRef.current;
+              if (!ds) return;
+              setRotOffset(ds.startRot + (e.clientX - ds.startX) * 0.01);
+            }}
+            onPointerUp={() => { dragStateRef.current = null; }}
+            onPointerLeave={() => { dragStateRef.current = null; }}
+            onPointerCancel={() => { dragStateRef.current = null; }}
+          >
             <video
               ref={videoRef}
               className="w-full h-full object-contain -scale-x-100"
@@ -851,7 +860,6 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
         ) : (
           /* Mode 2: 3D Studio 360 Turntable */
           <div className="relative w-full h-full flex items-center justify-center bg-gradient-to-b from-surface-200/50 via-surface-100/40 to-slate-950">
-            <div className="absolute bottom-6 w-72 h-72 rounded-full bg-indigo-500/10 border border-indigo-500/20 blur-sm pointer-events-none" />
             <div className="absolute top-4 left-4 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10px] font-mono z-20">
               <Sparkles className="w-3 h-3 text-indigo-400" />
               <span>STUDIO 3D INSPECTION 360°</span>
@@ -876,9 +884,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
             >
               {isUploadMode ? (
                 <Lock className="w-3.5 h-3.5 text-slate-400" />
-              ) : (
-                <Zap className="w-3.5 h-3.5 text-amber-300" />
-              )}
+              ) : null}
               <span>
                 {isShirt
                   ? "Pasang ke Badan (AR 3D)"
@@ -951,23 +957,12 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
             </button>
           </div>
 
-          {/* Maju / Mundur */}
+          {/* Rotasi Manual — geser langsung di layar AR */}
           <div className="flex items-center space-x-1.5 bg-slate-900/60 p-1 rounded-2xl border border-white/5">
-            <span className="text-[11px] text-slate-400 px-1.5 font-medium">Maju/Mundur:</span>
-            <button
-              onClick={() => setOffsetZ((prev) => prev + 1)}
-              className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-white/10 font-bold text-xs transition-all cursor-pointer"
-              title="Geser Maju (Keluar ke Depan)"
-            >
-              ▲ Maju
-            </button>
-            <button
-              onClick={() => setOffsetZ((prev) => prev - 1)}
-              className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-white/10 font-bold text-xs transition-all cursor-pointer"
-              title="Geser Mundur (Masuk ke Dalam)"
-            >
-              ▼ Mundur
-            </button>
+            <span className="text-[11px] text-slate-400 px-1.5 font-medium">Putar:</span>
+            <span className="text-[10px] text-slate-400 font-mono px-1">
+              Geser di layar ◀▶ {Math.round((rotOffset * 180) / Math.PI)}°
+            </span>
           </div>
 
           {/* Reset */}
@@ -975,6 +970,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
             onClick={() => {
               setOffsetY(0);
               setOffsetZ(0);
+              setRotOffset(0);
               setScaleMultiplier(100);
             }}
             className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-400 hover:text-white border border-white/10 transition-all flex items-center space-x-1.5 cursor-pointer"

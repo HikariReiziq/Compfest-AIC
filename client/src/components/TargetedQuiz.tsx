@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   HelpCircle,
   ChevronLeft,
@@ -8,7 +8,6 @@ import {
   ArrowRight,
   Plus,
   Loader2,
-  Brain,
   AlertCircle,
   Sparkles,
 } from 'lucide-react';
@@ -31,94 +30,6 @@ export interface DynamicQuestion {
   options: QuestionOption[];
 }
 
-/* ------------------------------------------------------------------ */
-/*  Alternative Options Pool Bank for Dynamic Re-Rolling             */
-/* ------------------------------------------------------------------ */
-const ALTERNATIVE_OPTIONS_MAP: Record<string, QuestionOption[][]> = {
-  occasion: [
-    [
-      { id: "Occ_Cafe", label: "Ngopi & Hangout Santai", desc: "Aktivitas kasual harian bersama teman" },
-      { id: "Occ_Executive", label: "Meeting Eksekutif Resmi", desc: "Suasana kerja profesional dan berwibawa" },
-      { id: "Occ_Gala", label: "Gala & Dinner Romantis", desc: "Momen perayaan malam berkesan" },
-      { id: "Occ_Gym", label: "Gym & Mobilitas Aktif", desc: "Ketahanan tinggi untuk aktivitas dinamis" },
-    ],
-    [
-      { id: "Occ_Travel", label: "Traveling & Liburan", desc: "Fleksibel dan nyaman di perjalanan" },
-      { id: "Occ_Creative", label: "Studio & Komunitas Kreatif", desc: "Tampilan ekspresif bernuansa artistik" },
-      { id: "Occ_Daily", label: "Daily Essentials Harian", desc: "Pilihan serbaguna dari pagi hingga malam" },
-      { id: "Occ_FormalEvent", label: "Resepsi & Acara Resmi", desc: "Kesan anggun/maskulin yang rapi" },
-    ],
-  ],
-  fit_preference: [
-    [
-      { id: "Fit_Geometric", label: "Geometris Heksagonal", desc: "Sudut kontemporer unik berani beda" },
-      { id: "Fit_Rimless", label: "Rimless / Tanpa Bingkai", desc: "Sangat ringan dan tidak dominan" },
-      { id: "Fit_VintageRound", label: "Bulat Retro Artistik", desc: "Sentuhan klasik intelektual" },
-      { id: "Fit_Clubmaster", label: "Clubmaster / Browline", desc: "Garis atas tegas beraksen metal" },
-    ],
-    [
-      { id: "Fit_AviatorDouble", label: "Aviator Double-Bridge", desc: "Jembatan ganda memotong panjang wajah" },
-      { id: "Fit_SquareBold", label: "Kotak Tebal Solid", desc: "Garis tegas memperkuat struktur rahang" },
-      { id: "Fit_CatEyeSoft", label: "Cat-Eye / Sudut Halus", desc: "Aksen terangkat mempersegar tatapan" },
-      { id: "Fit_MinimalistWire", label: "Wireframe Tipis Presisi", desc: "Simpel, bersih, dan profesional" },
-    ],
-  ],
-  color_mood: [
-    [
-      { id: "Col_Champagne", label: "Champagne & Caramel", desc: "Nuansa emas lembut berkelas" },
-      { id: "Col_SmokyOnyx", label: "Smoky Charcoal & Onyx", desc: "Abu arang modern berwibawa" },
-      { id: "Col_SageForest", label: "Sage Green & Forest", desc: "Hijau alami yang menenangkan" },
-      { id: "Col_RichHavana", label: "Rich Havana Tortoise", desc: "Gradasi amber mewah eksotis" },
-    ],
-    [
-      { id: "Col_DeepNavy", label: "Deep Navy & Perak", desc: "Kontras biru pekat elegan" },
-      { id: "Col_BronzeEarth", label: "Bronze & Terrakota Tua", desc: "Kilau tembaga hangat memikat" },
-      { id: "Col_RoseGold", label: "Rose Gold & Soft Blush", desc: "Sentuhan lembut manis berkelas" },
-      { id: "Col_MatteBlack", label: "All-Black Doff Solid", desc: "Ketegasan maskulin minimalis" },
-    ],
-  ],
-  brand_style: [
-    [
-      { id: "Style_Techwear", label: "Tech-Wear Fungsional", desc: "Fokus material modern dan utilitas" },
-      { id: "Style_Retro90s", label: "Vintage 90s Heritage", desc: "Sentuhan nostalgia yang otentik" },
-      { id: "Style_QuietLuxury", label: "Quiet Luxury Elegan", desc: "Mewah bersahaja tanpa logo mencolok" },
-      { id: "Style_Cyberpunk", label: "Kontemporer Eksploratif", desc: "Desain masa depan berkarakter tajam" },
-    ],
-  ],
-  comfort_priority: [
-    [
-      { id: "Comf_AntiSlip", label: "Anti-Slip & Tahan Keringat", desc: "Tetap stabil saat cuaca panas tropis" },
-      { id: "Comf_SoftPads", label: "Bantalan Hidung Lembut", desc: "Bantalan silikon adaptif tanpa bekas" },
-      { id: "Comf_SpringHinges", label: "Engsel Pegas Fleksibel", desc: "Menyesuaikan lebar pelipis dengan pas" },
-      { id: "Comf_Weightless", label: "Beban Terdistribusi Merata", desc: "Terasa seringan tanpa beban di hidung" },
-    ],
-  ],
-  material_preference: [
-    [
-      { id: "Mat_CarbonFiber", label: "Carbon Fiber Composite", desc: "Daya tahan maksimal bobot ekstra ringan" },
-      { id: "Mat_Alloy", label: "Aluminium Alloy Ringan", desc: "Logam modern dengan fleksibilitas tinggi" },
-      { id: "Mat_Ultem", label: "Ultem Resilient Memory", desc: "Fleksibel, tidak mudah patah, elastis" },
-      { id: "Mat_EcoAcetate", label: "Eco-Acetate Selulosa", desc: "Ramah lingkungan dan lembut di kulit" },
-    ],
-  ],
-  finish_style: [
-    [
-      { id: "Fin_SatinSilky", label: "Satin Silky Touch", desc: "Sentuhan halus lembut semi-doff" },
-      { id: "Fin_Ceramic", label: "Ceramic Matte Coating", desc: "Lapisan tahan gores bertekstur kokoh" },
-      { id: "Fin_Gradation", label: "Gradasi Amber Tortoise", desc: "Pola motif alami berdimensi kaya" },
-      { id: "Fin_Anodized", label: "Metallic Anodized", desc: "Warna logam menyatu anti-luntur" },
-    ],
-  ],
-  budget_range: [
-    [
-      { id: "Bud_Value", label: "Smart Value (< Rp400rb)", desc: "Kualitas harian harga hemat" },
-      { id: "Bud_Midrange", label: "Mid-Tier Pilihan (Rp400-800rb)", desc: "Material lebih kokoh dan detail rapi" },
-      { id: "Bud_HighEnd", label: "High-End Artisan (Rp800rb-1.5Jt)", desc: "Finishing presisi pengerjaan tangan" },
-      { id: "Bud_Collector", label: "Collector Edition (> Rp1.5Jt)", desc: "Material langka dan seri terbatas" },
-    ],
-  ],
-};
-
 interface TargetedQuizProps {
   subcategory: 'glasses' | 'hats' | 'shirts';
   userProfile: Record<string, any>;
@@ -128,6 +39,7 @@ interface TargetedQuizProps {
   ) => void;
   onBack: () => void;
   isLoading: boolean;
+  onLoadingChange?: (loading: boolean) => void;
 }
 
 function normalizeQuestions(rawList: DynamicQuestion[], batchNumber: number): DynamicQuestion[] {
@@ -169,6 +81,7 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
   onSubmitQuiz,
   onBack,
   isLoading,
+  onLoadingChange,
 }) => {
   const [questionsList, setQuestionsList] = useState<DynamicQuestion[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -177,15 +90,22 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
   const [questionSource, setQuestionSource] = useState<string>('gemini_api');
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [rerollCounts, setRerollCounts] = useState<Record<string, number>>({});
   const [rerollingId, setRerollingId] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [retryTick, setRetryTick] = useState<number>(0);
 
-  // Load Initial Batch 1 Questions
+  // Stable serialized key for the profile object — prevents the load effect
+  // from re-firing on every parent re-render (which created an infinite fetch loop)
+  const profileKey = JSON.stringify(userProfile);
+
+  // Load Initial Batch 1 Questions (100% Gemini-generated)
   useEffect(() => {
     let cancelled = false;
 
     async function loadBatch1() {
       setIsLoadingInitial(true);
+      setLoadError(null);
+      onLoadingChange?.(true);
       try {
         const res = await fetchDynamicQuestions(
           subcategory.includes('glass') || subcategory.includes('hat') ? 'accessories' : 'apparel',
@@ -196,20 +116,30 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
         );
         if (!cancelled) {
           const validatedQuestions = normalizeQuestions(res.questions || [], 1);
+          if (validatedQuestions.length === 0) {
+            throw new Error('Gemini tidak menghasilkan pertanyaan.');
+          }
           setQuestionsList(validatedQuestions);
           setQuestionSource(res.source || 'gemini_api');
           setAnswers({});
         }
-      } catch (err) {
+      } catch (err: any) {
         console.warn('Failed to fetch initial questions:', err);
+        if (!cancelled) {
+          setLoadError(err?.message || 'Gemini AI Engine tidak dapat dihubungi.');
+        }
       } finally {
-        if (!cancelled) setIsLoadingInitial(false);
+        if (!cancelled) {
+          setIsLoadingInitial(false);
+          onLoadingChange?.(false);
+        }
       }
     }
 
     loadBatch1();
     return () => { cancelled = true; };
-  }, [subcategory, userProfile]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subcategory, profileKey, retryTick]);
 
   // Load More Questions
   const handleLoadMoreQuestions = async () => {
@@ -237,46 +167,46 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
     }
   };
 
-  // Re-roll options for a specific question with alternative sets
-  const handleRerollQuestion = (questionId: string) => {
+  // Re-roll options for a specific question — alternatives are re-generated live by Gemini
+  const handleRerollQuestion = async (questionId: string) => {
     setRerollingId(questionId);
+    try {
+      const res = await fetchDynamicQuestions(
+        subcategory.includes('glass') || subcategory.includes('hat') ? 'accessories' : 'apparel',
+        subcategory,
+        userProfile,
+        answers,
+        1
+      );
+      const fresh = normalizeQuestions(res.questions || [], 1);
+      const target = questionsList.find((q) => q.id === questionId);
 
-    setTimeout(() => {
-      setQuestionsList((prevList) => {
-        return prevList.map((q) => {
-          if (q.id !== questionId) return q;
+      // Prefer a fresh question about the same theme; otherwise take the first fresh set
+      const candidate =
+        fresh.find(
+          (q) =>
+            target &&
+            q.question.toLowerCase().split(/\s+/).some((w) =>
+              w.length > 4 && target.question.toLowerCase().includes(w)
+            )
+        ) || fresh[0];
 
-          // Find alternative sets matching the question key or fallback
-          const qKey = Object.keys(ALTERNATIVE_OPTIONS_MAP).find(
-            (k) => q.id.toLowerCase().includes(k) || q.question.toLowerCase().includes(k)
-          ) || 'fit_preference';
-
-          const altSets = ALTERNATIVE_OPTIONS_MAP[qKey] || ALTERNATIVE_OPTIONS_MAP.fit_preference;
-          const currentCount = rerollCounts[questionId] || 0;
-          const nextSetIdx = currentCount % altSets.length;
-          const newOptions = altSets[nextSetIdx];
-
-          setRerollCounts((prev) => ({
-            ...prev,
-            [questionId]: currentCount + 1,
-          }));
-
-          return {
-            ...q,
-            options: newOptions,
-          };
+      if (candidate && candidate.options?.length) {
+        setQuestionsList((prevList) =>
+          prevList.map((q) => (q.id === questionId ? { ...q, options: candidate.options } : q))
+        );
+        // Reset previous selection for this question so user picks from new choices
+        setAnswers((prev) => {
+          const next = { ...prev };
+          delete next[questionId];
+          return next;
         });
-      });
-
-      // Reset previous selection for this question so user picks from new choices
-      setAnswers((prev) => {
-        const next = { ...prev };
-        delete next[questionId];
-        return next;
-      });
-
+      }
+    } catch (err) {
+      console.warn('Failed to reroll question options via Gemini:', err);
+    } finally {
       setRerollingId(null);
-    }, 200);
+    }
   };
 
   const handleSelectOption = (questionId: string, optionId: string) => {
@@ -383,8 +313,40 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
     );
   }
 
+  if (loadError) {
+    return (
+      <div className="w-full max-w-xl mx-auto text-center space-y-6 animate-fadeIn text-white py-16">
+        <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-mono">
+          <AlertCircle className="w-4 h-4" />
+          <span>GEMINI AI ENGINE TIDAK TERSEDIA</span>
+        </div>
+        <h2 className="text-2xl font-bold">Kuesioner Gagal Dimuat</h2>
+        <p className="text-sm text-slate-400 leading-relaxed">
+          Semua pertanyaan kuesioner dihasilkan langsung oleh Gemini AI (tanpa bank soal statis),
+          jadi koneksi ke AI Engine wajib tersedia. Error: <span className="text-rose-300 font-mono text-xs">{loadError}</span>
+        </p>
+        <div className="flex items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={() => setRetryTick((t) => t + 1)}
+            className="px-6 py-3 rounded-full bg-gradient-to-r from-blue-600 to-sky-500 text-white font-semibold text-sm shadow-lg hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
+          >
+            Coba Lagi
+          </button>
+          <button
+            type="button"
+            onClick={onBack}
+            className="px-6 py-3 rounded-full bg-slate-800 border border-white/10 text-slate-300 font-semibold text-sm hover:text-white transition-all cursor-pointer"
+          >
+            Kembali
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-9 animate-fadeIn text-white">
+    <div className="w-full space-y-9 animate-fadeIn text-white">
       {/* Header */}
       <div className="text-center space-y-3">
         <button
@@ -440,7 +402,8 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-7">
-        {/* Questions List */}
+        {/* Questions List — 2-column grid to fill the screen left-right (minimize scrolling) */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-7 items-start">
         {questionsList.map((q, index) => {
           const isAnswered = !!answers[q.id];
 
@@ -448,6 +411,8 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
             <div
               key={q.id}
               className={`relative bg-[#0B1528]/90 rounded-3xl p-7 sm:p-8 space-y-5 transition-all duration-300 border backdrop-blur-xl shadow-xl ${
+                questionsList.length % 2 === 1 && index === questionsList.length - 1 ? 'xl:col-span-2' : ''
+              } ${
                 !isAnswered && validationError
                   ? 'border-rose-500/60'
                   : 'border-blue-500/20'
@@ -487,7 +452,6 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
 
                   {q.reason && (
                     <div className="flex items-start gap-2 px-3.5 py-2.5 rounded-2xl bg-[#071120] border border-blue-500/20 text-xs text-[#93C5FD]/80">
-                      <Brain className="w-4 h-4 shrink-0 mt-0.5 text-[#38BDF8]" />
                       <span>{q.reason}</span>
                     </div>
                   )}
@@ -499,10 +463,11 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
                 {q.options.map((opt) => {
                   const isSelected = answers[q.id] === opt.id;
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={opt.id}
                       onClick={() => handleSelectOption(q.id, opt.id)}
-                      className={`p-5 rounded-2xl border cursor-pointer transition-all duration-200 ${
+                      className={`text-left p-5 rounded-2xl border cursor-pointer transition-all duration-200 ${
                         isSelected
                           ? 'bg-blue-600/20 border-blue-500 text-white'
                           : 'bg-[#071120]/60 border-white/10 text-[#94A3B8] hover:border-blue-500/30 hover:bg-[#071120]'
@@ -519,13 +484,14 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
                         )}
                       </div>
                       <p className="text-xs sm:text-sm text-[#64748B] mt-2 leading-relaxed">{opt.desc}</p>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
             </div>
           );
         })}
+        </div>
 
         {/* Add More Questions Button */}
         <div className="flex flex-col items-center justify-center pt-3 space-y-2">
@@ -566,7 +532,7 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
         <button
           type="submit"
           disabled={isLoading}
-          className={`w-full py-6 sm:py-6.5 min-h-[70px] sm:min-h-[78px] rounded-full font-extrabold text-lg sm:text-xl text-white transition-all duration-300 flex items-center justify-center gap-3.5 disabled:opacity-50 cursor-pointer shadow-2xl tracking-wide ${
+          className={`w-full py-4 min-h-[54px] rounded-full font-extrabold text-base sm:text-lg text-white transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-50 cursor-pointer shadow-2xl tracking-wide ${
             isAllAnswered
               ? 'bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 hover:scale-[1.01] active:scale-[0.99] border border-blue-400/30'
               : 'bg-[#08101E] border border-white/15 text-[#64748B]'
