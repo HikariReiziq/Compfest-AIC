@@ -949,7 +949,7 @@
       "hex_colour": "#93C5FD",
       "usage": "Casual",
       "priceIdr": "Rp259.000",
-      "model_3d_path": "/images/products/shirts/Wanita/crop_top.glb",
+      "model_3d_path": "/images/products/shirts/Wanita/off_the_shoulder_shirt_-_ngchipv.glb",
       "preview_image_url": "/images/products/preview/shirt-wanita-01.png",
       "flatteringFaceShapes": [
         "Oval",
@@ -980,7 +980,7 @@
       "hex_colour": "#F472B6",
       "usage": "Casual",
       "priceIdr": "Rp379.000",
-      "model_3d_path": "/images/products/shirts/Wanita/female_t-shirt_and_skirt.glb",
+      "model_3d_path": "/images/products/shirts/Wanita/skirt_and_t-shirt.glb",
       "preview_image_url": "/images/products/preview/shirt-wanita-02.png",
       "flatteringFaceShapes": [
         "Oval",
@@ -1011,7 +1011,7 @@
       "hex_colour": "#FFFFFF",
       "usage": "Casual",
       "priceIdr": "Rp279.000",
-      "model_3d_path": "/images/products/shirts/Wanita/flared_crop_top.glb",
+      "model_3d_path": "/images/products/shirts/Wanita/soft_brushed_long_sleeve_shirt.glb",
       "preview_image_url": "/images/products/preview/shirt-wanita-03.png",
       "flatteringFaceShapes": [
         "Oval",
@@ -1042,7 +1042,7 @@
       "hex_colour": "#C084FC",
       "usage": "Casual",
       "priceIdr": "Rp329.000",
-      "model_3d_path": "/images/products/shirts/Wanita/sweater.glb",
+      "model_3d_path": "/images/products/shirts/Wanita/sweater_woman.glb",
       "preview_image_url": "/images/products/preview/shirt-wanita-04.png",
       "flatteringFaceShapes": [
         "Oval",
@@ -1073,7 +1073,7 @@
       "hex_colour": "#94A3B8",
       "usage": "Casual",
       "priceIdr": "Rp249.000",
-      "model_3d_path": "/images/products/shirts/Wanita/t-shirt.glb",
+      "model_3d_path": "/images/products/shirts/Wanita/vneck_t-shirt_for_female.glb",
       "preview_image_url": "/images/products/preview/shirt-wanita-05.png",
       "flatteringFaceShapes": [
         "Oval",
@@ -1104,7 +1104,7 @@
       "hex_colour": "#F8FAFC",
       "usage": "Formal",
       "priceIdr": "Rp459.000",
-      "model_3d_path": "/images/products/shirts/Wanita/victorian_blouse.glb",
+      "model_3d_path": "/images/products/shirts/Wanita/womens_shirt.glb",
       "preview_image_url": "/images/products/preview/shirt-wanita-06.png",
       "flatteringFaceShapes": [
         "Oval",
