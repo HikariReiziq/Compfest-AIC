@@ -678,9 +678,8 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     // 3. True 3D Pitch (Head tilting Up / Down)
     let safePitch = 0;
     if (chin && foreheadTop) {
-      const vertDepth = ((foreheadTop.z || 0) - (chin.z || 0)) * 2.2;
-      const noseRelY = ((nasion.y - foreheadTop.y) / (chin.y - foreheadTop.y + 0.001) - 0.45) * 2.0;
-      safePitch = THREE.MathUtils.clamp(vertDepth + noseRelY, -0.55, 0.55);
+      const vertDepth = ((foreheadTop.z || 0) - (chin.z || 0)) * 2.0;
+      safePitch = THREE.MathUtils.clamp(vertDepth, -0.45, 0.45);
     }
 
     // World Space Scale (Glasses width matches real Inter-Pupillary Distance)

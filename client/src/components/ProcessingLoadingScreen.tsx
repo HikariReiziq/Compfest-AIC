@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Sparkles, ShieldCheck } from 'lucide-react';
+import React, { useEffect } from 'react';
 
 export interface ProcessingLoadingScreenProps {
   userProfile?: Record<string, any>;
@@ -11,86 +10,57 @@ export interface ProcessingLoadingScreenProps {
   onComplete: () => void;
 }
 
-const STATUS_PHASES = [
-  'Menganalisis harmoni warna & undertone kulit...',
-  'Menyesuaikan siluet dengan proporsi wajah...',
-  'Menyusun kurasi Top-4 Style Archetypes...',
-];
-
 export const ProcessingLoadingScreen: React.FC<ProcessingLoadingScreenProps> = ({
-  subcategory = 'fashion',
   onComplete,
 }) => {
-  const [progress, setProgress] = useState<number>(10);
-  const [phaseIndex, setPhaseIndex] = useState<number>(0);
+  const letters = ['L', 'O', 'A', 'D', 'I', 'N', 'G', '.', '.', '.'];
 
   useEffect(() => {
-    // 1.8s total duration for a fast, responsive, and elegant transition
-    const totalDuration = 1800;
-    const intervalTime = 40;
-    const increment = 100 / (totalDuration / intervalTime);
+    // 1.8s duration for smooth transition to recommendation stage
+    const timer = setTimeout(() => {
+      onComplete();
+    }, 1800);
 
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        const next = prev + increment;
-        if (next >= 100) {
-          clearInterval(interval);
-          setTimeout(onComplete, 200);
-          return 100;
-        }
-        if (next >= 66) {
-          setPhaseIndex(2);
-        } else if (next >= 33) {
-          setPhaseIndex(1);
-        }
-        return next;
-      });
-    }, intervalTime);
-
-    return () => clearInterval(interval);
+    return () => clearTimeout(timer);
   }, [onComplete]);
 
   return (
-    <div className="w-full max-w-xl mx-auto py-12 px-4 animate-fadeIn text-white flex flex-col items-center justify-center min-h-[420px]">
-      {/* Minimalist Glowing Orbital Spinner */}
-      <div className="relative w-28 h-28 mb-8 flex items-center justify-center">
-        <div className="absolute inset-0 rounded-full border-2 border-blue-500/20 animate-ping opacity-25" />
-        <div className="absolute inset-0 rounded-full border-2 border-t-blue-500 border-r-sky-400 border-b-transparent border-l-transparent animate-spin" />
-        <div className="absolute inset-2 rounded-full border-2 border-t-transparent border-r-transparent border-b-[#FACC15] border-l-blue-400 animate-spin [animation-direction:reverse] [animation-duration:1.5s]" />
-        <div className="w-16 h-16 rounded-full bg-[#0B1528] border border-blue-500/30 flex items-center justify-center shadow-xl shadow-blue-500/10">
-          <Sparkles className="w-7 h-7 text-[#38BDF8] animate-pulse" />
-        </div>
+    <div className="fixed inset-0 z-[9999] bg-[#060B14] flex flex-col items-center justify-center select-none overflow-hidden space-y-6">
+      {/* Background Wallpaper Dahlia Flowers */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-55"
+          style={{
+            backgroundImage: 'url(/images/dahlia-flowers.jpg)',
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#060B14]/70 via-[#060B14]/60 to-[#060B14]/80" />
       </div>
 
-      {/* Main Title & Phase Status */}
-      <div className="text-center space-y-3 mb-8">
-        <h2 className="text-2xl font-extrabold text-white tracking-tight">
-          Menyiapkan Rekomendasi
-        </h2>
-        <p className="text-sm font-medium text-[#93C5FD] transition-all duration-300 min-h-[24px]">
-          {STATUS_PHASES[phaseIndex]}
-        </p>
+      {/* Maskot COBA dengan Efek Melayang Lembut */}
+      <div className="relative z-10 flex items-center justify-center">
+        <img
+          src="/images/mascot.png"
+          alt="COBA Mascot"
+          className="relative w-40 h-40 sm:w-48 sm:h-48 object-contain drop-shadow-lg animate-bounce"
+          style={{ animationDuration: '2s' }}
+        />
       </div>
 
-      {/* Clean Minimalist Progress Bar */}
-      <div className="w-full max-w-md space-y-2 mb-6">
-        <div className="w-full bg-black/60 h-2 rounded-full overflow-hidden border border-blue-500/20 p-0.5">
-          <div
-            className="h-full bg-gradient-to-r from-blue-600 via-sky-400 to-[#FACC15] rounded-full transition-all duration-100 ease-out"
-            style={{ width: `${Math.round(progress)}%` }}
-          />
-        </div>
-        <div className="flex justify-between items-center text-xs font-mono text-[#64748B]">
-          <span>Katalog: {subcategory.toUpperCase()}</span>
-          <span className="text-[#38BDF8] font-bold">{Math.round(progress)}%</span>
-        </div>
-      </div>
-
-      {/* Trust & Privacy Badge */}
-      <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#0B1528]/80 border border-blue-500/20 text-[#64748B] text-[11px] font-mono">
-        <ShieldCheck className="w-3.5 h-3.5 text-[#38BDF8]" />
-        <span>Kepatuhan UU PDP No. 27/2022</span>
+      {/* Tulisan Loading Bergelombang */}
+      <div className="relative z-10 flex items-center space-x-1 font-mono text-base sm:text-lg font-bold tracking-[0.2em] text-[#38BDF8] uppercase">
+        {letters.map((char, index) => (
+          <span
+            key={index}
+            className="animate-text-wave inline-block text-white"
+            style={{ animationDelay: `${index * 120}ms` }}
+          >
+            {char}
+          </span>
+        ))}
       </div>
     </div>
   );
 };
+
+export default ProcessingLoadingScreen;

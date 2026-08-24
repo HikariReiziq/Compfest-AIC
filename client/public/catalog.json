@@ -30,7 +30,9 @@
         "classic"
       ],
       "description": "Khronos Aviator Pilot Sunglasses dengan bingkai double-bridge silver chrome dan lensa hitam pekat beraksen modern.",
-      "gender": "Unisex"
+      "gender": "Unisex",
+      "preview_image": "/images/products/preview/glass-01.png",
+      "image_url": "/images/products/preview/glass-01.png"
     },
     {
       "id": "glass-02",
@@ -59,7 +61,9 @@
         "formal"
       ],
       "description": "Classic Wayfarer Sunglasses dengan bingkai full-rim black acetate elegan yang cocok untuk segala bentuk wajah.",
-      "gender": "Unisex"
+      "gender": "Unisex",
+      "preview_image": "/images/products/preview/glass-02.png",
+      "image_url": "/images/products/preview/glass-02.png"
     },
     {
       "id": "glass-03",
@@ -88,7 +92,9 @@
         "formal"
       ],
       "description": "Kacamata optik persegi modern dengan bingkai matte black ringan dan presisi untuk tampilan profesional dan cerdas.",
-      "gender": "Unisex"
+      "gender": "Unisex",
+      "preview_image": "/images/products/preview/glass-03.png",
+      "image_url": "/images/products/preview/glass-03.png"
     },
     {
       "id": "glass-04",
@@ -117,7 +123,9 @@
         "artistic"
       ],
       "description": "Kacamata bulat klasik bernuansa vintage bronze dengan lensa gelap yang menonjolkan karakter artistik dan retro.",
-      "gender": "Unisex"
+      "gender": "Unisex",
+      "preview_image": "/images/products/preview/glass-04.png",
+      "image_url": "/images/products/preview/glass-04.png"
     },
     {
       "id": "glass-05",
@@ -148,7 +156,9 @@
         "party"
       ],
       "description": "Kacamata unik bergaya 8-bit pixel art dengan aksen pantulan cahaya retro untuk penampilan bold dan jenaka.",
-      "gender": "Unisex"
+      "gender": "Unisex",
+      "preview_image": "/images/products/preview/glass-05.png",
+      "image_url": "/images/products/preview/glass-05.png"
     },
     {
       "id": "glass-06",
@@ -177,7 +187,9 @@
         "bold"
       ],
       "description": "Kacamata steampunk dengan mekanisme flip-up dobel dan bingkai silver metalik unik bernuansa futuristik industrial.",
-      "gender": "Unisex"
+      "gender": "Unisex",
+      "preview_image": "/images/products/preview/glass-06.png",
+      "image_url": "/images/products/preview/glass-06.png"
     },
     {
       "id": "glass-07",
@@ -204,7 +216,9 @@
         "active"
       ],
       "description": "Bingkai kacamata semi-sporty berwarna hitam matte dengan lekuk ergonomis untuk kenyamanan harian dan mobilitas tinggi.",
-      "gender": "Unisex"
+      "gender": "Unisex",
+      "preview_image": "/images/products/preview/glass-07.png",
+      "image_url": "/images/products/preview/glass-07.png"
     },
     {
       "id": "hat-01",
@@ -216,7 +230,7 @@
       "hex_colour": "#18181B",
       "usage": "Party",
       "priceIdr": "Rp499.000",
-      "model_3d_path": "/images/products/hats/18th-century_bicorne_hat.glb",
+      "model_3d_path": "/images/products/hats/bicorn_hat.glb",
       "preview_image_url": "/images/products/preview/hat-01.png",
       "flatteringFaceShapes": [
         "Oval",
@@ -233,7 +247,9 @@
         "party"
       ],
       "description": "Topi perwira era Napoleon klasik berbalut beludru hitam dengan aksen pita kokade merah-putih-biru autentik.",
-      "gender": "Unisex"
+      "gender": "Unisex",
+      "preview_image": "/images/products/preview/hat-01.png",
+      "image_url": "/images/products/preview/hat-01.png"
     },
     {
       "id": "hat-02",
@@ -245,7 +261,7 @@
       "hex_colour": "#854D0E",
       "usage": "Casual",
       "priceIdr": "Rp389.000",
-      "model_3d_path": "/images/products/hats/cowboy_hat.glb",
+      "model_3d_path": "/images/products/hats/cowboy hat2.glb",
       "preview_image_url": "/images/products/preview/hat-02.png",
       "flatteringFaceShapes": [
         "Square",
@@ -262,7 +278,9 @@
         "rustic"
       ],
       "description": "Topi koboi kulit asli berwarna saddle brown dengan tali aksen rivet metalik yang gagah dan berjiwa petualang.",
-      "gender": "Unisex"
+      "gender": "Unisex",
+      "preview_image": "/images/products/preview/hat-02.png",
+      "image_url": "/images/products/preview/hat-02.png"
     },
     {
       "id": "hat-03",
@@ -291,7 +309,9 @@
         "statement"
       ],
       "description": "Topi bolero bertepi datar lebar dengan material felt hitam pekat dan sabuk kulit cokelat bergesper klasik.",
-      "gender": "Unisex"
+      "gender": "Unisex",
+      "preview_image": "/images/products/preview/hat-03.png",
+      "image_url": "/images/products/preview/hat-03.png"
     },
     {
       "id": "hat-04",
@@ -303,7 +323,7 @@
       "hex_colour": "#FB923C",
       "usage": "Casual",
       "priceIdr": "Rp269.000",
-      "model_3d_path": "/images/products/hats/hat__cap.glb",
+      "model_3d_path": "/images/products/hats/female_beach_hat.glb",
       "preview_image_url": "/images/products/preview/hat-04.png",
       "flatteringFaceShapes": [
         "Square",
@@ -320,7 +340,9 @@
         "resort"
       ],
       "description": "Topi anyaman jerami alami bertepi lebar dengan pita jingga cerah dan tali dagu untuk liburan pantai dan musim panas.",
-      "gender": "Unisex"
+      "gender": "Unisex",
+      "preview_image": "/images/products/preview/hat-04.png",
+      "image_url": "/images/products/preview/hat-04.png"
     },
     {
       "id": "hat-05",
@@ -332,7 +354,7 @@
       "hex_colour": "#451A03",
       "usage": "Party",
       "priceIdr": "Rp520.000",
-      "model_3d_path": "/images/products/hats/hat_alchemist.glb",
+      "model_3d_path": "/images/products/hats/mafia_hat_spy_hat.glb",
       "preview_image_url": "/images/products/preview/hat-05.png",
       "flatteringFaceShapes": [
         "Round",
@@ -350,7 +372,9 @@
         "party"
       ],
       "description": "Top hat kulit cokelat bertekstur antik dengan sabuk botol ramuan kaca dan aksen kartu untuk gaya steampunk unik.",
-      "gender": "Unisex"
+      "gender": "Unisex",
+      "preview_image": "/images/products/preview/hat-05.png",
+      "image_url": "/images/products/preview/hat-05.png"
     },
     {
       "id": "hat-06",
@@ -380,7 +404,9 @@
         "adventure"
       ],
       "description": "Topi jerami legendaris beraksen pita merah menyala, terinspirasi dari karakter kapten anime petualang samudra.",
-      "gender": "Unisex"
+      "gender": "Unisex",
+      "preview_image": "/images/products/preview/hat-06.png",
+      "image_url": "/images/products/preview/hat-06.png"
     },
     {
       "id": "hat-07",
@@ -392,7 +418,7 @@
       "hex_colour": "#1E3A8A",
       "usage": "Formal",
       "priceIdr": "Rp379.000",
-      "model_3d_path": "/images/products/hats/panama_hat.glb",
+      "model_3d_path": "/images/products/hats/cowboy hat5.glb",
       "preview_image_url": "/images/products/preview/hat-07.png",
       "flatteringFaceShapes": [
         "Round",
@@ -410,7 +436,9 @@
         "elegant"
       ],
       "description": "Topi fedora modern bertekstur satin hitam halus dengan sentuhan garis biru kobalt di balik tepi topi.",
-      "gender": "Unisex"
+      "gender": "Unisex",
+      "preview_image": "/images/products/preview/hat-07.png",
+      "image_url": "/images/products/preview/hat-07.png"
     },
     {
       "id": "hat-08",
@@ -422,7 +450,7 @@
       "hex_colour": "#94A3B8",
       "usage": "Party",
       "priceIdr": "Rp189.000",
-      "model_3d_path": "/images/products/hats/propeller_cap.glb",
+      "model_3d_path": "/images/products/hats/propeller_hat.glb",
       "preview_image_url": "/images/products/preview/hat-08.png",
       "flatteringFaceShapes": [
         "Oval",
@@ -439,7 +467,9 @@
         "whimsical"
       ],
       "description": "Topi unik bernuansa silver metalik dengan baling-baling helikopter di puncaknya untuk pesta dan ekspresi playful.",
-      "gender": "Unisex"
+      "gender": "Unisex",
+      "preview_image": "/images/products/preview/hat-08.png",
+      "image_url": "/images/products/preview/hat-08.png"
     },
     {
       "id": "hat-09",
@@ -469,7 +499,9 @@
         "luxury"
       ],
       "description": "Baret beludru putih mutiara khas bangsawan Renaisans dengan hiasan bulu halus dan bros permata elegan.",
-      "gender": "Unisex"
+      "gender": "Unisex",
+      "preview_image": "/images/products/preview/hat-09.png",
+      "image_url": "/images/products/preview/hat-09.png"
     },
     {
       "id": "hat-10",
@@ -481,7 +513,7 @@
       "hex_colour": "#D4B996",
       "usage": "Sports",
       "priceIdr": "Rp349.000",
-      "model_3d_path": "/images/products/hats/safari_hat.glb",
+      "model_3d_path": "/images/products/hats/weathered_pith_hat.glb",
       "preview_image_url": "/images/products/preview/hat-10.png",
       "flatteringFaceShapes": [
         "Square",
@@ -498,7 +530,9 @@
         "adventure"
       ],
       "description": "Topi safari penjelajah bernuansa khaki gurun yang dilengkapi kacamata goggle pilot kulit untuk petualangan alam.",
-      "gender": "Unisex"
+      "gender": "Unisex",
+      "preview_image": "/images/products/preview/hat-10.png",
+      "image_url": "/images/products/preview/hat-10.png"
     },
     {
       "id": "hat-11",
@@ -510,7 +544,7 @@
       "hex_colour": "#DC2626",
       "usage": "Party",
       "priceIdr": "Rp420.000",
-      "model_3d_path": "/images/products/hats/wizard_hat.glb",
+      "model_3d_path": "/images/products/hats/witch_hat.glb",
       "preview_image_url": "/images/products/preview/hat-11.png",
       "flatteringFaceShapes": [
         "Round",
@@ -529,7 +563,9 @@
         "party"
       ],
       "description": "Topi penyihir kerucut dramatis berwarna hitam dengan motif mata kancing merah dan lis emas mistis.",
-      "gender": "Unisex"
+      "gender": "Unisex",
+      "preview_image": "/images/products/preview/hat-11.png",
+      "image_url": "/images/products/preview/hat-11.png"
     },
     {
       "id": "shirt-pria-01",
@@ -560,7 +596,9 @@
         "modern"
       ],
       "description": "Kemeja berpotongan modern dengan perpaduan setengah motif kotak-kotak biru-putih dan setengah biru solid kontemporer.",
-      "gender": "Men"
+      "gender": "Men",
+      "preview_image": "/images/products/preview/shirt-pria-01.png",
+      "image_url": "/images/products/preview/shirt-pria-01.png"
     },
     {
       "id": "shirt-pria-02",
@@ -592,7 +630,9 @@
         "athletic"
       ],
       "description": "Jersey resmi FC Barcelona edisi khusus dengan gradasi warna krem dan oranye koral hangat yang sporty dan stylish.",
-      "gender": "Men"
+      "gender": "Men",
+      "preview_image": "/images/products/preview/shirt-pria-02.png",
+      "image_url": "/images/products/preview/shirt-pria-02.png"
     },
     {
       "id": "shirt-pria-03",
@@ -623,7 +663,9 @@
         "zen"
       ],
       "description": "Kemeja lengan panjang berkerah shanghai (mandarin collar) putih bersih dengan aksen logo monokrom minimalis.",
-      "gender": "Men"
+      "gender": "Men",
+      "preview_image": "/images/products/preview/shirt-pria-03.png",
+      "image_url": "/images/products/preview/shirt-pria-03.png"
     },
     {
       "id": "shirt-pria-04",
@@ -654,7 +696,9 @@
         "tailored"
       ],
       "description": "Kemeja oxford lengan panjang putih berpotongan slim-fit dengan saku dada dan kancing rapi untuk tampilan eksekutif.",
-      "gender": "Men"
+      "gender": "Men",
+      "preview_image": "/images/products/preview/shirt-pria-04.png",
+      "image_url": "/images/products/preview/shirt-pria-04.png"
     },
     {
       "id": "shirt-pria-05",
@@ -686,7 +730,9 @@
         "casual"
       ],
       "description": "Kemeja flanel tebal bermotif tartan klasik hitam-putih dengan aksen garis merah tajam yang maskulin dan hangat.",
-      "gender": "Men"
+      "gender": "Men",
+      "preview_image": "/images/products/preview/shirt-pria-05.png",
+      "image_url": "/images/products/preview/shirt-pria-05.png"
     },
     {
       "id": "shirt-pria-06",
@@ -718,7 +764,9 @@
         "bold"
       ],
       "description": "Kaos streetwear bertingkat dua lapis dengan pola geometris oranye neon dan lengan motif catur hitam-putih yang berani.",
-      "gender": "Men"
+      "gender": "Men",
+      "preview_image": "/images/products/preview/shirt-pria-06.png",
+      "image_url": "/images/products/preview/shirt-pria-06.png"
     },
     {
       "id": "shirt-pria-07",
@@ -750,7 +798,9 @@
         "relaxed"
       ],
       "description": "Kemeja flanel lengan panjang bernuansa kotak-kotak biru indigo yang sejuk dan serbaguna untuk gaya kasual sehari-hari.",
-      "gender": "Men"
+      "gender": "Men",
+      "preview_image": "/images/products/preview/shirt-pria-07.png",
+      "image_url": "/images/products/preview/shirt-pria-07.png"
     },
     {
       "id": "shirt-pria-08",
@@ -782,7 +832,9 @@
         "luxury"
       ],
       "description": "Kemeja tuksedo formal putih dengan kerah wingtip, dasi kupu-kupu, dan lipit dada klasik untuk pesta gala dan acara resmi.",
-      "gender": "Men"
+      "gender": "Men",
+      "preview_image": "/images/products/preview/shirt-pria-08.png",
+      "image_url": "/images/products/preview/shirt-pria-08.png"
     },
     {
       "id": "shirt-pria-09",
@@ -813,7 +865,9 @@
         "minimalist"
       ],
       "description": "Baju rajut lengan panjang berpotongan athletic body-fit berwarna navy pekat yang menonjolkan lekuk bahu dan dada atletis.",
-      "gender": "Men"
+      "gender": "Men",
+      "preview_image": "/images/products/preview/shirt-pria-09.png",
+      "image_url": "/images/products/preview/shirt-pria-09.png"
     },
     {
       "id": "shirt-pria-10",
@@ -844,7 +898,9 @@
         "breathable"
       ],
       "description": "Tank top tanpa lengan berbahan katun heather berpori yang nyaman untuk sesi latihan olahraga dan santai.",
-      "gender": "Men"
+      "gender": "Men",
+      "preview_image": "/images/products/preview/shirt-pria-10.png",
+      "image_url": "/images/products/preview/shirt-pria-10.png"
     },
     {
       "id": "shirt-pria-11",
@@ -875,7 +931,9 @@
         "preppy"
       ],
       "description": "Kaus polo berkerah dengan motif garis horizontal biru dongker dan putih khas gaya pelaut maritim klasik.",
-      "gender": "Men"
+      "gender": "Men",
+      "preview_image": "/images/products/preview/shirt-pria-11.png",
+      "image_url": "/images/products/preview/shirt-pria-11.png"
     },
     {
       "id": "shirt-pria-12",
@@ -906,7 +964,9 @@
         "futuristic"
       ],
       "description": "Kemeja streetwear techwear hitam pekat dengan aksen tali selempang harness menyilang dan ring metalik futuristik.",
-      "gender": "Men"
+      "gender": "Men",
+      "preview_image": "/images/products/preview/shirt-pria-12.png",
+      "image_url": "/images/products/preview/shirt-pria-12.png"
     },
     {
       "id": "shirt-pria-13",
@@ -937,7 +997,9 @@
         "essential"
       ],
       "description": "T-shirt crewneck putih polos berbahan combed cotton premium yang sangat lembut dan nyaman sepanjang hari.",
-      "gender": "Men"
+      "gender": "Men",
+      "preview_image": "/images/products/preview/shirt-pria-13.png",
+      "image_url": "/images/products/preview/shirt-pria-13.png"
     },
     {
       "id": "shirt-wanita-01",
@@ -968,7 +1030,9 @@
         "feminine"
       ],
       "description": "Atasan crop off-shoulder beraksen ruffle lembut dengan rajutan smocked elastis berwarna biru langit feminin.",
-      "gender": "Women"
+      "gender": "Women",
+      "preview_image": "/images/products/preview/shirt-wanita-01.png",
+      "image_url": "/images/products/preview/shirt-wanita-01.png"
     },
     {
       "id": "shirt-wanita-02",
@@ -999,7 +1063,9 @@
         "playful"
       ],
       "description": "Setelan kasual manis memadukan kaus hitam crop dengan rok flare lipit motif polkadot merah muda ceria.",
-      "gender": "Women"
+      "gender": "Women",
+      "preview_image": "/images/products/preview/shirt-wanita-02.png",
+      "image_url": "/images/products/preview/shirt-wanita-02.png"
     },
     {
       "id": "shirt-wanita-03",
@@ -1030,7 +1096,9 @@
         "chic"
       ],
       "description": "Atasan crop putih bersih dengan potongan lengan lonceng (bell sleeves) dramatis bergaya bohemian chic.",
-      "gender": "Women"
+      "gender": "Women",
+      "preview_image": "/images/products/preview/shirt-wanita-03.png",
+      "image_url": "/images/products/preview/shirt-wanita-03.png"
     },
     {
       "id": "shirt-wanita-04",
@@ -1061,7 +1129,9 @@
         "cozy"
       ],
       "description": "Sweater rajut berusuk halus warna lavender pastel yang lembut, hangat, dan anggun untuk cuaca sejuk.",
-      "gender": "Women"
+      "gender": "Women",
+      "preview_image": "/images/products/preview/shirt-wanita-04.png",
+      "image_url": "/images/products/preview/shirt-wanita-04.png"
     },
     {
       "id": "shirt-wanita-05",
@@ -1092,7 +1162,9 @@
         "feminine"
       ],
       "description": "Atasan lengan pendek berpotongan pas badan dengan garis leher sweetheart feminin bernuansa abu-abu lembut.",
-      "gender": "Women"
+      "gender": "Women",
+      "preview_image": "/images/products/preview/shirt-wanita-05.png",
+      "image_url": "/images/products/preview/shirt-wanita-05.png"
     },
     {
       "id": "shirt-wanita-06",
@@ -1124,7 +1196,9 @@
         "gothic"
       ],
       "description": "Blus lengan puff bergaya Victoria klasik berkerah tinggi dengan aksen korset pinggang dan manset hitam kontras.",
-      "gender": "Women"
+      "gender": "Women",
+      "preview_image": "/images/products/preview/shirt-wanita-06.png",
+      "image_url": "/images/products/preview/shirt-wanita-06.png"
     }
   ]
 }

@@ -429,7 +429,12 @@ class StyleRecommender:
             item_usage = item_data.get("usage") or "Casual"
             item_price = item_data.get("priceIdr") or "Rp299.000"
             model_p = item_data.get("model_3d_path") or ""
-            prev_p = item_data.get("preview_image_url") or ""
+            prev_p = (
+                item_data.get("preview_image_url")
+                or item_data.get("preview_image")
+                or item_data.get("image_url")
+                or f"/images/products/preview/{item_data.get('id', '')}.png"
+            )
 
             if idx == 0:
                 reason = (

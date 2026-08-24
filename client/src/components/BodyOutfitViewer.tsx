@@ -40,11 +40,10 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
   const rafRef = useRef<number>(0);
   const localStreamRef = useRef<MediaStream | null>(null);
 
-  const isUploadMode = inputMode === "upload" || Boolean(userSnapshotUrl && !mediaStream);
+  const isUploadMode = inputMode === "upload" && !mediaStream;
 
   // View Mode: 'ar' (Live 3D Body Fitting) vs 'studio' (3D 360° Inspection)
-  // If uploaded photo, AR mode is locked and defaults to studio inspection
-  const [viewMode, setViewMode] = useState<"ar" | "studio">(isUploadMode ? "studio" : "ar");
+  const [viewMode, setViewMode] = useState<"ar" | "studio">("ar");
   const [isRotating, setIsRotating] = useState(true);
   const [isTrackingLive, setIsTrackingLive] = useState(false);
   const [fitStyle, setFitStyle] = useState<"regular" | "oversized" | "slim">("regular");
@@ -63,8 +62,6 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
     let cancelled = false;
 
     async function initCamera() {
-      if (userSnapshotUrl) return;
-
       try {
         let stream = mediaStream;
         const isStreamActive =
@@ -101,7 +98,7 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
       cancelled = true;
       localStreamRef.current?.getTracks().forEach((t) => t.stop());
     };
-  }, [mediaStream, userSnapshotUrl]);
+  }, [mediaStream]);
 
   /* ------------------------------------------------------------------ */
   /*  2. Initialize MediaPipe PoseLandmarker for Live Tracking           */
@@ -120,15 +117,29 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
 
         if (cancelled) return;
 
-        const landmarker = await PoseLandmarker.createFromOptions(fileset, {
-          baseOptions: {
-            modelAssetPath:
-              "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
-            delegate: "GPU",
-          },
-          runningMode: "VIDEO",
-          numPoses: 1,
-        });
+        let landmarker: any;
+        try {
+          landmarker = await PoseLandmarker.createFromOptions(fileset, {
+            baseOptions: {
+              modelAssetPath:
+                "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+              delegate: "GPU",
+            },
+            runningMode: "VIDEO",
+            numPoses: 1,
+          });
+        } catch (gpuErr) {
+          console.warn("PoseLandmarker GPU failed, falling back to CPU:", gpuErr);
+          landmarker = await PoseLandmarker.createFromOptions(fileset, {
+            baseOptions: {
+              modelAssetPath:
+                "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+              delegate: "CPU",
+            },
+            runningMode: "VIDEO",
+            numPoses: 1,
+          });
+        }
 
         if (!cancelled) {
           poseLandmarkerRef.current = landmarker;
