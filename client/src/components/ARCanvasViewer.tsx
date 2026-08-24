@@ -986,29 +986,29 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
       <div className="glass-panel p-4 rounded-3xl border border-white/10 bg-surface-100/60 flex flex-wrap items-center justify-between gap-4">
         {/* Position Controls: Atas/Bawah/Kiri/Kanan & Mode Geser vs Putar */}
         <div className="flex flex-wrap items-center gap-2.5 text-xs">
-          {/* Mode Switcher: Geser Posisi Bebas vs Putar */}
-          <div className="inline-flex rounded-2xl bg-slate-900/80 p-1 border border-white/10 gap-1 shadow-inner">
-            <button
-              onClick={() => setDragMode("pan")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                dragMode === "pan"
-                  ? "bg-blue-600 border border-blue-400 text-white shadow-md"
-                  : "text-slate-400 hover:text-white"
-              }`}
-              title="Geser bebas di layar ke segala arah untuk memindahkan posisi 3D"
-            >
-              <span>✋ Geser Bebas</span>
-            </button>
+          {/* 2 Opsi Interaksi Layar: Opsi 1 (Rotasi) vs Opsi 2 (Posisi Atas/Bawah/Kanan/Kiri) */}
+          <div className="inline-flex rounded-2xl bg-slate-900/90 p-1 border border-white/15 gap-1.5 shadow-xl">
             <button
               onClick={() => setDragMode("rotate")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                 dragMode === "rotate"
-                  ? "bg-blue-600 border border-blue-400 text-white shadow-md"
+                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 border border-blue-400 text-white shadow-md shadow-blue-500/25"
                   : "text-slate-400 hover:text-white"
               }`}
-              title="Geser di layar untuk memutar model 3D"
+              title="Opsi 1: Geser di layar untuk memutar model 3D (360°)"
             >
-              <span>🔄 Putar 360°</span>
+              <span>🔄 Opsi 1: Rotasi (Putar 360°)</span>
+            </button>
+            <button
+              onClick={() => setDragMode("pan")}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                dragMode === "pan"
+                  ? "bg-gradient-to-r from-sky-600 to-blue-600 border border-sky-400 text-white shadow-md shadow-sky-500/25"
+                  : "text-slate-400 hover:text-white"
+              }`}
+              title="Opsi 2: Geser di layar ke segala arah untuk memindahkan posisi (Atas, Bawah, Kiri, Kanan)"
+            >
+              <span>✋ Opsi 2: Posisi (Atas • Bawah • Kiri • Kanan)</span>
             </button>
           </div>
 

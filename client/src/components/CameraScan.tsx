@@ -180,6 +180,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
 
   const [hasCamera, setHasCamera] = useState<boolean>(true);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [isVideoPlaying, setIsVideoPlaying] = useState<boolean>(false);
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [scanProgress, setScanProgress] = useState<number>(0);
   const [scannedProfile, setScannedProfile] = useState<UserPersonalProfile | null>(
@@ -1151,13 +1152,17 @@ export const CameraScan: React.FC<CameraScanProps> = ({
             style={mode === "upload" ? undefined : { aspectRatio: "548 / 455" }}
           >
             {mode === "upload" ? null : (
-              /* Bingkai kamera DSLR Canon EOS — hanya untuk langkah 2 mode kamera live */
+              /* Bingkai kamera DSLR Canon EOS 4K Ultra HD — tajam & jernih */
               <img
                 src="/images/camera-frame.png"
                 alt="Canon Camera Frame"
                 aria-hidden
                 draggable={false}
-                className="absolute inset-0 w-full h-full object-contain pointer-events-none z-20 select-none drop-shadow-[0_25px_45px_rgba(0,0,0,0.65)]"
+                className="absolute inset-0 w-full h-full object-contain pointer-events-none z-20 select-none"
+                style={{
+                  filter: "drop-shadow(0 25px 50px rgba(0,0,0,0.85)) contrast(1.04) brightness(1.02)",
+                  imageRendering: "auto",
+                }}
               />
             )}
             {mode === "upload" ? (
@@ -1261,9 +1266,38 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                 autoPlay
                 playsInline
                 muted
+                onLoadedData={() => setIsVideoPlaying(true)}
+                onPlaying={() => setIsVideoPlaying(true)}
                 className="w-full h-full object-cover transform -scale-x-100"
                 style={{ filter: "brightness(1.35) contrast(1.05)" }}
               />
+
+              {/* Maskot Sesu-AI saat kamera sedang loading/menghubungkan */}
+              {!isVideoPlaying && (
+                <div className="absolute inset-0 bg-[#071120] z-20 flex flex-col items-center justify-center p-4 text-center">
+                  <div className="relative flex flex-col items-center justify-center">
+                    {/* Glow ambient halo */}
+                    <div className="absolute w-24 h-24 rounded-full bg-sky-500/20 blur-xl animate-pulse" />
+
+                    {/* Maskot dengan animasi atas-bawah lembut */}
+                    <div className="relative animate-bounce" style={{ animationDuration: "2s" }}>
+                      <img
+                        src="/images/mascot.png"
+                        alt="Sesu-AI Mascot"
+                        className="w-14 h-14 sm:w-16 sm:h-16 object-contain drop-shadow-[0_8px_20px_rgba(56,189,248,0.5)]"
+                      />
+                    </div>
+
+                    <div className="mt-2.5 flex items-center space-x-1.5 bg-slate-900/90 px-2.5 py-0.5 rounded-full border border-sky-400/30 shadow-lg">
+                      <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-ping" />
+                      <span className="text-[8px] sm:text-[9px] font-mono font-bold text-sky-200 uppercase tracking-wider">
+                        Memuat Sensor AI...
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Lampu sorot lembut dari kanan-atas agar wajah tidak gelap */}
               <div
                 aria-hidden
