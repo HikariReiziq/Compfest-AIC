@@ -615,6 +615,18 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
             const occluderMesh = new THREE.Mesh(neckGeom, occluderMat);
             occluderMesh.renderOrder = -1;
             group.add(occluderMesh);
+          } else {
+            // Glasses Head/Ears Occluder: Ensures temple tips naturally tuck behind the user's ears/temples
+            const glassesHeadGeom = new THREE.SphereGeometry(0.44, 24, 20);
+            glassesHeadGeom.scale(0.95, 1.15, 1.10);
+            glassesHeadGeom.translate(0, -0.05, -0.22);
+            const occluderMat = new THREE.MeshBasicMaterial({
+              colorWrite: false,
+              depthWrite: true,
+            });
+            const occluderMesh = new THREE.Mesh(glassesHeadGeom, occluderMat);
+            occluderMesh.renderOrder = -1;
+            group.add(occluderMesh);
           }
 
           setModelSource(`3D GLB (${filename})`);
@@ -715,11 +727,12 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
     let safePitch = 0;
     if (chin && foreheadTop) {
-      const vertDepth = ((foreheadTop.z || 0) - (chin.z || 0)) * 1.6;
+      const vertDepth = (foreheadTop.z || 0) - (chin.z || 0);
       if (isHat) {
         safePitch = 0.04 + THREE.MathUtils.clamp(-vertDepth * 0.4, -0.2, 0.2);
       } else {
-        safePitch = THREE.MathUtils.clamp(vertDepth, -0.45, 0.45);
+        // Glasses: Keep glasses level and horizontal (pantoscopic tilt ~0° to 4° max)
+        safePitch = THREE.MathUtils.clamp(vertDepth * 0.25, -0.10, 0.10);
       }
     } else if (isHat) {
       safePitch = 0.04;
