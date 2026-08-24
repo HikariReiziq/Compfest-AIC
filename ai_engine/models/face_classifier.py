@@ -148,44 +148,50 @@ class FaceShapeClassifier:
             except Exception:
                 pass  # fallback to rule-based scoring
 
-        # 2. Rule-based scoring fallback across 5 classes
+        # 2. Rule-based scoring fallback across 5 classes (Calibrated ANSUR II / Farkas 1994)
         scores = {"Oval": 0.5, "Round": 0.5, "Square": 0.5, "Heart": 0.5, "Oblong": 0.5}
 
-        # 1. Aspect Ratio (Width vs Height)
-        if f_w_h >= 0.84:
-            scores["Round"] += 1.8
-            scores["Square"] += 1.4
-        elif f_w_h <= 0.69:
-            scores["Oblong"] += 2.0
+        # 1. Aspect Ratio (Width vs Height) - Dominant signal for Oblong
+        if f_w_h >= 0.83:
+            scores["Round"] += 2.2
+            scores["Square"] += 1.8
+        elif f_w_h <= 0.72:
+            scores["Oblong"] += 2.8 * ((0.72 - f_w_h + 0.05) / 0.08)
+        elif f_w_h <= 0.79:
+            scores["Oval"] += 1.8
+            scores["Heart"] += 1.2
         else:
-            scores["Oval"] += 1.5
-            scores["Heart"] += 1.0
+            scores["Round"] += 1.0
+            scores["Oval"] += 1.0
 
         # 2. Jaw vs Forehead
-        if jaw_fh >= 0.92:
-            scores["Square"] += 1.8
-        elif jaw_fh <= 0.74:
-            scores["Heart"] += 2.0
-            scores["Oval"] += 0.8
+        if jaw_fh >= 0.90:
+            scores["Square"] += 2.0
+        elif jaw_fh <= 0.72:
+            scores["Heart"] += 2.4
+            scores["Oval"] += 0.4
         else:
-            scores["Oval"] += 1.0
-            scores["Round"] += 0.8
+            scores["Oval"] += 1.2
+            scores["Oblong"] += 1.2
 
         # 3. Cheekbone vs Jaw
-        if cheek_jaw >= 1.28:
-            scores["Heart"] += 1.2
-            scores["Round"] += 1.0
+        if cheek_jaw >= 1.32 and f_w_h >= 0.74:
+            scores["Heart"] += 1.8
+            scores["Round"] += 0.8
         elif cheek_jaw <= 1.12:
-            scores["Square"] += 1.5
+            scores["Square"] += 1.6
+            scores["Oblong"] += 1.0
+        else:
+            scores["Oval"] += 1.0
             scores["Oblong"] += 1.0
 
         # 4. Chin Sharpness
-        if chin_sharp <= 0.58:
-            scores["Heart"] += 1.0
+        if chin_sharp <= 0.54 and f_w_h >= 0.74:
+            scores["Heart"] += 1.4
             scores["Oval"] += 0.8
         elif chin_sharp >= 0.72:
-            scores["Square"] += 1.0
-            scores["Round"] += 0.8
+            scores["Square"] += 1.2
+            scores["Round"] += 1.0
 
         # Find best shape & confidence
         best_shape = max(scores, key=scores.get)

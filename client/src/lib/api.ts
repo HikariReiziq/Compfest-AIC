@@ -69,43 +69,47 @@ export async function analyzeLandmarks(payload: Record<string, unknown>): Promis
 }
 
 /* ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------ */
 /*  Dynamic Questionnaire Engine                                      */
 /* ------------------------------------------------------------------ */
-const LOCAL_FALLBACK_QUESTIONS_BATCH1 = (sub: string, profile: Record<string, any>) => [
-  {
-    id: "occasion",
-    question: `Untuk momen atau acara apa Anda mencari ${sub}?`,
-    reason: `Momen penggunaan menentukan tingkat formalitas dan jenis material.`,
-    options: [
-      { id: "Casual", label: "Casual / Santai", desc: "Hangout, ngopi, dan kegiatan sehari-hari" },
-      { id: "Formal", label: "Formal / Profesional", desc: "Kantor, meeting, presentasi" },
-      { id: "Party", label: "Pesta / Evening", desc: "Acara sosial malam, pesta, dan kencan" },
-      { id: "Sports", label: "Sporty / Outdoor", desc: "Aktivitas dinamis dan outdoor" },
-    ],
-  },
-  {
-    id: "fit_preference",
-    question: "Siluet dan karakter potongan apa yang Anda sukai?",
-    reason: `Potongan yang tepat untuk gaya dan aktivitas ${profile.gender?.label || "Anda"}.`,
-    options: [
-      { id: "Regular Fit", label: "Classic Timeless", desc: "Dimensi standar seimbang" },
-      { id: "Oversized", label: "Bold Oversized", desc: "Dramatis & percaya diri" },
-      { id: "Fitted", label: "Minimalist Slim", desc: "Garis tipis presisi" },
-      { id: "Layered", label: "Geometric Sharp", desc: "Aksen sudut kontemporer" },
-    ],
-  },
-  {
-    id: "color_mood",
-    question: "Nuansa palet warna dominan yang ingin dieksplorasi?",
-    reason: `Dengan undertone ${profile.undertone || "Anda"}, beberapa palet lebih bersinar.`,
-    options: [
-      { id: "Earth Tone", label: "Earth Tone (Hangat)", desc: "Terracotta, olive, mustard" },
-      { id: "Jewel Tone", label: "Jewel Tone (Sejuk)", desc: "Navy, emerald, burgundy" },
-      { id: "Neutral Classic", label: "Neutral Monokrom", desc: "Charcoal, beige, off-white" },
-      { id: "Bold Vibrant", label: "Bold & Expressive", desc: "Teal, bronze, plum" },
-    ],
-  },
-];
+const LOCAL_FALLBACK_QUESTIONS_BATCH1 = (sub: string, profile: Record<string, any>) => {
+  const items = [
+    {
+      id: "occasion",
+      question: `Untuk suasana apa ${sub} ini digunakan?`,
+      reason: `Menyesuaikan ketahanan dan siluet untuk kebutuhan Anda.`,
+      options: [
+        { id: "Casual", label: "Santai & Harian", desc: "Gaya kasual nyaman untuk hangout" },
+        { id: "Formal", label: "Kerja & Formal", desc: "Tampilan rapi profesional di kantor" },
+        { id: "Party", label: "Pesta & Spesial", desc: "Kesan berkelas dan memikat" },
+        { id: "Sports", label: "Outdoor & Aktif", desc: "Mobilitas tinggi dan aktivitas luar" },
+      ],
+    },
+    {
+      id: "fit_preference",
+      question: "Pilihan siluet yang Anda sukai?",
+      reason: `Potongan yang selaras dengan proporsi tubuh Anda.`,
+      options: [
+        { id: "Regular Fit", label: "Klasik Proporsional", desc: "Dimensi standar seimbang" },
+        { id: "Oversized", label: "Oversized / Lebar", desc: "Garis tegas percaya diri" },
+        { id: "Fitted", label: "Ramping Minimalis", desc: "Garis tipis presisi" },
+        { id: "Layered", label: "Geometris Modern", desc: "Aksen sudut kontemporer" },
+      ],
+    },
+    {
+      id: "color_mood",
+      question: "Nuansa warna yang ingin dieksplorasi?",
+      reason: `Menyelaraskan dengan rona kulit alami Anda.`,
+      options: [
+        { id: "Earth Tone", label: "Nuansa Bumi (Hangat)", desc: "Terracotta, olive, mustard" },
+        { id: "Jewel Tone", label: "Nuansa Sejuk", desc: "Navy, emerald, burgundy" },
+        { id: "Neutral Classic", label: "Netral Monokrom", desc: "Charcoal, hitam, off-white" },
+        { id: "Bold Vibrant", label: "Kontras Berani", desc: "Emas, bronze, aksen cerah" },
+      ],
+    },
+  ];
+  return items.sort(() => Math.random() - 0.5);
+};
 
 export async function fetchDynamicQuestions(
   category: string,

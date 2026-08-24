@@ -10,6 +10,7 @@ import {
   Loader2,
   Brain,
   AlertCircle,
+  Sparkles,
 } from 'lucide-react';
 import { fetchDynamicQuestions } from '../lib/api';
 import UniversalLoading3D from './UniversalLoading3D';
@@ -29,6 +30,94 @@ export interface DynamicQuestion {
   reason: string;
   options: QuestionOption[];
 }
+
+/* ------------------------------------------------------------------ */
+/*  Alternative Options Pool Bank for Dynamic Re-Rolling             */
+/* ------------------------------------------------------------------ */
+const ALTERNATIVE_OPTIONS_MAP: Record<string, QuestionOption[][]> = {
+  occasion: [
+    [
+      { id: "Occ_Cafe", label: "Ngopi & Hangout Santai", desc: "Aktivitas kasual harian bersama teman" },
+      { id: "Occ_Executive", label: "Meeting Eksekutif Resmi", desc: "Suasana kerja profesional dan berwibawa" },
+      { id: "Occ_Gala", label: "Gala & Dinner Romantis", desc: "Momen perayaan malam berkesan" },
+      { id: "Occ_Gym", label: "Gym & Mobilitas Aktif", desc: "Ketahanan tinggi untuk aktivitas dinamis" },
+    ],
+    [
+      { id: "Occ_Travel", label: "Traveling & Liburan", desc: "Fleksibel dan nyaman di perjalanan" },
+      { id: "Occ_Creative", label: "Studio & Komunitas Kreatif", desc: "Tampilan ekspresif bernuansa artistik" },
+      { id: "Occ_Daily", label: "Daily Essentials Harian", desc: "Pilihan serbaguna dari pagi hingga malam" },
+      { id: "Occ_FormalEvent", label: "Resepsi & Acara Resmi", desc: "Kesan anggun/maskulin yang rapi" },
+    ],
+  ],
+  fit_preference: [
+    [
+      { id: "Fit_Geometric", label: "Geometris Heksagonal", desc: "Sudut kontemporer unik berani beda" },
+      { id: "Fit_Rimless", label: "Rimless / Tanpa Bingkai", desc: "Sangat ringan dan tidak dominan" },
+      { id: "Fit_VintageRound", label: "Bulat Retro Artistik", desc: "Sentuhan klasik intelektual" },
+      { id: "Fit_Clubmaster", label: "Clubmaster / Browline", desc: "Garis atas tegas beraksen metal" },
+    ],
+    [
+      { id: "Fit_AviatorDouble", label: "Aviator Double-Bridge", desc: "Jembatan ganda memotong panjang wajah" },
+      { id: "Fit_SquareBold", label: "Kotak Tebal Solid", desc: "Garis tegas memperkuat struktur rahang" },
+      { id: "Fit_CatEyeSoft", label: "Cat-Eye / Sudut Halus", desc: "Aksen terangkat mempersegar tatapan" },
+      { id: "Fit_MinimalistWire", label: "Wireframe Tipis Presisi", desc: "Simpel, bersih, dan profesional" },
+    ],
+  ],
+  color_mood: [
+    [
+      { id: "Col_Champagne", label: "Champagne & Caramel", desc: "Nuansa emas lembut berkelas" },
+      { id: "Col_SmokyOnyx", label: "Smoky Charcoal & Onyx", desc: "Abu arang modern berwibawa" },
+      { id: "Col_SageForest", label: "Sage Green & Forest", desc: "Hijau alami yang menenangkan" },
+      { id: "Col_RichHavana", label: "Rich Havana Tortoise", desc: "Gradasi amber mewah eksotis" },
+    ],
+    [
+      { id: "Col_DeepNavy", label: "Deep Navy & Perak", desc: "Kontras biru pekat elegan" },
+      { id: "Col_BronzeEarth", label: "Bronze & Terrakota Tua", desc: "Kilau tembaga hangat memikat" },
+      { id: "Col_RoseGold", label: "Rose Gold & Soft Blush", desc: "Sentuhan lembut manis berkelas" },
+      { id: "Col_MatteBlack", label: "All-Black Doff Solid", desc: "Ketegasan maskulin minimalis" },
+    ],
+  ],
+  brand_style: [
+    [
+      { id: "Style_Techwear", label: "Tech-Wear Fungsional", desc: "Fokus material modern dan utilitas" },
+      { id: "Style_Retro90s", label: "Vintage 90s Heritage", desc: "Sentuhan nostalgia yang otentik" },
+      { id: "Style_QuietLuxury", label: "Quiet Luxury Elegan", desc: "Mewah bersahaja tanpa logo mencolok" },
+      { id: "Style_Cyberpunk", label: "Kontemporer Eksploratif", desc: "Desain masa depan berkarakter tajam" },
+    ],
+  ],
+  comfort_priority: [
+    [
+      { id: "Comf_AntiSlip", label: "Anti-Slip & Tahan Keringat", desc: "Tetap stabil saat cuaca panas tropis" },
+      { id: "Comf_SoftPads", label: "Bantalan Hidung Lembut", desc: "Bantalan silikon adaptif tanpa bekas" },
+      { id: "Comf_SpringHinges", label: "Engsel Pegas Fleksibel", desc: "Menyesuaikan lebar pelipis dengan pas" },
+      { id: "Comf_Weightless", label: "Beban Terdistribusi Merata", desc: "Terasa seringan tanpa beban di hidung" },
+    ],
+  ],
+  material_preference: [
+    [
+      { id: "Mat_CarbonFiber", label: "Carbon Fiber Composite", desc: "Daya tahan maksimal bobot ekstra ringan" },
+      { id: "Mat_Alloy", label: "Aluminium Alloy Ringan", desc: "Logam modern dengan fleksibilitas tinggi" },
+      { id: "Mat_Ultem", label: "Ultem Resilient Memory", desc: "Fleksibel, tidak mudah patah, elastis" },
+      { id: "Mat_EcoAcetate", label: "Eco-Acetate Selulosa", desc: "Ramah lingkungan dan lembut di kulit" },
+    ],
+  ],
+  finish_style: [
+    [
+      { id: "Fin_SatinSilky", label: "Satin Silky Touch", desc: "Sentuhan halus lembut semi-doff" },
+      { id: "Fin_Ceramic", label: "Ceramic Matte Coating", desc: "Lapisan tahan gores bertekstur kokoh" },
+      { id: "Fin_Gradation", label: "Gradasi Amber Tortoise", desc: "Pola motif alami berdimensi kaya" },
+      { id: "Fin_Anodized", label: "Metallic Anodized", desc: "Warna logam menyatu anti-luntur" },
+    ],
+  ],
+  budget_range: [
+    [
+      { id: "Bud_Value", label: "Smart Value (< Rp400rb)", desc: "Kualitas harian harga hemat" },
+      { id: "Bud_Midrange", label: "Mid-Tier Pilihan (Rp400-800rb)", desc: "Material lebih kokoh dan detail rapi" },
+      { id: "Bud_HighEnd", label: "High-End Artisan (Rp800rb-1.5Jt)", desc: "Finishing presisi pengerjaan tangan" },
+      { id: "Bud_Collector", label: "Collector Edition (> Rp1.5Jt)", desc: "Material langka dan seri terbatas" },
+    ],
+  ],
+};
 
 interface TargetedQuizProps {
   subcategory: 'glasses' | 'hats' | 'shirts';
@@ -58,6 +147,8 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
   const [questionSource, setQuestionSource] = useState<string>('gemini_api');
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [rerollCounts, setRerollCounts] = useState<Record<string, number>>({});
+  const [rerollingId, setRerollingId] = useState<string | null>(null);
 
   // Load Initial Batch 1 Questions
   useEffect(() => {
@@ -112,6 +203,48 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
     } finally {
       setIsLoadingMore(false);
     }
+  };
+
+  // Re-roll options for a specific question with alternative sets
+  const handleRerollQuestion = (questionId: string) => {
+    setRerollingId(questionId);
+
+    setTimeout(() => {
+      setQuestionsList((prevList) => {
+        return prevList.map((q) => {
+          if (q.id !== questionId) return q;
+
+          // Find alternative sets matching the question key or fallback
+          const qKey = Object.keys(ALTERNATIVE_OPTIONS_MAP).find(
+            (k) => q.id.toLowerCase().includes(k) || q.question.toLowerCase().includes(k)
+          ) || 'fit_preference';
+
+          const altSets = ALTERNATIVE_OPTIONS_MAP[qKey] || ALTERNATIVE_OPTIONS_MAP.fit_preference;
+          const currentCount = rerollCounts[questionId] || 0;
+          const nextSetIdx = currentCount % altSets.length;
+          const newOptions = altSets[nextSetIdx];
+
+          setRerollCounts((prev) => ({
+            ...prev,
+            [questionId]: currentCount + 1,
+          }));
+
+          return {
+            ...q,
+            options: newOptions,
+          };
+        });
+      });
+
+      // Reset previous selection for this question so user picks from new choices
+      setAnswers((prev) => {
+        const next = { ...prev };
+        delete next[questionId];
+        return next;
+      });
+
+      setRerollingId(null);
+    }, 200);
   };
 
   const handleSelectOption = (questionId: string, optionId: string) => {
@@ -282,12 +415,26 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
           return (
             <div
               key={q.id}
-              className={`bg-[#0B1528]/90 rounded-3xl p-7 sm:p-8 space-y-5 transition-all duration-300 border backdrop-blur-xl shadow-xl ${
+              className={`relative bg-[#0B1528]/90 rounded-3xl p-7 sm:p-8 space-y-5 transition-all duration-300 border backdrop-blur-xl shadow-xl ${
                 !isAnswered && validationError
                   ? 'border-rose-500/60'
                   : 'border-blue-500/20'
               }`}
             >
+              {/* Floating Compact Re-Roll Button Attached to Container */}
+              <div className="absolute -top-3.5 right-6 z-10">
+                <button
+                  type="button"
+                  onClick={() => handleRerollQuestion(q.id)}
+                  disabled={rerollingId === q.id}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-semibold text-[#38BDF8] bg-[#071120] border border-blue-400/40 hover:border-blue-400 hover:bg-blue-600/25 hover:text-white transition-all shadow-lg hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-50"
+                  title="Tidak ada pilihan yang cocok? Acak opsi alternatif lain"
+                >
+                  <Sparkles className={`w-3 h-3 text-[#FACC15] ${rerollingId === q.id ? 'animate-spin' : ''}`} />
+                  <span>Opsi Lain</span>
+                </button>
+              </div>
+
               {/* Question Header */}
               <div className="flex items-start gap-4">
                 <span
@@ -297,10 +444,10 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
                 </span>
 
                 <div className="flex-1 space-y-2">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
                     <h3 className="font-bold text-white text-lg sm:text-xl leading-snug">{q.question}</h3>
                     {isAnswered && (
-                      <span className="text-xs font-mono text-[#93C5FD] bg-blue-500/20 border border-blue-500/30 px-3 py-1 rounded-full shrink-0 ml-3">
+                      <span className="text-xs font-mono text-[#93C5FD] bg-blue-500/20 border border-blue-500/30 px-3 py-1 rounded-full shrink-0">
                         ✓ Terjawab
                       </span>
                     )}

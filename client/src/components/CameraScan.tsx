@@ -729,12 +729,11 @@ export const CameraScan: React.FC<CameraScanProps> = ({
       // Agregat temporal (median rasio + mean LAB) — fitur biometrik nyata dari FaceLandmarker
       let payload: Record<string, unknown>;
       const imgW = videoRef.current?.videoWidth || 640;
+      const imgH = lastImgHeightRef.current || videoRef.current?.videoHeight || 480;
 
       if (samplerRef.current.count >= MIN_SAMPLES) {
         const agg = samplerRef.current.aggregate();
         const lm = lastAlignedLmRef.current;
-        // Tinggi frame untuk konversi pinhole ke sentimeter (fix-kacamata).
-        const imgH = lastImgHeightRef.current || videoRef.current?.videoHeight || 480;
         payload = {
           face_ratios: agg.ratios,
           measurements_cm: lm ? computeMeasurementsCm(lm, imgH) : {},
@@ -760,7 +759,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
         const ratios = computeFaceRatios(lm);
         payload = {
           face_ratios: ratios,
-          measurements_cm: computeMeasurementsCm(lm, imgW),
+          measurements_cm: computeMeasurementsCm(lm, imgH),
           nose_features: computeNoseFeatures(lm),
           eye_features: computeEyeFeatures(lm),
           brow_features: computeBrowFeatures(lm),

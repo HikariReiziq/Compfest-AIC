@@ -118,6 +118,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   const faceLandmarkerRef = useRef<any>(null);
   const rafRef = useRef<number>(0);
   const localStreamRef = useRef<MediaStream | null>(null);
+  const lastDetectedTimeRef = useRef<number>(0);
 
   const [isTrackingFace, setIsTrackingFace] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
@@ -223,6 +224,9 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           },
           runningMode: "VIDEO",
           numFaces: 1,
+          minFaceDetectionConfidence: 0.3,
+          minFacePresenceConfidence: 0.3,
+          minTrackingConfidence: 0.3,
           outputFaceBlendshapes: false,
           outputFacialTransformationMatrixes: true,
         });
@@ -308,10 +312,11 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     });
 
     // Anatomical Head Ellipsoid (Blocks glasses temples from showing in front of ears/cheeks)
-    const headGeo = new THREE.SphereGeometry(0.72, 32, 24);
-    headGeo.scale(0.92, 1.18, 1.05);
+    // Scaled and positioned safely behind the facial plane so it never clips glasses front frame
+    const headGeo = new THREE.SphereGeometry(0.52, 32, 24);
+    headGeo.scale(0.85, 1.05, 0.85);
     const headMesh = new THREE.Mesh(headGeo, occluderMat);
-    headMesh.position.set(0, -0.05, -0.22);
+    headMesh.position.set(0, -0.08, -0.65);
     occluderGroup.add(headMesh);
 
     scene.add(occluderGroup);
@@ -329,7 +334,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
       if (viewMode === "ar" && video && video.readyState >= 2 && landmarker) {
         if (occluderGroup) {
-          occluderGroup.visible = true;
+          occluderGroup.visible = isHat;
         }
         if (video.currentTime !== lastVideoTime) {
           lastVideoTime = video.currentTime;
@@ -338,18 +343,14 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
             if (result && result.faceLandmarks && result.faceLandmarks.length > 0) {
               setIsTrackingFace(true);
               modelGroup.visible = true;
+              lastDetectedTimeRef.current = performance.now();
               applyLandmarksTo3DModel(result.faceLandmarks[0], modelGroup, occluderGroup);
             } else {
-              // Wajah hilang dari deteksi (keluar frame, terpotong tepi atas,
-              // cahaya kurang). Dulu model malah dihanyutkan ke tengah layar,
-              // sehingga tampak menempel diam menutupi wajah — persis yang
-              // dilaporkan sebagai "kaku, tidak mengikuti pergerakan".
-              // Menyembunyikannya jauh lebih jujur: yang hilang pelacakannya,
-              // bukan modelnya yang salah tempat.
-              setIsTrackingFace(false);
-              // Wajah hilang dari deteksi: sembunyikan model secara jujur
-              // (dari fix-kacamata) daripada menghanyutkannya ke tengah layar.
-              modelGroup.visible = false;
+              // Grace period 250ms to prevent flickering during fast head turns
+              if (performance.now() - lastDetectedTimeRef.current > 250) {
+                setIsTrackingFace(false);
+                modelGroup.visible = false;
+              }
             }
           } catch {
             // Frame skip
@@ -495,19 +496,19 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
           wrapper.position.set(pivot[0], pivot[1] - hatSink, pivot[2]);
 
-          // 3. Ultra-Realistic Optical Materials (clean matte, preserve GLTF textures)
+          // 3. Ultra-Realistic Optical Materials (sleek dark tint sunglasses lens, preserve GLTF textures)
           const opticalLensMat = new THREE.MeshPhysicalMaterial({
-            color: new THREE.Color(0x0f172a),
+            color: new THREE.Color(0x1e293b),
             transparent: true,
-            opacity: 0.22,
-            roughness: 0.05,
-            metalness: 0.08,
-            transmission: 0.92,
+            opacity: 0.72,
+            roughness: 0.12,
+            metalness: 0.25,
+            transmission: 0.35,
             ior: 1.52,
             reflectivity: 0.85,
             clearcoat: 1.0,
             clearcoatRoughness: 0.05,
-            depthWrite: false,
+            depthWrite: true,
             side: THREE.DoubleSide,
           });
 
@@ -527,13 +528,24 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
                 // Identify lens geometry vs frame geometry
                 const isLens =
                   !isHat &&
-                  (matName.includes("glass") ||
+                  (matName === "glass" ||
                     matName.includes("lens") ||
-                    matName.includes("001_g") ||
-                    matName.includes("000_glass") ||
-                    matName.includes("002_glass") ||
-                    meshName.includes("glass") ||
-                    meshName.includes("lens"));
+                    matName.includes("lenses") ||
+                    matName === "001_g" ||
+                    matName === "000_glass" ||
+                    matName === "002_glass" ||
+                    meshName.includes("lens") ||
+                    meshName.includes("lenses") ||
+                    meshName === "glass_glass_0") &&
+                  !matName.includes("sunglass") &&
+                  !matName.includes("frame") &&
+                  !matName.includes("temple") &&
+                  !matName.includes("earhook") &&
+                  !matName.includes("nose_pad") &&
+                  !matName.includes("lambert") &&
+                  !meshName.includes("frame") &&
+                  !meshName.includes("temple") &&
+                  !meshName.includes("earhook");
 
                 if (isLens) {
                   mesh.material = opticalLensMat;
@@ -627,9 +639,12 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const midEyeX = (eyeLX + eyeRX) / 2;
     const midEyeY = (eyeLY + eyeRY) / 2;
 
-    // Anchor: Nasion + MidEye blend for glasses, Forehead for hats
-    const anchorX = isHat ? (foreheadTop ? foreheadTop.x : midEyeX) : (midEyeX * 0.35 + nasion.x * 0.65);
-    const anchorY = isHat ? (foreheadTop ? foreheadTop.y : midEyeY) : (midEyeY * 0.35 + nasion.y * 0.65);
+    // Anchor: Sellion/Pupil blend for glasses, Forehead for hats
+    // For glasses, anchor directly on the horizontal eye pupil line (midEyeY)
+    // with sellion/glabella (Landmark 168) for horizontal symmetry.
+    const glabella168 = landmarks[168] || nasion;
+    const anchorX = isHat ? (foreheadTop ? foreheadTop.x : midEyeX) : (midEyeX * 0.70 + glabella168.x * 0.30);
+    const anchorY = isHat ? (foreheadTop ? foreheadTop.y : midEyeY) : (midEyeY * 0.85 + glabella168.y * 0.15);
 
     // Screen Pixel Coordinates (Mirrored Video Feed -X)
     const screenX = offsetX + (1 - anchorX) * renderedWidth;
@@ -644,11 +659,11 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const halfW = halfH * (cw / ch);
 
     const worldX = ndcX * halfW;
-    // Penempatan vertikal topi ditangani di ruang ternormalisasi (hatSink di
-    // loadCategorized3DModel) yang ikut terskalakan bersama kepala — bukan
-    // konstanta dunia yang hanya pas pada satu jarak kamera.
-    const worldY = ndcY * halfH + (isHat ? 0 : -0.01) + offsetY * 0.012;
-    const worldZ = (nasion.z || 0) * -1.8;
+    // Penempatan vertikal & kedalaman kacamata:
+    // 1. worldY: selaraskan pusat optik lensa persis di depan pupil mata (+0.065)
+    // 2. worldZ: dorong kacamata maju (+0.12) agar bertengger di atas batang hidung (tidak terbenam di wajah)
+    const worldY = ndcY * halfH + (isHat ? 0 : 0.065) + offsetY * 0.012;
+    const worldZ = ((glabella168?.z ?? nasion.z ?? 0) * -1.8) + (isHat ? 0 : 0.12) + (offsetZ * 0.02);
 
     // Screen Positions of Both Eyes for Angle & Scale
     const screenLX = offsetX + (1 - eyeLX) * renderedWidth;
@@ -661,56 +676,66 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const deltaY = screenLY - screenRY;
     const pixelDist = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-    // 1. True 3D Roll (Tilt angle around Z)
-    const rollAngle = Math.atan2(deltaY, deltaX);
-    const safeRoll = THREE.MathUtils.clamp(rollAngle, -0.95, 0.95);
+    // ---------------------------------------------------------------
+    // TRUE 6-DoF 3D ORTHONORMAL HEAD POSE TRACKING
+    // ---------------------------------------------------------------
+    // 1. Vector Ux (Horizontal Head Axis from Subject Right Eye to Left Eye)
+    // In mirrored video, Subject Right Eye (263) is on the left (-X), Subject Left Eye (33) is on the right (+X).
+    // In Three.js world space: +X is Right, +Y is Up, +Z is towards Camera.
+    const eyeDx = (rightOuter.x - leftOuter.x) * renderedWidth;
+    const eyeDy = (leftOuter.y - rightOuter.y) * renderedHeight;
+    // Depth (Z): When user turns head to their left (facing screen-right):
+    // Subject Right Eye (263, screen left) turns forward (+Z towards camera).
+    // Subject Left Eye (33, screen right) turns backward (-Z away from camera).
+    // (rightOuter.z - leftOuter.z) is positive -> dz from right to left eye is negative into screen.
+    const eyeDz = ((rightOuter.z || 0) - (leftOuter.z || 0)) * renderedWidth * 1.85;
+    const uX = new THREE.Vector3(eyeDx, eyeDy, eyeDz).normalize();
 
-    // 2. True 3D Yaw (Head turning Left / Right in 3D Space)
-    const eyeZDelta = (rightOuter.z || 0) - (leftOuter.z || 0);
-    const screenBridgeX = offsetX + (1 - nasion.x) * renderedWidth;
-    const eyeMidScreenX = (screenLX + screenRX) / 2;
-    const noseScreenShift = (screenBridgeX - eyeMidScreenX) / (pixelDist * 0.5 + 0.001);
-    
-    // Combining 3D depth and facial feature perspective foreshortening
-    const rawYaw = (eyeZDelta * 3.2) + (noseScreenShift * 1.1);
-    const safeYaw = THREE.MathUtils.clamp(rawYaw, -0.95, 0.95);
+    // 2. Vector Uy (Vertical Head Axis from Chin to Forehead)
+    // Chin is lower on screen (larger Y), Forehead is higher on screen (smaller Y).
+    // In Three.js, +Y is Up, so (chin.y - forehead.y) is positive.
+    const chinPt = chin || landmarks[152] || landmarks[175];
+    const forePt = foreheadTop || landmarks[10] || landmarks[151];
+    const headDx = (chinPt.x - forePt.x) * renderedWidth;
+    const headDy = (chinPt.y - forePt.y) * renderedHeight;
+    const headDz = ((chinPt.z || 0) - (forePt.z || 0)) * renderedWidth * 1.85;
+    const rawUy = new THREE.Vector3(headDx, headDy, headDz);
 
-    // 3. True 3D Pitch (Head tilting Up / Down)
-    let safePitch = 0;
-    if (chin && foreheadTop) {
-      const vertDepth = ((foreheadTop.z || 0) - (chin.z || 0)) * 2.2;
-      const noseRelY = ((nasion.y - foreheadTop.y) / (chin.y - foreheadTop.y + 0.001) - 0.45) * 2.0;
-      safePitch = THREE.MathUtils.clamp(vertDepth + noseRelY, -0.55, 0.55);
-    }
+    // Gram-Schmidt orthogonalize Uy against Ux to guarantee perfect 90° orthogonality
+    const dotXY = rawUy.dot(uX);
+    const uY = rawUy.sub(uX.clone().multiplyScalar(dotXY)).normalize();
+
+    // 3. Vector Uz (Normal Face Vector pointing directly out of the face plane)
+    const uZ = new THREE.Vector3().crossVectors(uX, uY).normalize();
+
+    // Build Exact 3D Rotation Matrix and Target Quaternion
+    const rotMatrix = new THREE.Matrix4().makeBasis(uX, uY, uZ);
+    const targetQuaternion = new THREE.Quaternion().setFromRotationMatrix(rotMatrix);
 
     // World Space Scale (Glasses width matches real Inter-Pupillary Distance)
     const worldInterPupil = (pixelDist / cw) * (2 * halfW);
-    const baseScale = isHat ? worldInterPupil * 1.95 : worldInterPupil * 1.62;
+    const baseScale = isHat ? worldInterPupil * 1.95 : worldInterPupil * 1.65;
     const finalScale = baseScale * (scaleMultiplier / 100);
 
     // 60 FPS Smooth Interpolation for 3D Accessory
-    group.position.x = THREE.MathUtils.lerp(group.position.x, worldX, 0.45);
-    group.position.y = THREE.MathUtils.lerp(group.position.y, worldY, 0.45);
-    group.position.z = THREE.MathUtils.lerp(group.position.z, worldZ, 0.45);
+    group.position.x = THREE.MathUtils.lerp(group.position.x, worldX, 0.55);
+    group.position.y = THREE.MathUtils.lerp(group.position.y, worldY, 0.55);
+    group.position.z = THREE.MathUtils.lerp(group.position.z, worldZ, 0.55);
 
-    group.rotation.z = THREE.MathUtils.lerp(group.rotation.z, safeRoll, 0.45);
-    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw, 0.45);
-    group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, safePitch, 0.45);
+    // Quaternion SLERP: 100% 1-to-1 sync for Roll, Pitch, and Yaw with Zero Gimbal Lock
+    group.quaternion.slerp(targetQuaternion, 0.55);
 
-    group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.45);
+    group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.55);
 
     // Synchronize Invisible Head Occluder (For Temples & Hat Interior Masking)
     if (occluderGroupRef.current) {
       const occ = occluderGroupRef.current;
       occ.position.x = group.position.x;
       occ.position.y = group.position.y - 0.05;
-      occ.position.z = group.position.z - 0.22;
+      occ.position.z = group.position.z - 0.25;
 
-      occ.rotation.z = group.rotation.z;
-      occ.rotation.y = group.rotation.y;
-      occ.rotation.x = group.rotation.x;
-
-      occ.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.45);
+      occ.quaternion.slerp(targetQuaternion, 0.55);
+      occ.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.55);
     }
   };
 

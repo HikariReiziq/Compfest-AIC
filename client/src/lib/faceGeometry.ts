@@ -191,7 +191,9 @@ export function computeFaceRatios(lm: Landmark[]): FaceRatios {
   const wCheek = dist2(lm[LM.cheekL], lm[LM.cheekR]);
   const wForehead = dist2(lm[LM.foreheadL], lm[LM.foreheadR]);
   const wJaw = dist2(lm[LM.jawL], lm[LM.jawR]);
-  const hFace = dist2(lm[LM.faceTop], lm[LM.chinBottom]);
+  // Landmark 10 adalah puncak dahi aktif MediaPipe; faktor 1.08 mengompensasi
+  // jarak vertikal dahi atas ke garis rambut (trichion) sesuai standar Farkas 1994.
+  const hFace = dist2(lm[LM.faceTop], lm[LM.chinBottom]) * 1.08;
   const wChin = dist2(lm[LM.chinL], lm[LM.chinR]);
   return {
     face_width_to_height: round4(wCheek / Math.max(1e-6, hFace)),

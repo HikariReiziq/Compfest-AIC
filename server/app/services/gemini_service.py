@@ -8,6 +8,7 @@ specific detected 3-parameter biometrics: Gender, Skin Tone, and Face Shape.
 import os
 import json
 import logging
+import random
 import urllib.request
 import urllib.error
 from typing import Dict, List, Any, Optional
@@ -32,11 +33,10 @@ def _build_tailored_prompt(
     previous_answers: Optional[Dict[str, str]] = None,
     batch: int = 1,
 ) -> str:
-    """Builds a bespoke conditional prompt instructing Gemini to craft questions customized to this exact user."""
+    """Builds a bespoke concise prompt instructing Gemini to craft punchy questions customized to this user."""
     # 1. Extract 3 core biometric parameters
     gender_raw = str(user_profile.get("gender", "male")).lower()
-    gender = "Wanita (Female)" if ("female" in gender_raw or "wanita" in gender_raw or "puan" in gender_raw) else "Pria (Male)"
-    gender_key = "female" if "Wanita" in gender else "male"
+    gender = "Wanita" if ("female" in gender_raw or "wanita" in gender_raw or "puan" in gender_raw) else "Pria"
 
     skin_tone = user_profile.get("skin_tone", "Tan")
     if isinstance(skin_tone, dict):
@@ -56,92 +56,60 @@ def _build_tailored_prompt(
 
     subcategory_id = subcategory.lower()
     if "glass" in subcategory_id:
-        item_label = "kacamata (eyewear)"
+        item_label = "kacamata"
     elif "hat" in subcategory_id:
-        item_label = "topi (headwear)"
+        item_label = "topi"
     elif "shirt" in subcategory_id or "apparel" in category.lower():
-        item_label = "atasan & kemeja/kaos (shirts)"
+        item_label = "baju/kemeja"
     elif "jacket" in subcategory_id:
-        item_label = "jaket & outerwear"
+        item_label = "jaket"
     else:
         item_label = subcategory_id
 
-    # 2. Conditional rules instructions
-    # A. Gender Rules
-    if gender_key == "female":
-        gender_instruction = (
-            "Pengguna adalah WANITA: Pertanyaan harus memprioritaskan keselarasan bingkai/kerah dengan riasan/makeup, "
-            "estetika proporsi yang anggun/chic, serta fleksibilitas transisi penampilan dari aktivitas formal ke kasual santai."
-        )
-    else:
-        gender_instruction = (
-            "Pengguna adalah PRIA: Pertanyaan harus memprioritaskan ketegasan garis rahang/pelipis, kepraktisan mobilitas outdoor, "
-            "daya tahan material saat beraktivitas dinamis, dan siluet clean/maskulin yang kokoh."
-        )
-
-    # B. Skin Tone Rules (Dark/Tan vs Fair/Light)
-    skin_tone_lower = str(skin_tone).lower()
-    if skin_tone_lower in ["dark", "tan"] or any(m in str(monk_tone) for m in ["06", "07", "08", "09", "10"]):
-        skin_instruction = (
-            f"Warna Kulit: {skin_tone} ({monk_tone} Sawo Matang/Gelap). Eksplorasi preferensi kontras hangat memikat "
-            "(Gold, Champagne, Warm Amber Tortoiseshell, Terracotta, Bronze) dan adaptasi intensitas pencahayaan matahari/outdoor tropis."
-        )
-    elif skin_tone_lower in ["fair", "light"] or any(m in str(monk_tone) for m in ["01", "02", "03", "04"]):
-        skin_instruction = (
-            f"Warna Kulit: {skin_tone} ({monk_tone} Cerah/Terang). Eksplorasi preferensi kontras sejuk/pastel "
-            "(Silver Steel, Gunmetal, Rose Gold, Navy Sapphire, Charcoal) untuk mencegah kesan pucat (wash-out)."
-        )
-    else:
-        skin_instruction = (
-            f"Warna Kulit: {skin_tone} ({monk_tone} Sedang/Medium). Fleksibilitas tinggi dalam memadukan warna netral hangat maupun sejuk."
-        )
-
-    # C. Face Shape Rules
-    face_shape_instruction = f"Bentuk Wajah: {face_shape}. Berikan opsi bentuk yang secara proporsional menyeimbangkan geometri wajah {face_shape}."
-
     batch_topics = {
-        1: f"3 pertanyaan inti: (1) Momen penggunaan & intensitas aktivitas ({gender}), (2) Keseimbangan siluet bingkai/potongan khusus wajah {face_shape}, (3) Harmoni palet warna khusus kulit {skin_tone} ({monk_tone}).",
-        2: "3 pertanyaan pendalaman: (1) Gaya inspirasi estetika (Minimalist vs Statement vs Heritage), (2) Prioritas kenyamanan material (Titanium/Asetat/Katun Premium), (3) Rentang alokasi anggaran.",
-        3: "2 pertanyaan signature identity: (1) Kesan karakter personal yang ingin dipancarkan, (2) Finishing aksen permukaan (Matte vs Gloss vs Brushed).",
+        1: f"3 soal inti: (1) Momen aktivitas ({gender}), (2) Bentuk siluet wajah {face_shape}, (3) Warna untuk kulit {skin_tone} ({monk_tone}).",
+        2: "3 soal gaya: (1) Estetika visual, (2) Material kenyamanan, (3) Target anggaran.",
+        3: "2 soal identitas: (1) Karakter personal, (2) Finishing aksen permukaan.",
     }
-    topic_instruction = batch_topics.get(batch, f"2 pertanyaan personalisasi lanjutan Batch {batch}")
+    topic_instruction = batch_topics.get(batch, f"2 pertanyaan personalisasi Batch {batch}")
 
     prev_info = ""
     if previous_answers:
-        prev_info = f"\nJAWABAN SEBELUMNYA OLEH PENGGUNA: {json.dumps(previous_answers, ensure_ascii=False)}"
+        prev_info = f"\nJAWABAN SEBELUMNYA: {json.dumps(previous_answers, ensure_ascii=False)}"
 
-    return f"""Kamu adalah AI Fashion Stylist & Accessories/Apparel Specialist bernama COBA.
+    return f"""Kamu adalah AI Stylist COBA. Buat kuesioner super ringkas, to-the-point, dan tidak berbelit-belit.
 
-PROFIL BIOMETRIK PENGGUNA (3 PARAMETER TERSTANDARISASI):
-1. Gender: {gender} -> {gender_instruction}
-2. Warna Kulit: {skin_tone} ({monk_tone}, Undertone {undertone}) -> {skin_instruction}
-3. Bentuk Wajah: {face_shape} -> {face_shape_instruction}
-Target Kategori: {item_label} (Batch #{batch})
+PROFIL PENGGUNA:
+- Gender: {gender}
+- Kulit: {skin_tone} ({monk_tone}, {undertone})
+- Wajah: {face_shape}
+- Kategori: {item_label} (Batch #{batch})
 {prev_info}
 
-TUGAS ANDA:
-Buat kuesioner bergaya desainer profesional yang SANGAT KONDISIONAL dan EKSPLISIT merespons kombinasi ({gender}, {skin_tone}, {face_shape}).
+TOPIK BATCH #{batch}:
 {topic_instruction}
 
-FORMAT OUTPUT (WAJIB JSON array valid murni tanpa teks pengantar / markdown fence):
+ATURAN GAYA BAHASA (SANGAT KETAT):
+1. Teks PERTANYAAN harus SANGAT SINGKAT (maksimal 5–8 kata, to-the-point). Jangan gunakan kalimat berbunga-bunga.
+2. REASON cukup 1 kalimat pendek (maksimal 8–10 kata).
+3. LABEL opsi 2–3 kata. DESC opsi maksimal 4–6 kata padat.
+4. Jangan gunakan kalimat panjang berulang atau membingungkan.
+5. Acak urutan aspek agar dinamis.
+
+FORMAT OUTPUT (WAJIB JSON array valid murni):
 [
   {{
     "id": "q_{subcategory}_b{batch}_1",
-    "question": "Pertanyaan dalam Bahasa Indonesia yang kontekstual dan personal",
-    "reason": "Alasan 1-2 kalimat mengapa pertanyaan ini krusial untuk profil gender {gender}, wajah {face_shape}, dan warna kulit {skin_tone} pengguna",
+    "question": "Pertanyaan 5-8 kata?",
+    "reason": "Alasan singkat 1 kalimat.",
     "options": [
-      {{"id": "opt_1", "label": "Label Opsi 1", "desc": "Deskripsi singkat 1 kalimat"}},
-      {{"id": "opt_2", "label": "Label Opsi 2", "desc": "Deskripsi singkat 1 kalimat"}},
-      {{"id": "opt_3", "label": "Label Opsi 3", "desc": "Deskripsi singkat 1 kalimat"}},
-      {{"id": "opt_4", "label": "Label Opsi 4", "desc": "Deskripsi singkat 1 kalimat"}}
+      {{"id": "opt_1", "label": "Label 1", "desc": "Deskripsi 4-6 kata"}},
+      {{"id": "opt_2", "label": "Label 2", "desc": "Deskripsi 4-6 kata"}},
+      {{"id": "opt_3", "label": "Label 3", "desc": "Deskripsi 4-6 kata"}},
+      {{"id": "opt_4", "label": "Label 4", "desc": "Deskripsi 4-6 kata"}}
     ]
   }}
-]
-
-ATURAN KETAT:
-1. Output WAJIB JSON array valid murni.
-2. Setiap pertanyaan memiliki tepat 4 pilihan opsi yang relevan dan actionable.
-3. Pertanyaan harus membedakan jelas gaya Pria vs Wanita dan rona Kulit Gelap/Tan vs Terang/Fair."""
+]"""
 
 
 def _generate_dynamic_fallback(
@@ -149,9 +117,7 @@ def _generate_dynamic_fallback(
     subcategory: str,
     batch: int = 1,
 ) -> List[Dict[str, Any]]:
-    """Generates dynamically customized questions for the user's specific 3 biometric parameters.
-    Used as an ultra-fast resilient local question bank when offline or API key is absent.
-    """
+    """Generates concise, punchy questions with intra-batch randomization for the user's biometrics."""
     gender_raw = str(user_profile.get("gender", "male")).lower()
     is_female = "female" in gender_raw or "wanita" in gender_raw
     gender_label = "Wanita" if is_female else "Pria"
@@ -170,188 +136,178 @@ def _generate_dynamic_fallback(
 
     is_dark_or_tan = str(skin_tone).lower() in ["dark", "tan"] or any(m in str(monk_tone) for m in ["06", "07", "08", "09", "10"])
 
-    # 1. Question 1: Occasion & Lifestyle tailored to Gender
-    if is_female:
-        q1 = {
-            "id": "occasion",
-            "question": f"Untuk suasana aktivitas atau penampilan harian seperti apa Anda mencari {subcategory} ini?",
-            "reason": f"Membantu kurasi siluet yang anggun dan serasi dengan riasan wajah serta gaya aktivitas harian Anda sebagai {gender_label}.",
-            "options": [
-                {"id": "Casual", "label": "Chic Casual & Daily Café", "desc": "Gaya santai harian yang estetik, ringan, dan fotogenik"},
-                {"id": "Formal", "label": "Executive & Smart Formal", "desc": "Suasana kerja profesional, meeting, dan presentasi resmi"},
-                {"id": "Party", "label": "Glamour Evening & Social Gathering", "desc": "Momen pesta, makan malam spesial, dan acara berkesan"},
-                {"id": "Sports", "label": "Active Lifestyle & Outdoor", "desc": "Aktivitas luar ruangan yang fleksibel dan dinamis"},
-            ],
-        }
-    else:
-        q1 = {
-            "id": "occasion",
-            "question": f"Untuk kebutuhan aktivitas utama apa Anda memilih {subcategory} ini?",
-            "reason": f"Menyesuaikan ketahanan material dan ketegasan siluet dengan gaya mobilitas aktif Anda sebagai {gender_label}.",
-            "options": [
-                {"id": "Casual", "label": "Casual Everyday & Hangout", "desc": "Aktivitas santai harian, kafe, dan mobilitas fleksibel"},
-                {"id": "Formal", "label": "Business Formal & Workwear", "desc": "Lingkungan kantor profesional, meeting penting, dan suasana formal"},
-                {"id": "Party", "label": "Evening Event & Smart Dinner", "desc": "Acara sosial malam hari dan perayaan berkelas"},
-                {"id": "Sports", "label": "Outdoor Adventure & Sports", "desc": "Aktivitas luar ruangan dengan mobilitas tinggi dan terik matahari"},
-            ],
-        }
-
-    # 2. Question 2: Geometric Silhouette tailored to Face Shape
-    face_q_map = {
-        "Square": {
-            "q": f"Untuk menyeimbangkan garis rahang tegas pada wajah {face_shape} Anda, karakter siluet apa yang Anda prioritaskan?",
-            "reason": f"Wajah Square memiliki rahang kuat bersudut. Siluet melengkung (round/oval/curved) melembutkan proporsi rahang secara harmonis.",
-            "options": [
-                {"id": "Round Curved", "label": "Round / Soft Curved Frames", "desc": "Kurva lembut melingkar untuk melembutkan sudut rahang yang tegas"},
-                {"id": "Rounded Square", "label": "Soft Wayfarer / Soft Edges", "desc": "Bentuk kotak dengan sudut membulat proporsional"},
-                {"id": "Geometric Sharp", "label": "Geometric Octagonal", "desc": "Garis kontemporer yang mempertegas wibawa karakter wajah"},
-                {"id": "Minimalist Wire", "label": "Thin Wire Aviator", "desc": "Bingkai tipis ringan tanpa memberi beban visual berlebih"},
-            ],
-        },
-        "Round": {
-            "q": f"Untuk memberikan ilusi kontur yang lebih terstruktur pada wajah {face_shape} Anda, siluet apa yang Anda sukai?",
-            "reason": f"Wajah Round memiliki garis pipi lembut. Bingkai bersudut tegas (rectangular/angular) memberi kontras yang membuat wajah tampak lebih tirus.",
-            "options": [
-                {"id": "Rectangular Sharp", "label": "Rectangular / Sharp Square", "desc": "Sudut tegas horizontal yang memberi ilusi wajah lebih tirus"},
-                {"id": "Cat Eye Angular", "label": "Upward Browline / Cat-Eye", "desc": "Aksen terangkat ke atas untuk menarik fokus vertikal"},
-                {"id": "Geometric Bold", "label": "Structured Bold Frame", "desc": "Garis geometris kokoh mengimbangi kelembutan pipi"},
-                {"id": "Structured Classic", "label": "Classic Wayfarer", "desc": "Garis atas lurus kokoh berdimensi seimbang"},
-            ],
-        },
-        "Heart": {
-            "q": f"Dengan dahi yang lebih lebar dari dagu pada wajah {face_shape} Anda, proporsi bingkai apa yang paling Anda sukai?",
-            "reason": f"Wajah Heart memiliki dahi lebar dan dagu lancip. Bingkai dengan aksen bawah lebar atau siluet ringan menyeimbangkan proporsi dagu.",
-            "options": [
-                {"id": "Bottom Heavy", "label": "Bottom-Weighted / Aviator", "desc": "Bingkai berdimensi bawah lebar menyeimbangkan dagu lancip"},
-                {"id": "Rimless / Light", "label": "Rimless / Thin Wire", "desc": "Desain ringan tanpa bingkai tebal agar dahi tetap proporsional"},
-                {"id": "Round Oval", "label": "Soft Oval Teardrop", "desc": "Kurva lembut yang mengimbangi ketajaman dagu"},
-                {"id": "Low Bridge", "label": "Low-Bridge Fit Minimalist", "desc": "Jembatan hidung seimbang untuk fokus tengah wajah"},
-            ],
-        },
-        "Oblong": {
-            "q": f"Untuk menyeimbangkan proporsi vertikal wajah {face_shape} Anda, dimensi bingkai seperti apa yang Anda cari?",
-            "reason": f"Wajah Oblong memiliki panjang vertikal lebih dominan. Lensa lebih tinggi (tall lens/oversized) membagi bidang vertikal secara seimbang.",
-            "options": [
-                {"id": "Tall Lens Oversized", "label": "Tall Lens / Oversized Frame", "desc": "Lensa berdimensi tinggi membagi bidang vertikal wajah"},
-                {"id": "Bold Browline", "label": "Thick Browline Accent", "desc": "Garis atas tegas menarik fokus horizontal ke area mata"},
-                {"id": "Square Wide", "label": "Wide Square Cut", "desc": "Lebar bingkai melampaui pelipis memberi ilusi proporsional"},
-                {"id": "Double Bridge", "label": "Double Bridge Aviator", "desc": "Aksen jembatan ganda mengisi ruang vertikal hidung"},
-            ],
-        },
-        "Oval": {
-            "q": f"Wajah {face_shape} Anda memiliki simetri proporsional alami. Karakter visual apa yang ingin Anda tonjolkan?",
-            "reason": f"Wajah Oval adalah bentuk paling serbaguna dan selaras dengan hampir seluruh variasi siluet.",
-            "options": [
-                {"id": "Classic Wayfarer", "label": "Classic Wayfarer Timeless", "desc": "Desain klasik yang menonjolkan simetri alami wajah Anda"},
-                {"id": "Modern Geometric", "label": "Modern Geometric / Hexagon", "desc": "Sentuhan kontemporer kekinian yang berani beda"},
-                {"id": "Retro Round", "label": "Retro Round Metal", "desc": "Gaya vintage intelektual bernuansa artistik"},
-                {"id": "Slim Minimalist", "label": "Slim Titanium Minimalist", "desc": "Tampilan profesional bersih tanpa mengaburkan fitur wajah"},
-            ],
-        },
-    }
-    fq = face_q_map.get(face_shape, face_q_map["Oval"])
-
-    # 3. Question 3: Color Palette tailored to Skin Tone (Dark/Tan vs Fair/Light)
-    if is_dark_or_tan:
-        q3 = {
-            "id": "color_mood",
-            "question": f"Untuk memancarkan kilau eksotis kulit {skin_tone} ({monk_tone}) Anda, nuansa palet warna apa yang Anda prioritaskan?",
-            "reason": f"Kulit {skin_tone} sawo matang bersinar alami saat dipadukan dengan aksen logam hangat, motif tortoiseshell emas, dan warna earthy tropis.",
-            "options": [
-                {"id": "Earth Tone Gold", "label": "Gold, Amber & Warm Tortoise", "desc": "Kilau emas dan motif penyu hangat yang menyatu mewah di kulit"},
-                {"id": "Warm Terracotta", "label": "Terracotta & Rich Ochre", "desc": "Warna bata dan tanah bakar hangat yang memancarkan aura bersahabat"},
-                {"id": "Olive Bronze", "label": "Olive Green & Antique Bronze", "desc": "Hijau zaitun dan tembaga berkarakter maskulin/anggun eksotis"},
-                {"id": "Solid Black Contrast", "label": "Matte Jet Black & Gunmetal", "desc": "Kontras hitam pekat solid yang mempertegas garis wajah"},
-            ],
-        }
-    else:
-        q3 = {
-            "id": "color_mood",
-            "question": f"Untuk menonjolkan kecerahan warna kulit {skin_tone} ({monk_tone}) Anda tanpa kesan pucat, palet apa yang paling Anda sukai?",
-            "reason": f"Kulit {skin_tone} cerah tampak segar dan berdimensi saat dipadukan dengan perak murni, navy pekat, rose gold, atau abu-abu arang.",
-            "options": [
-                {"id": "Silver Steel", "label": "Silver Steel & Clean Monochrome", "desc": "Kilau perak tegas dan abu-abu arang bersih modern"},
-                {"id": "Navy Sapphire", "label": "Deep Navy & Ice Blue", "desc": "Biru pekat berwibawa yang memberikan kontras cerah segar"},
-                {"id": "Rose Gold Pastel", "label": "Rose Gold & Soft Champagne", "desc": "Sentuhan emas merah muda lembut yang hangat elegan"},
-                {"id": "Burgundy Wine", "label": "Burgundy & Dark Plum", "desc": "Merah anggur mewah berdimensi tegas dan berkelas"},
-            ],
-        }
-
+    # Batch 1: 3 Fondasi Singkat (Aktivitas, Siluet Wajah, Palet Warna)
     if batch == 1:
-        return [
-            q1,
-            {
-                "id": "fit_preference",
-                "question": fq["q"],
-                "reason": fq["reason"],
-                "options": fq["options"],
-            },
-            q3,
-        ]
+        # Q1: Occasion
+        q_occ = {
+            "id": "occasion",
+            "question": f"Untuk suasana apa {subcategory} ini digunakan?",
+            "reason": f"Menyesuaikan ketahanan dan siluet untuk kebutuhan {gender_label}.",
+            "options": [
+                {"id": "Casual", "label": "Santai & Harian", "desc": "Gaya kasual nyaman untuk hangout"},
+                {"id": "Formal", "label": "Kerja & Formal", "desc": "Tampilan rapi profesional di kantor"},
+                {"id": "Party", "label": "Pesta & Acara Spesial", "desc": "Kesan berkelas dan memikat"},
+                {"id": "Sports", "label": "Outdoor & Aktif", "desc": "Mobilitas tinggi dan aktivitas luar"},
+            ],
+        }
 
-    # Batch 2: Aesthetic & Material
+        # Q2: Siluet Wajah (Ringkas per Bentuk Wajah)
+        face_q_map = {
+            "Square": {
+                "q": f"Pilihan siluet untuk wajah {face_shape} Anda?",
+                "reason": "Melembutkan garis rahang yang tegas.",
+                "options": [
+                    {"id": "Round Curved", "label": "Bulat / Melengkung", "desc": "Melembutkan sudut rahang tegas"},
+                    {"id": "Rounded Square", "label": "Kotak Sudut Halus", "desc": "Proporsional dan seimbang"},
+                    {"id": "Geometric Sharp", "label": "Geometris Modern", "desc": "Tegas dan kontemporer"},
+                    {"id": "Minimalist Wire", "label": "Bingkai Tipis Ringan", "desc": "Simpel dan tidak membebani wajah"},
+                ],
+            },
+            "Round": {
+                "q": f"Pilihan siluet untuk wajah {face_shape} Anda?",
+                "reason": "Memberi kontur tegas agar wajah lebih terstruktur.",
+                "options": [
+                    {"id": "Rectangular Sharp", "label": "Kotak / Persegi Panjang", "desc": "Memberi kesan wajah lebih ramping"},
+                    {"id": "Cat Eye Angular", "label": "Browline / Sudut Naik", "desc": "Menarik fokus vertikal ke atas"},
+                    {"id": "Geometric Bold", "label": "Geometris Tegas", "desc": "Mengimbangi kelembutan pipi"},
+                    {"id": "Structured Classic", "label": "Wayfarer Klasik", "desc": "Garis atas lurus dan kokoh"},
+                ],
+            },
+            "Heart": {
+                "q": f"Pilihan siluet untuk wajah {face_shape} Anda?",
+                "reason": "Menyeimbangkan dahi lebar dan dagu ramping.",
+                "options": [
+                    {"id": "Bottom Heavy", "label": "Aviator / Bawah Lebar", "desc": "Menyeimbangkan dagu lancip"},
+                    {"id": "Rimless / Light", "label": "Tanpa Bingkai / Tipis", "desc": "Ringan dan tidak dominan"},
+                    {"id": "Round Oval", "label": "Oval Melengkung", "desc": "Menghaluskan proporsi wajah"},
+                    {"id": "Low Bridge", "label": "Jembatan Rendah", "desc": "Fokus seimbang di tengah wajah"},
+                ],
+            },
+            "Oblong": {
+                "q": f"Pilihan siluet untuk wajah {face_shape} Anda?",
+                "reason": "Menyeimbangkan proporsi panjang vertikal wajah.",
+                "options": [
+                    {"id": "Square Wide", "label": "Wayfarer / Kotak Lebar", "desc": "Memotong ilusi wajah memanjang"},
+                    {"id": "Double Bridge", "label": "Aviator Double-Bridge", "desc": "Garis ganda memberi dimensi seimbang"},
+                    {"id": "Bold Browline", "label": "Browline Aksen Atas", "desc": "Fokus horizontal di area mata"},
+                    {"id": "Tall Lens Oversized", "label": "Lensa Tinggi / Lebar", "desc": "Membagi bidang panjang wajah"},
+                ],
+            },
+            "Oval": {
+                "q": f"Pilihan siluet untuk wajah {face_shape} Anda?",
+                "reason": "Bentuk oval harmonis dengan hampir seluruh siluet.",
+                "options": [
+                    {"id": "Classic Wayfarer", "label": "Wayfarer Klasik", "desc": "Desain abadi menonjolkan simetri alami"},
+                    {"id": "Modern Geometric", "label": "Geometris Heksagon", "desc": "Aksen kontemporer kekinian"},
+                    {"id": "Retro Round", "label": "Bulat Retro Metal", "desc": "Gaya vintage intelektual"},
+                    {"id": "Slim Minimalist", "label": "Titanium Minimalis", "desc": "Bersih dan profesional"},
+                ],
+            },
+        }
+        fq = face_q_map.get(face_shape, face_q_map["Oval"])
+        q_fit = {
+            "id": "fit_preference",
+            "question": fq["q"],
+            "reason": fq["reason"],
+            "options": fq["options"],
+        }
+
+        # Q3: Color Mood (Ringkas)
+        if is_dark_or_tan:
+            q_col = {
+                "id": "color_mood",
+                "question": f"Warna yang disukai untuk kulit {skin_tone} Anda?",
+                "reason": "Warna hangat memberi kontras eksotis pada kulit.",
+                "options": [
+                    {"id": "Earth Tone Gold", "label": "Gold & Warm Amber", "desc": "Kilau emas dan amber hangat"},
+                    {"id": "Warm Terracotta", "label": "Terracotta & Cokelat", "desc": "Nuansa bumi hangat bersahabat"},
+                    {"id": "Olive Bronze", "label": "Olive & Bronze", "desc": "Hijau zaitun dan tembaga maskulin"},
+                    {"id": "Solid Black Contrast", "label": "Hitam Doff & Abu Gelap", "desc": "Kontras tegas dan berwibawa"},
+                ],
+            }
+        else:
+            q_col = {
+                "id": "color_mood",
+                "question": f"Warna yang disukai untuk kulit {skin_tone} Anda?",
+                "reason": "Warna sejuk memberi kesegaran tanpa kesan pucat.",
+                "options": [
+                    {"id": "Silver Steel", "label": "Silver & Abu-Abu", "desc": "Kilau perak bersih dan modern"},
+                    {"id": "Navy Sapphire", "label": "Navy & Biru Safir", "desc": "Kontras sejuk berwibawa"},
+                    {"id": "Rose Gold Pastel", "label": "Rose Gold & Champagne", "desc": "Sentuhan lembut elegan"},
+                    {"id": "Burgundy Wine", "label": "Burgundy & Merah Gelap", "desc": "Merah anggur mewah berkelas"},
+                ],
+            }
+
+        questions = [q_occ, q_fit, q_col]
+        # Intra-batch shuffle so repeated attempts feel dynamic
+        random.shuffle(questions)
+        return questions
+
+    # Batch 2: 3 Soal Gaya & Budget
     if batch == 2:
-        return [
-            {
-                "id": "brand_style",
-                "question": f"Gaya estetika mana yang paling merepresentasikan personalitas ({gender_label}) Anda?",
-                "reason": f"Menyelaraskan arsitektur produk dengan karakter visual wajah {face_shape}.",
-                "options": [
-                    {"id": "Minimalist", "label": "Minimalist Clean", "desc": "Garis bersih, ultra-ringan, tanpa ornamen berlebih"},
-                    {"id": "Streetwear", "label": "Urban Statement", "desc": "Desain tegas, berdimensi berani, fokus karakter kuat"},
-                    {"id": "Classic", "label": "Heritage Vintage", "desc": "Potongan legendaris abadi dengan pengerjaan presisi"},
-                    {"id": "Avant-Garde", "label": "Contemporary Luxury", "desc": "Eksplorasi bentuk geometris unik dan sentuhan premium"},
-                ],
-            },
-            {
-                "id": "comfort_priority",
-                "question": "Prioritas kenyamanan apa yang paling esensial saat dikenakan harian?",
-                "reason": "Menentukan bobot material dan fleksibilitas bantalan produk.",
-                "options": [
-                    {"id": "ultra_light", "label": "Ultra-Ringan Tanpa Tekanan", "desc": "Material titanium/katun organik nyaman seharian"},
-                    {"id": "balanced", "label": "Keseimbangan Mantap & Kokoh", "desc": "Tetap berbobot pas tanpa mudah bergeser saat aktif"},
-                    {"id": "statement", "label": "Prioritas Visual & Ketegasan", "desc": "Siluet berani dengan tampilan berkelas"},
-                    {"id": "ergonomic", "label": "Ergonomis Adaptif", "desc": "Desain yang menyesuaikan kontur wajah secara presisi"},
-                ],
-            },
-            {
-                "id": "budget_range",
-                "question": "Alokasi anggaran yang Anda rencanakan untuk koleksi ini?",
-                "reason": "Memastikan kurasi AI memilih katalog terbaik dalam rentang target Anda.",
-                "options": [
-                    {"id": "budget", "label": "Terjangkau (< Rp350.000)", "desc": "Kualitas harian solid dengan nilai terbaik"},
-                    {"id": "mid", "label": "Menengah (Rp350K - 650K)", "desc": "Material premium dengan sentuhan detail pilihan"},
-                    {"id": "premium", "label": "Premium (Rp650K - 1.2Jt)", "desc": "Craftsmanship tinggi dengan finishing istimewa"},
-                    {"id": "luxury", "label": "Exclusive Designer (> Rp1.2Jt)", "desc": "Koleksi desainer eksklusif edisi terbatas"},
-                ],
-            },
-        ]
+        q_style = {
+            "id": "brand_style",
+            "question": "Gaya estetika yang paling Anda sukai?",
+            "reason": "Menyelaraskan vibe visual produk pilihan.",
+            "options": [
+                {"id": "Minimalist", "label": "Minimalis Bersih", "desc": "Simpel, ringan, tanpa ornamen ramai"},
+                {"id": "Streetwear", "label": "Urban & Berani", "desc": "Desain tegas berkarakter kuat"},
+                {"id": "Classic", "label": "Klasik Timeless", "desc": "Desain legendaris sepanjang masa"},
+                {"id": "Avant-Garde", "label": "Modern Mewah", "desc": "Detail premium kontemporer"},
+            ],
+        }
+        q_comfort = {
+            "id": "comfort_priority",
+            "question": "Prioritas kenyamanan yang Anda inginkan?",
+            "reason": "Menentukan berat dan bantalan produk.",
+            "options": [
+                {"id": "ultra_light", "label": "Sangat Ringan", "desc": "Nyaman dipakai seharian penuh"},
+                {"id": "balanced", "label": "Kokoh & Mantap", "desc": "Stabil saat banyak bergerak"},
+                {"id": "statement", "label": "Fokus Estetika", "desc": "Tampilan visual lebih utama"},
+                {"id": "ergonomic", "label": "Pas di Wajah", "desc": "Mengikuti kontur dengan presisi"},
+            ],
+        }
+        q_budget = {
+            "id": "budget_range",
+            "question": "Alokasi anggaran yang direncanakan?",
+            "reason": "Memilih katalog terbaik sesuai target Anda.",
+            "options": [
+                {"id": "budget", "label": "Ekonomis (< Rp350rb)", "desc": "Kualitas harian harga terjangkau"},
+                {"id": "mid", "label": "Menengah (Rp350rb - 650rb)", "desc": "Material solid berdetail bagus"},
+                {"id": "premium", "label": "Premium (Rp650rb - 1.2Jt)", "desc": "Finishing kelas atas tahan lama"},
+                {"id": "luxury", "label": "Eksklusif (> Rp1.2Jt)", "desc": "Koleksi khusus edisi terbatas"},
+            ],
+        }
+        questions = [q_style, q_comfort, q_budget]
+        random.shuffle(questions)
+        return questions
 
-    # Batch 3: Detail & Signature Finish
-    return [
-        {
-            "id": "material_preference",
-            "question": f"Material utama apa yang paling nyaman berinteraksi dengan kulit {skin_tone} Anda?",
-            "reason": f"Refleksi material berinteraksi langsung dengan pigmen kulit {monk_tone}.",
-            "options": [
-                {"id": "Acetate Handcrafted", "label": "Asetat Selulosa Alami", "desc": "Kilau organik hangat, tahan lama, hypoallergenic"},
-                {"id": "Titanium Alloy", "label": "Beta Titanium Presisi", "desc": "Sangat ringan, fleksibel, tahan keringat tropis"},
-                {"id": "Stainless Steel", "label": "Stainless Steel Modern", "desc": "Garis tipis kokoh bernuansa modern industrial"},
-                {"id": "Mixed Material", "label": "Kombinasi Logam & Asetat", "desc": "Perpaduan klasik kontemporer dengan aksen elegan"},
-            ],
-        },
-        {
-            "id": "finish_style",
-            "question": "Tingkat kilau finishing permukaan yang Anda sukai?",
-            "reason": f"Finishing matte meredam bayangan wajah {face_shape}, sedangkan gloss memantulkan kilau cerah.",
-            "options": [
-                {"id": "Matte Satin", "label": "Matte / Satin Doff", "desc": "Tampilan kalem elegan tanpa pantulan menyilaukan"},
-                {"id": "High Gloss", "label": "High Gloss Polished", "desc": "Permukaan mengkilap mewah yang memancarkan kecerahan"},
-                {"id": "Brushed Metal", "label": "Brushed / Hairline Texture", "desc": "Tekstur goresan halus artistik bergaya industrial"},
-                {"id": "Translucent Frosted", "label": "Translucent Frosted", "desc": "Semi-transparan buram yang modern dan kekinian"},
-            ],
-        },
-    ]
+    # Batch 3: 2 Soal Material & Finishing
+    q_mat = {
+        "id": "material_preference",
+        "question": "Material frame yang Anda prioritaskan?",
+        "reason": "Menyesuaikan daya tahan dengan aktivitas.",
+        "options": [
+            {"id": "Titanium Alloy", "label": "Titanium Ringan", "desc": "Anti-karat, ultra-ringan, tahan keringat"},
+            {"id": "Acetate Handcrafted", "label": "Asetat Premium", "desc": "Kilau natural, solid, warna kaya"},
+            {"id": "Stainless Steel", "label": "Stainless Steel", "desc": "Garis ramping kokoh dan awet"},
+            {"id": "Mixed Material", "label": "Kombinasi Logam-Asetat", "desc": "Keseimbangan gaya dan kekuatan"},
+        ],
+    }
+    q_fin = {
+        "id": "finish_style",
+        "question": "Tipe finishing permukaan yang Anda sukai?",
+        "reason": "Menentukan pantulan cahaya bingkai.",
+        "options": [
+            {"id": "Matte Satin", "label": "Matte / Doff", "desc": "Kalem, elegan, tanpa silau"},
+            {"id": "High Gloss", "label": "Mengkilap / Glossy", "desc": "Mewah dan memantulkan kilau cerah"},
+            {"id": "Brushed Metal", "label": "Tekstur Brushed", "desc": "Serat halus bernuansa industrial"},
+            {"id": "Translucent Frosted", "label": "Semi-Transparan", "desc": "Buram modern kekinian"},
+        ],
+    }
+    questions = [q_mat, q_fin]
+    random.shuffle(questions)
+    return questions
 
 
 async def generate_dynamic_questions(
@@ -407,6 +363,7 @@ async def generate_dynamic_questions(
                         questions = json.loads(raw_text)
                         if isinstance(questions, list) and len(questions) >= 1:
                             logger.info(f"Gemini ({model_name}) synthesized {len(questions)} tailored questions for batch {batch}")
+                            random.shuffle(questions)
                             return questions
         except Exception as err:
             logger.debug(f"Gemini {model_name} attempt skipped: {err}")
