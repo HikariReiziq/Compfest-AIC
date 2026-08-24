@@ -16,6 +16,8 @@ import {
   ImagePlus,
   ShieldCheck,
   ArrowLeft,
+  User,
+  Sparkles,
 } from "lucide-react";
 import { UserPersonalProfile, MOCK_PRESETS } from "../lib/mockData";
 import { analyzeLandmarks } from "../lib/api";
@@ -1691,13 +1693,14 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                             : prev
                         )
                       }
-                      className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                         scannedProfile.gender?.label_id === "male"
                           ? "bg-blue-600 border border-blue-400 text-white shadow-md"
                           : "text-slate-400 hover:text-white"
                       }`}
                     >
-                      Pria
+                      <User className="w-3.5 h-3.5" />
+                      <span>Pria</span>
                     </button>
                     <button
                       type="button"
@@ -1717,13 +1720,14 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                             : prev
                         )
                       }
-                      className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                         scannedProfile.gender?.label_id === "female"
                           ? "bg-pink-600 border border-pink-400 text-white shadow-md"
                           : "text-slate-400 hover:text-white"
                       }`}
                     >
-                      Wanita
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Wanita</span>
                     </button>
                   </div>
                 </div>
