@@ -73,42 +73,161 @@ export async function analyzeLandmarks(payload: Record<string, unknown>): Promis
 /*  Dynamic Questionnaire Engine                                      */
 /* ------------------------------------------------------------------ */
 const LOCAL_FALLBACK_QUESTIONS_BATCH1 = (sub: string, profile: Record<string, any>) => {
-  const items = [
+  const subcat = (sub || "glasses").toLowerCase();
+  const isFemale = profile?.gender?.label_id === "female" || profile?.gender?.label?.toLowerCase().includes("wanita");
+  const faceShape = profile?.face_shape?.shape || "Oval";
+  const skinTone = profile?.skin_tone?.tone || "Tan";
+
+  if (subcat === "hats") {
+    return [
+      {
+        id: "occasion",
+        question: "Aktivitas apa yang paling cocok untuk topi Anda?",
+        reason: "Menyesuaikan fungsionalitas dan pelindung kepala.",
+        options: [
+          { id: "Casual", label: "Hangout & Kafe", desc: "Trilby Fedora kasual stylish" },
+          { id: "Travel", label: "Pantai & Liburan", desc: "Topi anyaman jerami santai" },
+          { id: "Sports", label: "Petualangan & Safari", desc: "Cowboy hat & Pith helmet kokoh" },
+          { id: "Party", label: "Pesta Karakter & Tema", desc: "Ekspresif bergaya teatrikal" },
+        ],
+      },
+      {
+        id: "fit_preference",
+        question: "Siluet model topi 3D yang ingin Anda coba?",
+        reason: "Menonjolkan siluet kepala dan karakter gaya.",
+        options: [
+          { id: "Fedora Classic", label: "Fedora / Trilby Noir", desc: "Tepi terlipat klasik berwibawa" },
+          { id: "Cowboy Western", label: "Western Cowboy Leather", desc: "Tepi lebar melengkung gagah" },
+          { id: "Beach Straw", label: "Wide Beach Straw Hat", desc: "Anyaman lebar penyejuk tropis" },
+          { id: "Explorer Pith", label: "Safari Pith Helmet", desc: "Struktur kubah kokoh ikonis" },
+        ],
+      },
+      {
+        id: "color_mood",
+        question: `Warna & material topi untuk kulit ${skinTone} Anda?`,
+        reason: "Memberikan kontras visual yang memikat.",
+        options: [
+          { id: "Natural Straw", label: "Jerami Alami (Krem)", desc: "Nuansa cerah alami tropis" },
+          { id: "Leather Brown", label: "Cokelat Kulit Tua", desc: "Nuansa kulit gelap eksotis" },
+          { id: "Pitch Black", label: "Hitam Noir Pekat", desc: "Tampilan elegan misterius" },
+          { id: "Safari Khaki", label: "Khaki & Olive Hijau", desc: "Nuansa alam earthy outdoor" },
+        ],
+      },
+    ];
+  }
+
+  if (subcat === "shirts") {
+    if (isFemale) {
+      return [
+        {
+          id: "occasion",
+          question: "Momen pemakaian busana yang Anda tuju?",
+          reason: "Menyesuaikan potongan baju dengan aktivitas wanita.",
+          options: [
+            { id: "Formal", label: "Kerja & Eksekutif", desc: "Kemeja satin elegan profesional" },
+            { id: "Casual", label: "Hangout & Santai", desc: "Setelan rok dan crop tee manis" },
+            { id: "Party", label: "Pesta & Dinner", desc: "Blus off-shoulder beraksen ruffle" },
+            { id: "Cozy", label: "Santai Dingin / Hangat", desc: "Sweater rajut lembut nyaman" },
+          ],
+        },
+        {
+          id: "fit_preference",
+          question: "Pilihan siluet busana yang paling menarik minat Anda?",
+          reason: "Menonjolkan proporsi tubuh yang anggun.",
+          options: [
+            { id: "Satin ButtonDown", label: "Kemeja Satin Emerald", desc: "Potongan rapi berwibawa" },
+            { id: "Crop And Skirt", label: "Setelan Crop & Rok", desc: "Paduan santai manis berjenjang" },
+            { id: "Knit Sweater", label: "Sweater Rajut Pullover", desc: "Rajutan tebal longgar hangat" },
+            { id: "Fitted VNeck", label: "Kaos V-Neck Pas Tubuh", desc: "Siluet ramping mempertegas leher" },
+          ],
+        },
+        {
+          id: "color_mood",
+          question: `Palet warna busana untuk kulit ${skinTone} Anda?`,
+          reason: "Memancarkan aura rona kulit wanita tropis.",
+          options: [
+            { id: "Emerald Green", label: "Emerald Green Satin", desc: "Hijau zamrud mewah memikat" },
+            { id: "Lilac Pastel", label: "Lilac & Soft Rose", desc: "Warna pastel manis feminin" },
+            { id: "Ivory Cream", label: "Ivory Cream Hangat", desc: "Putih gading lembut elegan" },
+            { id: "Terracotta Coral", label: "Terracotta Coral Ceria", desc: "Nuansa oranye hangat eksotis" },
+          ],
+        },
+      ];
+    } else {
+      return [
+        {
+          id: "occasion",
+          question: "Suasana apa yang menjadi tujuan busana Anda?",
+          reason: "Menyesuaikan kenyamanan dan fungsi pakaian pria.",
+          options: [
+            { id: "Formal", label: "Kantor & Acara Resmi", desc: "Kemeja oxford berwibawa rapi" },
+            { id: "Casual", label: "Santai & Harian", desc: "Kaos kasual grafis santai" },
+            { id: "Sports", label: "Olahraga & Aktif", desc: "Jersey FC Barcelona atletis" },
+            { id: "Streetwear", label: "Urban & Nongkrong", desc: "Polo color-block & layering" },
+          ],
+        },
+        {
+          id: "fit_preference",
+          question: "Potongan busana yang ingin Anda kenakan?",
+          reason: "Menyesuaikan dengan lebar bahu dan postur tubuh.",
+          options: [
+            { id: "Formal Shirt", label: "Kemeja Oxford Formal", desc: "Garis kerah tegas profesional" },
+            { id: "Sport Jersey", label: "Jersey Sepak Bola", desc: "Bahan atletis aerodinamis" },
+            { id: "ColorBlock Polo", label: "Polo Shirt Color-Block", desc: "Aksen warna modern berkerah" },
+            { id: "Layered Tee", label: "Kaos Layering / Santai", desc: "Gaya bertumpuk kasual leluasa" },
+          ],
+        },
+        {
+          id: "color_mood",
+          question: `Nuansa warna untuk kulit ${skinTone} Anda?`,
+          reason: "Memberi ketegasan maskulin pada kulit sawo matang.",
+          options: [
+            { id: "Blaugrana Navy", label: "Navy & Blaugrana", desc: "Biru dan merah marun berenergi" },
+            { id: "Neutral Monokrom", label: "Hitam & Charcoal", desc: "Ketegasan maskulin minimalis" },
+            { id: "Earth Tone", label: "Khaki, Cokelat & Olive", desc: "Nuansa bumi hangat bersahabat" },
+            { id: "Clean White", label: "Putih Bersih Kontras", desc: "Kesan segar dan profesional" },
+          ],
+        },
+      ];
+    }
+  }
+
+  // Glasses (Default)
+  return [
     {
       id: "occasion",
-      question: `Untuk suasana apa ${sub} ini digunakan?`,
-      reason: `Menyesuaikan ketahanan dan siluet untuk kebutuhan Anda.`,
+      question: "Untuk suasana apa kacamata ini digunakan?",
+      reason: "Menyesuaikan ketahanan dan siluet untuk kebutuhan Anda.",
       options: [
-        { id: "Casual", label: "Santai & Harian", desc: "Gaya kasual nyaman untuk hangout" },
-        { id: "Formal", label: "Kerja & Formal", desc: "Tampilan rapi profesional di kantor" },
-        { id: "Party", label: "Pesta & Spesial", desc: "Kesan berkelas dan memikat" },
-        { id: "Sports", label: "Outdoor & Aktif", desc: "Mobilitas tinggi dan aktivitas luar" },
+        { id: "Casual", label: "Santai & Harian", desc: "Gaya kasual Wayfarer yang nyaman" },
+        { id: "Formal", label: "Kerja & Eksekutif", desc: "Tampilan Browline profesional rapi" },
+        { id: "Party", label: "Pesta & Glamour", desc: "Sentuhan Khronos Gold mewah" },
+        { id: "Sports", label: "Outdoor & Olahraga", desc: "Sunfit Sport aerodinamis aktif" },
       ],
     },
     {
       id: "fit_preference",
-      question: "Pilihan siluet yang Anda sukai?",
-      reason: `Potongan yang selaras dengan proporsi tubuh Anda.`,
+      question: `Pilihan siluet bingkai untuk wajah ${faceShape} Anda?`,
+      reason: `Menciptakan proporsi harmonis pada wajah ${faceShape}.`,
       options: [
-        { id: "Regular Fit", label: "Klasik Proporsional", desc: "Dimensi standar seimbang" },
-        { id: "Oversized", label: "Oversized / Lebar", desc: "Garis tegas percaya diri" },
-        { id: "Fitted", label: "Ramping Minimalis", desc: "Garis tipis presisi" },
-        { id: "Layered", label: "Geometris Modern", desc: "Aksen sudut kontemporer" },
+        { id: "Aviator Double", label: "Aviator Pilot Wire", desc: "Jembatan ganda memikat ikonik" },
+        { id: "Classic Wayfarer", label: "Wayfarer Kotak Tebal", desc: "Garis atas lurus dan tegas" },
+        { id: "Modern Geometric", label: "Geometris Heksagon", desc: "Aksen kontemporer bersudut unik" },
+        { id: "Retro Round", label: "Bulat Retro Horn-Rim", desc: "Gaya vintage intelektual artistik" },
       ],
     },
     {
       id: "color_mood",
-      question: "Nuansa warna yang ingin dieksplorasi?",
-      reason: `Menyelaraskan dengan rona kulit alami Anda.`,
+      question: `Nuansa warna bingkai untuk kulit ${skinTone} Anda?`,
+      reason: "Menyelaraskan kilau bingkai dengan rona kulit Anda.",
       options: [
-        { id: "Earth Tone", label: "Nuansa Bumi (Hangat)", desc: "Terracotta, olive, mustard" },
-        { id: "Jewel Tone", label: "Nuansa Sejuk", desc: "Navy, emerald, burgundy" },
-        { id: "Neutral Classic", label: "Netral Monokrom", desc: "Charcoal, hitam, off-white" },
-        { id: "Bold Vibrant", label: "Kontras Berani", desc: "Emas, bronze, aksen cerah" },
+        { id: "Earth Tone Gold", label: "Gold & Warm Amber", desc: "Kilau emas dan amber hangat" },
+        { id: "Silver Steel", label: "Silver Steel & Chrome", desc: "Kilau perak bersih modern" },
+        { id: "Solid Black", label: "Matte Black & Onyx", desc: "Hitam pekat tegas maskulin" },
+        { id: "Rich Havana", label: "Havana Tortoise", desc: "Gradasi cokelat penyu eksotis" },
       ],
     },
   ];
-  return items.sort(() => Math.random() - 0.5);
 };
 
 export async function fetchDynamicQuestions(

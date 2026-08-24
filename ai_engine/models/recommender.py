@@ -210,7 +210,7 @@ class StyleRecommender:
         mst_code = extract_profile_str(user_profile.get("monk_tone"), "code", "MST-06")
         skin_tone = extract_profile_str(user_profile.get("skin_tone"), "tone", "Tan")
 
-        # Extract quiz attributes with robust fallback signal detection
+        # Extract quiz attributes with robust token and keyword signal detection
         def extract_quiz_signals(q_data: Dict[str, Any]) -> Tuple[str, str, str, List[str]]:
             all_text_blobs = []
             for k, v in q_data.items():
@@ -230,132 +230,226 @@ class StyleRecommender:
 
             # 1. Occasion
             occ = str(q_data.get("occasion", "")).strip()
-            if not occ:
-                if any(w in joined_text for w in ["formal", "kantor", "executive", "meeting", "sartorial", "bisnis", "resmi"]):
+            if not occ or occ.startswith("opt_"):
+                if any(w in joined_text for w in ["formal", "kantor", "executive", "meeting", "sartorial", "bisnis", "resmi", "satin"]):
                     occ = "Formal"
-                elif any(w in joined_text for w in ["olahraga", "sports", "sport", "atletik", "gym", "lari", "outdoor", "fitness"]):
+                elif any(w in joined_text for w in ["olahraga", "sports", "sport", "atletik", "gym", "lari", "outdoor", "fitness", "jersey", "sunfit"]):
                     occ = "Sports"
-                elif any(w in joined_text for w in ["pesta", "party", "gala", "wedding", "malam", "statement", "perayaan"]):
+                elif any(w in joined_text for w in ["pesta", "party", "gala", "wedding", "malam", "statement", "perayaan", "dinner", "glamour"]):
                     occ = "Party"
+                elif any(w in joined_text for w in ["pantai", "travel", "liburan", "tropis", "beach", "jerami", "straw"]):
+                    occ = "Travel / Beach"
                 elif any(w in joined_text for w in ["streetwear", "urban", "skate", "hangout", "nongkrong", "techwear", "casual streetwear"]):
                     occ = "Streetwear"
+                elif any(w in joined_text for w in ["cozy", "dingin", "sweater", "hangat"]):
+                    occ = "Cozy"
                 else:
                     occ = "Casual"
 
-            # 2. Fit / Silhouette
+            # 2. Fit / Silhouette / Model
             fit = str(q_data.get("fit_preference", "")).strip()
-            if not fit:
-                if any(w in joined_text for w in ["oversize", "oversized", "boxy", "longgar", "lebar", "wrap", "santai"]):
+            if not fit or fit.startswith("opt_"):
+                if any(w in joined_text for w in ["aviator", "pilot", "double"]):
+                    fit = "Aviator Pilot"
+                elif any(w in joined_text for w in ["wayfarer", "kotak", "square", "tebal", "bold"]):
+                    fit = "Wayfarer Classic"
+                elif any(w in joined_text for w in ["geometric", "geometris", "heksagon", "sudut"]):
+                    fit = "Geometric"
+                elif any(w in joined_text for w in ["browline", "clubmaster", "garis atas"]):
+                    fit = "Browline"
+                elif any(w in joined_text for w in ["round", "bulat", "retro", "horn", "rim"]):
+                    fit = "Retro Round"
+                elif any(w in joined_text for w in ["cowboy", "western", "kulit", "leather"]):
+                    fit = "Western Cowboy"
+                elif any(w in joined_text for w in ["fedora", "trilby", "noir", "spy", "mafia"]):
+                    fit = "Fedora Trilby"
+                elif any(w in joined_text for w in ["straw", "jerami", "pantai", "beach", "anyaman", "luffy"]):
+                    fit = "Beach Straw"
+                elif any(w in joined_text for w in ["pith", "safari", "explorer", "helmet"]):
+                    fit = "Safari Pith"
+                elif any(w in joined_text for w in ["satin", "blouse", "emerald"]):
+                    fit = "Satin Button-Down"
+                elif any(w in joined_text for w in ["crop", "skirt", "rok", "two-piece", "setelan"]):
+                    fit = "Crop And Skirt"
+                elif any(w in joined_text for w in ["sweater", "rajut", "pullover", "cable"]):
+                    fit = "Knit Sweater"
+                elif any(w in joined_text for w in ["vneck", "v-neck", "fitted"]):
+                    fit = "Fitted V-Neck"
+                elif any(w in joined_text for w in ["jersey", "barcelona", "bola", "sporty"]):
+                    fit = "Sport Jersey"
+                elif any(w in joined_text for w in ["polo", "colorblock", "color-block"]):
+                    fit = "ColorBlock Polo"
+                elif any(w in joined_text for w in ["oxford", "kemeja"]):
+                    fit = "Oxford Shirt"
+                elif any(w in joined_text for w in ["oversize", "oversized", "boxy", "longgar", "lebar", "wrap", "santai"]):
                     fit = "Oversized / Boxy"
-                elif any(w in joined_text for w in ["slim", "fitted", "ramping", "ketat", "tailored", "aviator", "presisi"]):
+                elif any(w in joined_text for w in ["slim", "fitted", "ramping", "ketat", "tailored", "presisi"]):
                     fit = "Slim / Fitted"
-                elif any(w in joined_text for w in ["layer", "layered", "tumpuk", "tekstur", "geometric", "tactical", "berlapis"]):
+                elif any(w in joined_text for w in ["layer", "layered", "tumpuk", "tekstur", "tactical", "berlapis"]):
                     fit = "Layered / Textured"
                 else:
                     fit = "Regular Fit"
 
             # 3. Color Mood
             col = str(q_data.get("color_mood", "")).strip()
-            if not col:
-                if any(w in joined_text for w in ["earth", "bumi", "terracotta", "olive", "hijau", "cokelat", "mustard", "beige", "sand", "khaki", "tan"]):
+            if not col or col.startswith("opt_"):
+                if any(w in joined_text for w in ["gold", "amber", "emas"]):
+                    col = "Gold / Amber"
+                elif any(w in joined_text for w in ["silver", "chrome", "perak", "abu"]):
+                    col = "Silver / Steel"
+                elif any(w in joined_text for w in ["hitam", "black", "onyx", "doff", "noir"]):
+                    col = "Matte Black"
+                elif any(w in joined_text for w in ["havana", "tortoise", "penyu"]):
+                    col = "Havana Tortoise"
+                elif any(w in joined_text for w in ["emerald", "zamrud", "hijau", "green"]):
+                    col = "Emerald Green"
+                elif any(w in joined_text for w in ["lilac", "rose", "pastel", "pink"]):
+                    col = "Lilac Pastel"
+                elif any(w in joined_text for w in ["ivory", "cream", "krem", "putih", "gading"]):
+                    col = "Ivory Cream"
+                elif any(w in joined_text for w in ["terracotta", "coral", "oranye", "mustard"]):
+                    col = "Terracotta Coral"
+                elif any(w in joined_text for w in ["blaugrana", "navy", "biru"]):
+                    col = "Navy / Blaugrana"
+                elif any(w in joined_text for w in ["straw", "jerami", "natural"]):
+                    col = "Natural Straw"
+                elif any(w in joined_text for w in ["leather", "cokelat", "brown"]):
+                    col = "Leather Brown"
+                elif any(w in joined_text for w in ["earth", "bumi", "olive", "khaki", "tan"]):
                     col = "Earth Tone"
-                elif any(w in joined_text for w in ["jewel", "sejuk", "cool", "navy", "biru", "sapphire", "emerald", "burgundy", "sky", "rose", "dingin"]):
-                    col = "Jewel Tone / Sejuk"
-                elif any(w in joined_text for w in ["monokrom", "monochrome", "netral", "neutral", "hitam", "putih", "abu", "charcoal", "silver", "black"]):
-                    col = "Neutral / Monokrom"
-                elif any(w in joined_text for w in ["bold", "berani", "vibrant", "terang", "kontras", "cerah", "emas", "gold", "merah", "ekspresif"]):
-                    col = "Bold / Expressive"
                 else:
                     col = "Earth Tone"
 
-            tokens = [t for t in joined_text.replace("/", " ").replace("-", " ").split() if len(t) > 2]
+            tokens = [t for t in joined_text.replace("/", " ").replace("-", " ").replace("_", " ").split() if len(t) > 2]
             return occ, fit, col, tokens
 
         quiz_occasion, quiz_fit, quiz_color, quiz_tokens = extract_quiz_signals(quiz_answers)
 
         scored_items = []
         for item in candidate_items:
-            base_col = item.get("baseColour") or item.get("colour") or "Black"
-            model_type = item.get("modelType") or subcat
-            item_gender = str(item.get("gender", "Unisex")).lower()
+            base_col = (item.get("baseColour") or item.get("colour") or "Black").lower()
+            model_type = (item.get("modelType") or item.get("name") or "").lower()
+            item_name = (item.get("name") or "").lower()
+            item_desc = (item.get("description") or "").lower()
+            style_tags = [t.lower() for t in item.get("styleTags", [])]
+            item_usage = str(item.get("usage", "Casual")).lower()
+            item_text = f"{item_name} {model_type} {' '.join(style_tags)} {item_desc} {base_col} {item_usage}"
 
             # ----------------------------------------------------
-            # A. Occasion & Intent Harmony Score (0 - 100) — Primary Weight 40%
+            # A. Occasion & Intent Harmony Score (0 - 100) — Primary Weight 35%
             # ----------------------------------------------------
-            occasion_score = 50.0
-            item_usage = str(item.get("usage", "Casual")).lower()
+            occasion_score = 60.0
             q_occ = quiz_occasion.lower()
 
             if q_occ in item_usage or item_usage in q_occ:
                 occasion_score = 100.0
-            elif "casual" in q_occ and item_usage in ["casual", "streetwear", "regularfit"]:
-                occasion_score = 95.0
-            elif "formal" in q_occ and item_usage in ["formal", "sartorial", "executive", "office"]:
-                occasion_score = 98.0
-            elif "party" in q_occ and item_usage in ["party", "evening", "statement"]:
-                occasion_score = 98.0
-            elif "sports" in q_occ and item_usage in ["sports", "athletic", "gym", "performance"]:
-                occasion_score = 98.0
-            elif "streetwear" in q_occ and item_usage in ["streetwear", "urban", "techwear"]:
-                occasion_score = 98.0
+            elif "casual" in q_occ and ("casual" in item_usage or "streetwear" in item_usage or "regularfit" in style_tags):
+                occasion_score = 96.0
+            elif "formal" in q_occ and ("formal" in item_usage or "sartorial" in item_usage or "executive" in style_tags or "oxford" in item_name or "satin" in item_name):
+                occasion_score = 100.0
+            elif "party" in q_occ and ("party" in item_usage or "statement" in style_tags or "gold" in base_col or "satin" in item_name or "off-shoulder" in item_name):
+                occasion_score = 100.0
+            elif "sports" in q_occ and ("sports" in item_usage or "athletic" in style_tags or "jersey" in item_name or "sport" in item_name):
+                occasion_score = 100.0
+            elif "travel" in q_occ and ("travel" in style_tags or "straw" in item_name or "beach" in item_name or "casual" in item_usage):
+                occasion_score = 100.0
+            elif "streetwear" in q_occ and ("streetwear" in item_usage or "urban" in style_tags or "polo" in item_name or "layered" in item_name):
+                occasion_score = 100.0
+            elif "cozy" in q_occ and ("cozy" in style_tags or "sweater" in item_name or "flannel" in item_name):
+                occasion_score = 100.0
             else:
-                # Slight penalty for conflicting occasion
                 occasion_score = 65.0
 
             # ----------------------------------------------------
-            # B. Fit & Silhouette Score (0 - 100) — Weight 25%
+            # B. Fit, Silhouette & Specific 3D Model Affinity (0 - 100) — Weight 35%
             # ----------------------------------------------------
-            fit_score = 70.0
-            style_tags = [t.lower() for t in item.get("styleTags", [])]
+            fit_score = 65.0
             q_fit = quiz_fit.lower()
 
-            if "oversized" in q_fit and any(t in style_tags for t in ["oversized", "boxy", "streetwear", "wrap"]):
+            # Direct Model-Level Keyword Affinity
+            if "aviator" in q_fit and ("aviator" in item_text or "pilot" in item_text):
                 fit_score = 100.0
+            elif "wayfarer" in q_fit and ("wayfarer" in item_text or "khronos" in item_text or "square" in item_text):
+                fit_score = 100.0
+            elif "geometric" in q_fit and ("geometric" in item_text or "hexagon" in item_text or "polygon" in item_text):
+                fit_score = 100.0
+            elif "browline" in q_fit and ("browline" in item_text or "clubmaster" in item_text):
+                fit_score = 100.0
+            elif "round" in q_fit and ("round" in item_text or "hornrimmed" in item_text or "horn" in item_text):
+                fit_score = 100.0
+            elif "cowboy" in q_fit and ("cowboy" in item_text or "western" in item_text):
+                fit_score = 100.0
+            elif "fedora" in q_fit and ("fedora" in item_text or "trilby" in item_text or "spy" in item_text or "mafia" in item_text):
+                fit_score = 100.0
+            elif "straw" in q_fit and ("straw" in item_text or "beach" in item_text or "luffy" in item_text):
+                fit_score = 100.0
+            elif "pith" in q_fit and ("pith" in item_text or "safari" in item_text or "helmet" in item_text):
+                fit_score = 100.0
+            elif "satin" in q_fit and ("satin" in item_text or "womens_shirt" in item.get("model_3d_path", "")):
+                fit_score = 100.0
+            elif "crop" in q_fit and ("skirt" in item_text or "crop" in item_text):
+                fit_score = 100.0
+            elif "sweater" in q_fit and ("sweater" in item_text or "knit" in item_text or "pullover" in item_text):
+                fit_score = 100.0
+            elif "v-neck" in q_fit and ("vneck" in item_text or "v-neck" in item_text):
+                fit_score = 100.0
+            elif "jersey" in q_fit and ("jersey" in item_text or "football" in item_text or "barcelona" in item_text):
+                fit_score = 100.0
+            elif "polo" in q_fit and ("polo" in item_text or "color_blocked" in item_text):
+                fit_score = 100.0
+            elif "oxford" in q_fit and ("oxford" in item_text or "formal" in item_text or "man_shirt" in item.get("model_3d_path", "")):
+                fit_score = 100.0
+            elif "oversized" in q_fit and any(t in style_tags for t in ["oversized", "boxy", "streetwear", "wrap"]):
+                fit_score = 98.0
             elif "slim" in q_fit or "fitted" in q_fit:
                 if any(t in style_tags for t in ["fitted", "slim", "tailored", "satin", "aviator"]):
-                    fit_score = 100.0
-                elif any(t in style_tags for t in ["regularfit", "classic"]):
-                    fit_score = 88.0
-            elif "layered" in q_fit or "geometric" in q_fit:
-                if any(t in style_tags for t in ["layered", "geometric", "colorblock", "twinset", "tactical"]):
-                    fit_score = 100.0
-            elif "regular" in q_fit or "classic" in q_fit:
-                if any(t in style_tags for t in ["classic", "regularfit", "polo", "oxford", "wayfarer", "fedora", "heavyweight"]):
-                    fit_score = 100.0
+                    fit_score = 98.0
+                else:
+                    fit_score = 82.0
+            else:
+                # Bonus for any token overlap
+                token_matches = sum(1 for t in quiz_tokens if t in item_text)
+                fit_score = min(98.0, 70.0 + (token_matches * 8.0))
 
             # ----------------------------------------------------
-            # C. Color & Mood Harmony Score (0 - 100) — Weight 25%
+            # C. Color & Mood Harmony Score (0 - 100) — Weight 20%
             # ----------------------------------------------------
-            color_score = 75.0
+            color_score = 70.0
             u_low = undertone.lower()
-            b_low = base_col.lower()
             q_col = quiz_color.lower()
 
-            # Direct quiz color preference matching
-            if "earth" in q_col:
-                if any(c in b_low for c in ["terracotta", "mustard", "olive", "beige", "sand", "straw", "gold", "amber", "brown", "sage", "khaki", "camel"]):
-                    color_score = 100.0
-                elif any(c in b_low for c in ["white", "black", "grey"]):
-                    color_score = 82.0
-            elif "jewel" in q_col or "sejuk" in q_col or "cool" in q_col:
-                if any(c in b_low for c in ["navy", "emerald", "burgundy", "crimson", "sapphire", "blue", "sky", "lilac", "purple", "rose"]):
-                    color_score = 100.0
-                elif any(c in b_low for c in ["white", "black", "grey"]):
-                    color_score = 85.0
-            elif "monokrom" in q_col or "neutral" in q_col or "monochrome" in q_col:
-                if any(c in b_low for c in ["black", "white", "grey", "charcoal", "silver", "onyx", "slate", "ivory"]):
-                    color_score = 100.0
+            if "gold" in q_col and ("gold" in base_col or "amber" in base_col or "yellow" in base_col):
+                color_score = 100.0
+            elif "silver" in q_col and ("silver" in base_col or "chrome" in base_col or "grey" in base_col or "steel" in base_col):
+                color_score = 100.0
+            elif "black" in q_col and ("black" in base_col or "onyx" in base_col or "charcoal" in base_col):
+                color_score = 100.0
+            elif "havana" in q_col and ("havana" in base_col or "tortoise" in base_col or "brown" in base_col):
+                color_score = 100.0
+            elif "emerald" in q_col and ("emerald" in base_col or "green" in base_col or "forest" in base_col):
+                color_score = 100.0
+            elif "lilac" in q_col and ("lilac" in base_col or "rose" in base_col or "pink" in base_col or "purple" in base_col):
+                color_score = 100.0
+            elif "ivory" in q_col and ("ivory" in base_col or "cream" in base_col or "white" in base_col):
+                color_score = 100.0
+            elif "terracotta" in q_col and ("terracotta" in base_col or "coral" in base_col or "orange" in base_col or "mustard" in base_col):
+                color_score = 100.0
+            elif "navy" in q_col and ("navy" in base_col or "blue" in base_col or "blaugrana" in base_col):
+                color_score = 100.0
+            elif "straw" in q_col and ("straw" in base_col or "sand" in base_col or "beige" in base_col):
+                color_score = 100.0
+            elif "leather" in q_col and ("leather" in base_col or "brown" in base_col or "tan" in base_col):
+                color_score = 100.0
+            elif "earth" in q_col and any(c in base_col for c in ["terracotta", "mustard", "olive", "beige", "sand", "straw", "gold", "amber", "brown", "khaki"]):
+                color_score = 100.0
+            else:
+                # Skin undertone synergy
+                if "warm" in u_low and any(c in base_col for c in ["gold", "terracotta", "olive", "sand", "amber", "brown"]):
+                    color_score = 92.0
+                elif "cool" in u_low and any(c in base_col for c in ["silver", "navy", "charcoal", "emerald", "burgundy", "blue"]):
+                    color_score = 92.0
                 else:
-                    color_score = 78.0
-            elif "bold" in q_col or "vibrant" in q_col or "expressive" in q_col:
-                if any(c in b_low for c in ["crimson", "emerald", "multi-color", "terracotta", "blaugrana", "gold", "rose"]):
-                    color_score = 100.0
-
-            # Subtle skin undertone synergy bonus (+5 pts)
-            if "warm" in u_low and any(c in b_low for c in ["gold", "terracotta", "olive", "warm", "sand", "amber"]):
-                color_score = min(100.0, color_score + 5.0)
-            elif "cool" in u_low and any(c in b_low for c in ["silver", "navy", "charcoal", "sky blue", "emerald", "burgundy"]):
-                color_score = min(100.0, color_score + 5.0)
+                    color_score = 80.0
 
             # ----------------------------------------------------
             # D. Shape & Anatomical Affinity (0 - 100) — Weight 10%
@@ -364,18 +458,18 @@ class StyleRecommender:
             if subcat in ["glasses", "hats"]:
                 flattering_faces = [f.lower() for f in item.get("flatteringFaceShapes", [])]
                 if face_shape.lower() in flattering_faces:
-                    shape_score = 98.0
+                    shape_score = 100.0
                 elif face_shape.lower() == "oval":
                     shape_score = 95.0
 
             # ----------------------------------------------------
-            # Weighted Dynamic Total Score
-            # 40% Occasion + 25% Fit Preference + 25% Color Mood + 10% Shape Affinity
+            # Weighted Dynamic Total Score (0 - 100)
+            # 35% Occasion + 35% Fit/Model Affinity + 20% Color + 10% Shape
             # ----------------------------------------------------
             total_score = (
-                (0.40 * occasion_score) +
-                (0.25 * fit_score) +
-                (0.25 * color_score) +
+                (0.35 * occasion_score) +
+                (0.35 * fit_score) +
+                (0.20 * color_score) +
                 (0.10 * shape_score)
             )
 

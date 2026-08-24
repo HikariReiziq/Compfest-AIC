@@ -448,56 +448,20 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           } else {
             model.position.x -= center.x;
             model.position.z -= center.z;
-            // Jangkar topi = bidang brim (lubang kepala), diukur dari mesh.
-            // Bila mesh terlalu jarang untuk disimpulkan, jatuh ke dasar bbox
-            // seperti perilaku lama — buruk, tapi tidak menghentikan render.
-            const brimY = findBrimPlaneY(wrapper);
-            model.position.y -= brimY ?? boxAfter.min.y;
+            // Base of hat sits at anchor origin
+            model.position.y -= boxAfter.min.y;
           }
 
-          // Normalize model width (sizeAfter.x) to ~1.45 standard units.
-          //
-          // Skala dipasang di wrapper, bukan di model. Sebabnya: `position` sebuah
-          // objek hidup di ruang koordinat induknya dan TIDAK ikut terskalakan oleh
-          // `scale` objek itu sendiri. Kalau model yang diskalakan, seluruh
-          // penempatan di atas meleset sebesar center * (s - 1). Katalog ini berisi
-          // GLB dengan satuan author yang berbeda-beda (lebar mentah 0,18 sampai
-          // 34,89 alias rentang 189x), sehingga s berkisar 0,04 sampai 7,88 dan
-          // galatnya sanggup melempar model puluhan unit keluar layar.
-          // Dipasang di wrapper, model.position ikut terskalakan bersama geometri.
+          // Normalize model width (sizeAfter.x) to ~1.35 (hat) or 1.0 (glasses) standard units
           const targetWidth = sizeAfter.x > 0 ? sizeAfter.x : 1.0;
           const baseNormScale = (isHat ? HAT_TARGET_WIDTH : 1.0) / targetWidth;
           const customScaleFactor = modelConfig?.scale_factor || 1.0;
           const normalizeScale = baseNormScale * customScaleFactor;
           wrapper.scale.setScalar(normalizeScale);
 
-          // Apply manifest pivot offset to fine-tune exact anchor point.
-          //
-          // Nilainya memang berada di ruang ternormalisasi, dan itu sudah benar
-          // sejak versi sebelumnya: `position` tidak ikut terskalakan oleh
-          // `scale` objeknya sendiri, sehingga offset selalu mendarat 1:1 di
-          // ruang induk. Yang dipindahkan ke wrapper hanyalah tempatnya, supaya
-          // ia tidak lagi bercampur dengan penempatan titik jangkar yang justru
-          // HARUS ikut terskalakan.
+          // Apply manifest pivot offset to fine-tune exact anchor point
           const pivot = modelConfig?.pivot_offset ?? [0, 0, 0];
-
-          // Topi: turunkan agar mahkotanya menelan kepala.
-          //
-          // Titik jangkar topi adalah landmark dahi (10), dan penempatan di atas
-          // menaruh DASAR bounding box tepat di titik itu. Akibatnya seluruh
-          // tinggi topi — rata-rata 0,94 dan sampai 1,66 satuan ternormalisasi,
-          // sementara lebar kepala hanya 1,35 — melayang di atas dahi tanpa
-          // sedikit pun bersinggungan dengan kepala.
-          //
-          // Topi sungguhan tidak bertumpu di atas kepala; lubang mahkotanya
-          // berada di sekitar pelipis, yaitu DI BAWAH garis dahi. Karena itu
-          // topi diturunkan sebesar pecahan dari lebar kepala. Dinyatakan
-          // relatif terhadap lebar kepala, bukan terhadap tinggi topi, supaya
-          // topi jangkung seperti witch_hat tidak ikut terbenam lebih dalam
-          // hanya karena kerucutnya panjang.
-          const hatSink = isHat ? HAT_BRIM_BELOW_BROW * HAT_TARGET_WIDTH : 0;
-
-          wrapper.position.set(pivot[0], pivot[1] - hatSink, pivot[2]);
+          wrapper.position.set(pivot[0], pivot[1], pivot[2]);
 
           // 3. Preserve Authentic Original GLB PBR Textures & Materials
           model.traverse((child) => {
@@ -609,7 +573,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const halfW = halfH * (cw / ch);
 
     const worldX = ndcX * halfW;
-    const worldY = ndcY * halfH + (isHat ? 0 : -0.01) + offsetY * 0.012;
+    const worldY = ndcY * halfH + (isHat ? 0.22 : -0.01) + offsetY * 0.012;
     const worldZ = (nasion.z || 0) * -1.8;
 
     // Screen Positions on Mirrored Viewport:
