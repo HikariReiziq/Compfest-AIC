@@ -4,10 +4,11 @@ import React from 'react';
 import {
   ChevronLeft,
   ChevronRight,
-  CheckCircle2,
-  Box,
-  Layers,
-  ShieldCheck,
+  Palette,
+  Sparkles,
+  Shirt,
+  Calendar,
+  Compass,
 } from 'lucide-react';
 import { RecommendationItem, UserPersonalProfile } from '../lib/mockData';
 
@@ -34,7 +35,7 @@ export const SwitchControls: React.FC<SwitchControlsProps> = ({
   const currentItem = items[currentIndex] || items[0];
 
   const archetypeLabels = [
-    'Best Match',
+    'The Best Fit',
     'Safe Classic',
     'Bold Statement',
     'Modern Trend',
@@ -45,13 +46,19 @@ export const SwitchControls: React.FC<SwitchControlsProps> = ({
       ? currentItem.preview_image_url
       : `/images/products/preview/${currentItem.id}.png`;
 
+  // Natural stylist summary
+  const stylistSummary =
+    currentItem.stylist_reason ||
+    (currentItem as any).why_recommended ||
+    `Pilihan warna ${currentItem.base_colour} memberikan harmoni alami pada rona kulit Anda, sementara siluetnya dirancang menyeimbangkan proporsi wajah secara proporsional.`;
+
   return (
     <div className="w-full space-y-3.5 text-white animate-fadeIn">
-      {/* 1. Selector Tab Berbentuk Pill Selengkung Navbar (Tanpa Angka & Tombol Solid Non-Gradient) */}
+      {/* 1. Selector Tab Berbentuk Pill Selengkung Navbar */}
       <div className="flex items-center gap-1.5 p-1.5 rounded-full bg-[#0B1528] border border-blue-500/20 backdrop-blur-2xl shadow-xl">
         {items.map((item, idx) => {
           const isSelected = idx === currentIndex;
-          const label = archetypeLabels[idx] || (item.archetype_title?.replace(/^[0-9]+\.\s*/, '') || 'Rekomendasi');
+          const label = archetypeLabels[idx] || `Pilihan ${idx + 1}`;
 
           return (
             <button
@@ -77,43 +84,43 @@ export const SwitchControls: React.FC<SwitchControlsProps> = ({
         })}
       </div>
 
-      {/* 2. Single Unified Card: Seluruh Rincian & Gambar Katalog Terintegrasi Bersih */}
-      <div className="bg-[#081322]/90 rounded-3xl p-5 sm:p-6 border border-white/10 backdrop-blur-xl shadow-2xl space-y-4">
-        {/* Header Bar: Title, Meta, Navigation & Score */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-white/10">
+      {/* 2. Editorial Fashion Showcase Card (Natural, Sleek, Non-Robotic) */}
+      <div className="bg-[#0B1528]/95 rounded-3xl p-5 sm:p-6 border border-white/10 backdrop-blur-xl shadow-2xl space-y-5">
+        {/* Top Header: Title, Category, Price & Navigation */}
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 pb-4 border-b border-white/10">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-mono font-bold text-sky-400 uppercase tracking-wider">
-                {currentItem.archetype_title || `Pilihan ${currentIndex + 1}`}
+              <span className="text-[10px] font-mono uppercase tracking-widest text-[#38BDF8] font-bold">
+                {archetypeLabels[currentIndex] || `Pilihan ${currentIndex + 1}`}
               </span>
-              <span className="text-[10px] text-slate-500">•</span>
-              <span className="text-[11px] font-mono text-slate-400 uppercase">
+              <span className="text-slate-600">•</span>
+              <span className="text-[10px] font-mono text-slate-400 uppercase">
                 {currentItem.subcategory || currentItem.category}
               </span>
             </div>
-            <h3 className="text-base sm:text-xl font-bold text-white tracking-tight">
+            <h3 className="text-lg sm:text-2xl font-bold text-white tracking-tight">
               {currentItem.name}
             </h3>
-            <div className="flex items-center gap-3 text-xs text-slate-400 pt-0.5">
+            <div className="flex items-center gap-3 text-xs text-slate-300 pt-0.5 font-mono">
               <span>
-                Rona: <strong className="text-white font-medium">{currentItem.base_colour}</strong>
+                Warna: <strong className="text-white font-semibold">{currentItem.base_colour}</strong>
               </span>
-              <span>•</span>
+              <span className="text-slate-600">•</span>
               <span>
-                Harga: <strong className="text-[#FACC15] font-semibold">{currentItem.price_idr}</strong>
+                Harga: <strong className="text-[#FACC15] font-bold">{currentItem.price_idr}</strong>
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
-            <span className="px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-xs font-mono font-bold text-emerald-300">
-              {currentItem.compatibility_score}% Match
-            </span>
+          <div className="flex items-center gap-2.5 self-start sm:self-center shrink-0">
+            <div className="px-3.5 py-1.5 rounded-full bg-blue-500/15 border border-blue-400/30 text-xs font-mono font-bold text-[#93C5FD]">
+              {currentItem.compatibility_score}% Keserasian
+            </div>
             <div className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={onPrev}
-                className="w-8 h-8 rounded-full bg-slate-900 hover:bg-blue-600 text-slate-300 hover:text-white border border-white/10 flex items-center justify-center transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-full bg-[#071120] hover:bg-blue-600 text-slate-300 hover:text-white border border-white/10 flex items-center justify-center transition-colors cursor-pointer"
                 title="Sebelumnya"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -121,7 +128,7 @@ export const SwitchControls: React.FC<SwitchControlsProps> = ({
               <button
                 type="button"
                 onClick={onNext}
-                className="w-8 h-8 rounded-full bg-slate-900 hover:bg-blue-600 text-slate-300 hover:text-white border border-white/10 flex items-center justify-center transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-full bg-[#071120] hover:bg-blue-600 text-slate-300 hover:text-white border border-white/10 flex items-center justify-center transition-colors cursor-pointer"
                 title="Selanjutnya"
               >
                 <ChevronRight className="w-4 h-4" />
@@ -130,10 +137,10 @@ export const SwitchControls: React.FC<SwitchControlsProps> = ({
           </div>
         </div>
 
-        {/* Product Showcase Row: Gambar Katalog 2D + Justifikasi AI & Mini Scores */}
-        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3.5 items-center">
-          {/* Gambar Katalog 2D Jernih & Terang */}
-          <div className="sm:col-span-4 aspect-square rounded-2xl overflow-hidden border border-slate-700/60 bg-[#071120] flex items-center justify-center p-2.5 shadow-inner relative">
+        {/* Content Body: Gambar Katalog + Analisis Keserasian Gaya */}
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-5 items-center">
+          {/* Gambar Katalog 2D */}
+          <div className="sm:col-span-4 aspect-square rounded-2xl overflow-hidden border border-slate-700/50 bg-[#071120] flex items-center justify-center p-3 shadow-inner relative">
             <img
               src={previewImg}
               alt={currentItem.name}
@@ -145,123 +152,64 @@ export const SwitchControls: React.FC<SwitchControlsProps> = ({
             />
           </div>
 
-          {/* Justifikasi Biometrik AI & 3 Nilai Kecocokan */}
-          <div className="sm:col-span-8 space-y-2.5">
-            <div className="space-y-1">
-              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-semibold block">
-                Justifikasi Biometrik AI
+          {/* Ulasan Stylist & Faktor Keserasian */}
+          <div className="sm:col-span-8 space-y-3.5">
+            <div>
+              <span className="text-[10px] font-mono uppercase tracking-widest text-[#94A3B8] font-bold block mb-1">
+                Catatan Kurasi Stylist
               </span>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                {currentItem.stylist_reason ||
-                  (currentItem as any).why_recommended ||
-                  'Rekomendasi gaya yang diselaraskan secara presisi dengan proporsi biometrik dan rona kulit Anda.'}
+              <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                {stylistSummary}
               </p>
             </div>
 
-            {/* 3 Mini Metric Badges */}
-            <div className="grid grid-cols-3 gap-1.5 pt-1 font-mono text-[10px]">
-              <div className="bg-[#071120] p-1.5 rounded-xl border border-white/5 text-center">
-                <span className="text-slate-400 block text-[9px]">Undertone</span>
-                <strong className="text-emerald-400">{currentItem.color_match_score || 96}%</strong>
+            {/* 3 Poin Keserasian Berbasis Karakter Pengguna (Natural & Elegan) */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 font-mono text-[11px]">
+              <div className="bg-[#071120] p-2.5 rounded-xl border border-white/5 space-y-1">
+                <span className="text-[#38BDF8] font-semibold flex items-center gap-1.5 text-[10px] uppercase">
+                  <Palette className="w-3 h-3" />
+                  Rona Kulit
+                </span>
+                <p className="text-slate-300 text-[10px] leading-tight">
+                  Warna {currentItem.base_colour} selaras dengan rona alami Anda.
+                </p>
               </div>
-              <div className="bg-[#071120] p-1.5 rounded-xl border border-white/5 text-center">
-                <span className="text-slate-400 block text-[9px]">Siluet 3D</span>
-                <strong className="text-sky-400">{currentItem.shape_match_score || 94}%</strong>
+
+              <div className="bg-[#071120] p-2.5 rounded-xl border border-white/5 space-y-1">
+                <span className="text-[#60A5FA] font-semibold flex items-center gap-1.5 text-[10px] uppercase">
+                  <Compass className="w-3 h-3" />
+                  Proporsi Siluet
+                </span>
+                <p className="text-slate-300 text-[10px] leading-tight">
+                  Potongan menyeimbangkan kontur wajah &amp; postur tubuh.
+                </p>
               </div>
-              <div className="bg-[#071120] p-1.5 rounded-xl border border-white/5 text-center">
-                <span className="text-slate-400 block text-[9px]">Acara</span>
-                <strong className="text-indigo-400">92%</strong>
+
+              <div className="bg-[#071120] p-2.5 rounded-xl border border-white/5 space-y-1">
+                <span className="text-[#93C5FD] font-semibold flex items-center gap-1.5 text-[10px] uppercase">
+                  <Calendar className="w-3 h-3" />
+                  Penggunaan
+                </span>
+                <p className="text-slate-300 text-[10px] leading-tight">
+                  Ideal untuk kebutuhan {currentItem.usage || 'Formal & Kasual'}.
+                </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* 3-Point Detailed AI Biometric Reasoning */}
-        <div className="space-y-2 pt-1 border-t border-white/5">
-          <div className="flex items-center justify-between pb-1">
-            <span className="text-xs font-bold text-white tracking-wide">
-              Mengapa AI Merekomendasikan Item Ini?
-            </span>
-            <span className="text-[10px] font-mono text-sky-400 bg-sky-500/10 border border-sky-400/20 px-2 py-0.5 rounded-full">
-              Analisis Biometrik 3D
-            </span>
+        {/* Saran Padu-Padan (Styling Tip) */}
+        <div className="bg-[#071120] rounded-2xl p-3.5 border border-white/10 flex items-start gap-3">
+          <div className="p-2 rounded-xl bg-blue-500/10 border border-blue-400/20 text-[#38BDF8] shrink-0 mt-0.5">
+            <Shirt className="w-4 h-4" />
           </div>
-
-          <div className="space-y-2 text-xs text-slate-300">
-            {/* Poin 1: Spektrum Rona Kulit */}
-            <div className="bg-[#060e1a]/90 p-3 rounded-2xl border border-white/10 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-sky-300 text-xs flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-sky-400" />
-                  1. Analisis Spektrum Rona Kulit
-                </span>
-                <span className="text-[10px] font-mono text-emerald-300 bg-emerald-500/15 border border-emerald-400/20 px-1.5 py-0.2 rounded-full">
-                  {currentItem.color_match_score || 96}% Match
-                </span>
-              </div>
-              <p className="text-slate-300 text-[11px] leading-relaxed pl-5">
-                Warna <strong className="text-white">{currentItem.base_colour}</strong> melengkapi rona kulit tropis Monk Scale Anda ({userProfile?.monk_tone?.code || 'MST-06'}), menghindari efek wash-out dan memancarkan kilau rona alami.
-              </p>
-            </div>
-
-            {/* Poin 2: Proporsi Geometris 3D */}
-            <div className="bg-[#060e1a]/90 p-3 rounded-2xl border border-white/10 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-blue-300 text-xs flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-blue-400" />
-                  2. Proporsi Geometris 3D
-                </span>
-                <span className="text-[10px] font-mono text-sky-300 bg-sky-500/15 border border-sky-400/20 px-1.5 py-0.2 rounded-full">
-                  {currentItem.shape_match_score || 94}% Match
-                </span>
-              </div>
-              <p className="text-slate-300 text-[11px] leading-relaxed pl-5">
-                Potongan siluet produk ini dirancang proporsional terhadap kontur wajah ({userProfile?.face_shape?.shape || 'Oval'}) dan postur torso Anda
-                {userProfile?.gender?.label_id === 'female'
-                  ? ', dengan aksen yang melengkapi gaya feminin Anda'
-                  : userProfile?.gender?.label_id === 'male'
-                  ? ', dengan aksen yang melengkapi gaya maskulin Anda'
-                  : ''} sehingga menciptakan keseimbangan visual yang flattering.
-              </p>
-            </div>
-
-            {/* Poin 3: Konteks Acara & Fit */}
-            <div className="bg-[#060e1a]/90 p-3 rounded-2xl border border-white/10 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-indigo-300 text-xs flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-indigo-400" />
-                  3. Konteks Acara &amp; Fit
-                </span>
-                <span className="text-[10px] font-mono text-indigo-300 bg-indigo-500/15 border border-indigo-400/20 px-1.5 py-0.2 rounded-full">
-                  92% Match
-                </span>
-              </div>
-              <p className="text-slate-300 text-[11px] leading-relaxed pl-5">
-                Disesuaikan untuk skenario penggunaan <strong className="text-white">{currentItem.usage || 'Casual & Sports'}</strong> dengan siluet bahan yang jatuh rapi dan nyaman.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Saran Padu-Padan AI Stylist & Compliance */}
-        <div className="bg-[#060e1a]/80 rounded-2xl p-3.5 border border-white/10 space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-sky-400">
-              Saran Padu-Padan AI Stylist
+          <div className="space-y-0.5">
+            <span className="text-[10px] font-mono uppercase tracking-widest text-[#93C5FD] font-bold block">
+              Saran Padu-Padan
             </span>
-            <span className="text-[10px] font-mono text-slate-400">
-              Koleksi Pilihan
-            </span>
-          </div>
-          <p className="text-xs text-slate-300 leading-relaxed">
-            Padukan dengan kemeja warna netral atau kaos polos berkerah untuk menonjolkan aksen {currentItem.base_colour}. Siluet ini dirancang untuk memaksimalkan kontur wajah dan postur natural Anda.
-          </p>
-          <div className="flex items-center justify-between pt-1 text-[10px] font-mono text-slate-400">
-            <span className="flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              Zero Persistent Biometrics (UU PDP No. 27/2022)
-            </span>
-            <span className="text-slate-500">60 FPS Real-Time AR</span>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Padukan item ini dengan busana warna netral untuk menonjolkan aksen {currentItem.base_colour} dan menciptakan kesan penampilan yang rapi serta elegan.
+            </p>
           </div>
         </div>
       </div>
