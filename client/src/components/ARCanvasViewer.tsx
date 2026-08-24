@@ -405,9 +405,10 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
             model.position.z -= boxAfter.max.z;
           }
 
-          // Normalize model width (sizeAfter.x) to category standard units
+          // Normalize model dimensions to category standard units
+          const maxHoriz = Math.max(sizeAfter.x, sizeAfter.z) > 0 ? Math.max(sizeAfter.x, sizeAfter.z) : 1.0;
           const targetWidth = sizeAfter.x > 0 ? sizeAfter.x : 1.0;
-          const baseNormScale = (isHat ? HAT_TARGET_WIDTH : isShirt ? SHIRT_TARGET_WIDTH : 1.0) / targetWidth;
+          const baseNormScale = isHat ? (1.0 / maxHoriz) : isShirt ? (1.0 / targetWidth) : (1.0 / targetWidth);
           const customScaleFactor = modelConfig?.scale_factor || 1.0;
           const normalizeScale = baseNormScale * customScaleFactor;
           wrapper.scale.setScalar(normalizeScale);
@@ -510,9 +511,9 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const halfW = halfH * (cw / ch);
 
     const worldX = ndcX * halfW;
-    // Lower hat slightly so head enters the crown and brim sits naturally at the hairline
-    const worldY = isHat ? (ndcY * halfH - 0.05 + offsetY * 0.012) : (ndcY * halfH - 0.01 + offsetY * 0.012);
-    const worldZ = isHat ? ((foreheadTop?.z || nasion.z || 0) * -1.8 - 0.06) : ((nasion.z || 0) * -1.8);
+    // Lower hat anchor so head & hair fully enter the hat cavity and brim rests around upper brow level
+    const worldY = isHat ? (ndcY * halfH - 0.12 + offsetY * 0.012) : (ndcY * halfH - 0.01 + offsetY * 0.012);
+    const worldZ = isHat ? ((foreheadTop?.z || nasion.z || 0) * -1.8 - 0.08) : ((nasion.z || 0) * -1.8);
 
     const screenLeftEyeX = offsetX + (1 - eyeLX) * renderedWidth;
     const screenLeftEyeY = offsetYPixel + eyeLY * renderedHeight;
@@ -538,17 +539,18 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     if (chin && foreheadTop) {
       const vertDepth = ((foreheadTop.z || 0) - (chin.z || 0)) * 1.6;
       if (isHat) {
-        // Natural forward pitch (+0.12 rad ~ 7 deg) so the hat faces the camera straight on and crown is visible, NOT pitched backwards showing the underside!
-        safePitch = 0.12 + THREE.MathUtils.clamp(-vertDepth * 0.6, -0.3, 0.3);
+        // Natural forward pitch (+0.08 rad ~ 4.5 deg) so the hat faces the camera straight on and crown is visible
+        safePitch = 0.08 + THREE.MathUtils.clamp(-vertDepth * 0.5, -0.25, 0.25);
       } else {
         safePitch = THREE.MathUtils.clamp(vertDepth, -0.45, 0.45);
       }
     } else if (isHat) {
-      safePitch = 0.12;
+      safePitch = 0.08;
     }
 
     const worldInterPupil = (pixelDist / cw) * (2 * halfW);
-    const baseScale = isHat ? worldInterPupil * 1.95 : worldInterPupil * 2.35;
+    // Hats require 2.85x IPD to fit the entire human skull & hair volume comfortably
+    const baseScale = isHat ? worldInterPupil * 2.85 : worldInterPupil * 2.35;
     const finalScale = baseScale * (scaleMultiplier / 100);
 
     group.position.x = THREE.MathUtils.lerp(group.position.x, worldX, 0.45);
