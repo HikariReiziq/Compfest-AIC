@@ -425,11 +425,14 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               mesh.castShadow = true;
               mesh.receiveShadow = true;
               mesh.frustumCulled = false;
+              mesh.renderOrder = 1; // Ensure 3D model renders after depth occluder (-1)
 
               const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
               mats.forEach((mat: any) => {
                 if (!mat) return;
                 mat.side = THREE.DoubleSide;
+                mat.depthTest = true;
+                mat.depthWrite = true;
                 if (mat.map) {
                   mat.map.colorSpace = THREE.SRGBColorSpace;
                   mat.map.needsUpdate = true;
@@ -445,16 +448,15 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           if (isHat) {
             // Head Occluder: Writes to Z-depth buffer so the back brim & interior of the hat
             // is culled behind the user's real head and hair, creating true 3D head immersion!
-            const headGeom = new THREE.SphereGeometry(0.46, 32, 24);
-            headGeom.scale(1.0, 1.3, 1.15);
-            headGeom.translate(0, -0.32, -0.06);
+            const headGeom = new THREE.SphereGeometry(0.48, 32, 24);
+            headGeom.scale(1.0, 1.35, 1.15);
+            headGeom.translate(0, -0.25, -0.08);
             const occluderMat = new THREE.MeshBasicMaterial({
               colorWrite: false,
               depthWrite: true,
             });
             const occluderMesh = new THREE.Mesh(headGeom, occluderMat);
             occluderMesh.renderOrder = -1;
-            wrapper.renderOrder = 1;
             group.add(occluderMesh);
           } else if (isShirt) {
             // Torso/Neck Occluder: Prevents back of collar from rendering over the neck
@@ -466,7 +468,6 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
             });
             const occluderMesh = new THREE.Mesh(torsoGeom, occluderMat);
             occluderMesh.renderOrder = -1;
-            wrapper.renderOrder = 1;
             group.add(occluderMesh);
           }
 
@@ -543,9 +544,9 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
     const worldX = ndcX * halfW;
     // Lower hat anchor so head & hair fully enter the hat cavity and brim rests around upper brow level
-    const worldY = isHat ? (ndcY * halfH - 0.12 + offsetY * 0.012) : (ndcY * halfH - 0.01 + offsetY * 0.012);
+    const worldY = isHat ? (ndcY * halfH - 0.16 + offsetY * 0.012) : (ndcY * halfH - 0.01 + offsetY * 0.012);
     const worldZ = isHat
-      ? ((foreheadTop?.z || nasion.z || 0) * -1.8 - 0.08 + offsetZ * 0.015)
+      ? ((foreheadTop?.z || nasion.z || 0) * -1.8 - 0.03 + offsetZ * 0.015)
       : ((nasion.z || 0) * -1.8 + offsetZ * 0.015);
 
     const screenLeftEyeX = offsetX + (1 - eyeLX) * renderedWidth;
@@ -572,13 +573,13 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     if (chin && foreheadTop) {
       const vertDepth = ((foreheadTop.z || 0) - (chin.z || 0)) * 1.6;
       if (isHat) {
-        // Natural forward pitch (+0.08 rad ~ 4.5 deg) so the hat faces the camera straight on and crown is visible
-        safePitch = 0.08 + THREE.MathUtils.clamp(-vertDepth * 0.5, -0.25, 0.25);
+        // Natural slight forward pitch (+0.04 rad ~ 2.5 deg) so the hat faces the camera straight on and crown is visible
+        safePitch = 0.04 + THREE.MathUtils.clamp(-vertDepth * 0.4, -0.2, 0.2);
       } else {
         safePitch = THREE.MathUtils.clamp(vertDepth, -0.45, 0.45);
       }
     } else if (isHat) {
-      safePitch = 0.08;
+      safePitch = 0.04;
     }
 
     const worldInterPupil = (pixelDist / cw) * (2 * halfW);
