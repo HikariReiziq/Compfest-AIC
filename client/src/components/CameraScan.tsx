@@ -1148,7 +1148,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                 ? "relative bg-black rounded-3xl overflow-hidden border-2 border-slate-400/60 shadow-[0_0_0_1px_rgba(255,255,255,0.15),0_20px_60px_rgba(0,0,0,0.6)] flex items-center justify-center aspect-auto min-h-[480px] p-6"
                 : "relative w-full max-w-[800px] mx-auto drop-shadow-2xl"
             }
-            style={mode === "upload" ? undefined : { aspectRatio: "860 / 714" }}
+            style={mode === "upload" ? undefined : { aspectRatio: "548 / 455" }}
           >
             {mode === "upload" ? null : (
               /* Bingkai kamera DSLR Canon EOS — hanya untuk langkah 2 mode kamera live */
@@ -1248,10 +1248,10 @@ export const CameraScan: React.FC<CameraScanProps> = ({
               </div>
             ) : (
               <>
-              {/* Layar LCD kamera DSLR Canon — proporsi 16:9 pas di dalam bezel layar */}
+              {/* Layar LCD kamera DSLR Canon — proporsi pas di dalam bezel layar */}
               <div
                 className="absolute z-10 overflow-hidden rounded-[3px] bg-black shadow-[inset_0_0_20px_rgba(0,0,0,0.95)]"
-                style={{ left: "16.51%", top: "42.58%", width: "53.14%", height: "35.99%" }}
+                style={{ left: "16.42%", top: "42.20%", width: "45.07%", height: "36.26%" }}
               >
               <div className="relative w-full h-full bg-black flex items-center justify-center">
             {hasCamera ? (
