@@ -18,7 +18,7 @@ class FaceShapeResult:
     ):
         self.shape = shape  # "Oval", "Round", "Square", "Heart", "Oblong"
         self.confidence = round(confidence, 2)
-        self.ratios = {k: round(v, 3) for k, v in ratios.items()}
+        self.ratios = {k: round(v, 3) for k, v in ratios.items() if v is not None}
         self.glasses_recommendations = glasses_recommendations
         self.hat_recommendations = hat_recommendations
         self.styling_advice = styling_advice
@@ -120,10 +120,10 @@ class FaceShapeClassifier:
 
     def classify(self, ratios: Dict[str, float]) -> FaceShapeResult:
         """Classifies face shape using trained Random Forest or calibrated geometric threshold decision rules."""
-        f_w_h = ratios.get("face_width_to_height", 0.76)
-        jaw_fh = ratios.get("jaw_to_forehead", 0.85)
-        cheek_jaw = ratios.get("cheekbone_to_jaw", 1.15)
-        chin_sharp = ratios.get("chin_sharpness", 0.65)
+        f_w_h = ratios.get("face_width_to_height") or 0.76
+        jaw_fh = ratios.get("jaw_to_forehead") or 0.85
+        cheek_jaw = ratios.get("cheekbone_to_jaw") or 1.15
+        chin_sharp = ratios.get("chin_sharpness") or 0.65
 
         # 1. Use trained Random Forest model if loaded
         if self.model is not None:
@@ -135,11 +135,12 @@ class FaceShapeClassifier:
                 best_shape = str(classes[best_idx])
                 confidence = float(probs[best_idx])
                 
+                clean_ratios = {k: float(v) for k, v in ratios.items() if v is not None}
                 advice_data = self.flattering_advice.get(best_shape, self.flattering_advice["Oval"])
                 return FaceShapeResult(
                     shape=best_shape,
                     confidence=confidence,
-                    ratios=ratios,
+                    ratios=clean_ratios,
                     glasses_recommendations=advice_data["glasses"],
                     hat_recommendations=advice_data["hats"],
                     styling_advice=advice_data["advice"],

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { UserCheck, Sparkles, Sliders } from "lucide-react";
+import { UserCheck, Sliders } from "lucide-react";
 import { MOCK_PRESETS, UserPersonalProfile } from "../lib/mockData";
 
 interface MockDataToggleProps {

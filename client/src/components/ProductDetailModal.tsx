@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import React from "react";
-import { X, Sparkles, CheckCircle2, Tag, Shirt, ShieldAlert } from "lucide-react";
-import { RecommendationItem, UserPersonalProfile } from "../lib/mockData";
+import React from 'react';
+import { X, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { RecommendationItem, UserPersonalProfile } from '../lib/mockData';
 
 interface ProductDetailModalProps {
   item: RecommendationItem | null;
@@ -18,36 +18,36 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   if (!item) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-      <div className="relative w-full max-w-2xl bg-surface-100 border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl animate-fadeIn text-white">
+      <div className="relative w-full max-w-2xl bg-[#0B1528] border border-blue-500/30 rounded-3xl p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto shadow-2xl">
         {/* Close Button */}
         <button
+          type="button"
           onClick={onClose}
-          className="absolute top-5 right-5 w-8 h-8 rounded-full bg-surface-50 hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
+          className="absolute top-5 right-5 w-9 h-9 rounded-full bg-[#071120] hover:bg-blue-600 flex items-center justify-center text-white/70 hover:text-white transition-all cursor-pointer border border-blue-500/20"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Modal Header */}
         <div className="space-y-1">
-          <div className="inline-flex items-center space-x-1.5 text-xs font-mono text-indigo-400 font-bold uppercase tracking-wider">
-            <Sparkles className="w-3.5 h-3.5" />
+          <div className="inline-flex items-center gap-1.5 text-xs font-mono text-[#38BDF8] font-bold uppercase tracking-wider">
             <span>{item.archetype_title}</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
             {item.name}
           </h2>
-          <p className="text-xs text-slate-400 font-mono">
-            Kategori: {item.category} • Sub: {item.subcategory.toUpperCase()} • Harga: <strong className="text-emerald-400">{item.price_idr}</strong>
+          <p className="text-xs text-[#94A3B8] font-mono">
+            Kategori: {item.category} • Sub: {item.subcategory.toUpperCase()} • Harga: <strong className="text-[#FACC15]">{item.price_idr}</strong>
           </p>
         </div>
 
         {/* 2D Preview and High-level compatibility */}
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-5 items-center">
-          <div className="sm:col-span-5 aspect-square rounded-2xl overflow-hidden border border-white/10 bg-slate-950 flex items-center justify-center p-3">
+          <div className="sm:col-span-5 aspect-square rounded-2xl overflow-hidden border border-blue-500/20 bg-black/60 flex items-center justify-center p-3">
             <img
               src={
-                item.preview_image_url && !item.preview_image_url.endsWith(".obj")
+                item.preview_image_url && !item.preview_image_url.endsWith('.obj')
                   ? item.preview_image_url
                   : `/images/products/preview/${item.id}.png`
               }
@@ -61,23 +61,23 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           </div>
 
           <div className="sm:col-span-7 space-y-3 text-xs">
-            <div className="bg-surface-50 p-4 rounded-2xl border border-white/5 space-y-2">
-              <div className="flex justify-between items-center font-semibold text-slate-300">
+            <div className="bg-[#071120]/80 p-4 rounded-2xl border border-blue-500/20 space-y-2">
+              <div className="flex justify-between items-center font-semibold text-white">
                 <span>Skor Keserasian Total</span>
-                <span className="font-mono text-emerald-400 text-sm font-bold">{item.compatibility_score}%</span>
+                <span className="font-mono text-[#FACC15] text-sm font-bold">{item.compatibility_score}%</span>
               </div>
-              <div className="flex justify-between items-center text-slate-400">
-                <span>Kecocokan Warna Kulit</span>
-                <span className="font-mono text-indigo-300">{item.color_match_score}%</span>
+              <div className="flex justify-between items-center text-[#93C5FD]">
+                <span>Kecocokan Rona Kulit</span>
+                <span className="font-mono text-[#38BDF8]">{item.color_match_score}%</span>
               </div>
-              <div className="flex justify-between items-center text-slate-400">
+              <div className="flex justify-between items-center text-[#93C5FD]">
                 <span>Kecocokan Siluet Geometris</span>
-                <span className="font-mono text-rose-300">{item.shape_match_score}%</span>
+                <span className="font-mono text-[#60A5FA]">{item.shape_match_score}%</span>
               </div>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <span className="text-slate-400">Warna Produk:</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[#94A3B8]">Warna Produk:</span>
               <span
                 className="w-3.5 h-3.5 rounded-full border border-white/30"
                 style={{ backgroundColor: item.hex_colour }}
@@ -89,28 +89,29 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
         {/* Detailed AI Stylist Analysis */}
         <div className="space-y-3">
-          <h4 className="text-sm font-bold text-white flex items-center space-x-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <h4 className="text-sm font-bold text-white flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-[#38BDF8] fill-current" />
             <span>Mengapa AI Merekomendasikan Item Ini?</span>
           </h4>
 
-          <div className="bg-surface-50/70 p-4 rounded-2xl border border-white/5 space-y-3 text-xs text-slate-300 leading-relaxed">
+          <div className="bg-[#071120]/80 p-4 rounded-2xl border border-blue-500/20 space-y-2.5 text-xs text-[#94A3B8] leading-relaxed">
             <p>
-              <strong className="text-indigo-300">1. Analisis Warna Musiman:</strong> Warna <strong>{item.base_colour}</strong> sangat serasi dengan undertone kulit <strong>{userProfile?.undertone?.undertone || "Warm"}</strong> Anda, menghindari kesan *wash-out* dan memancarkan kilau segar alami.
+              <strong className="text-[#93C5FD]">1. Analisis Spektrum Rona Kulit:</strong> Warna <strong>{item.base_colour}</strong> melengkapi rona kulit tropis Monk Scale Anda, menghindari efek wash-out dan memancarkan kilau rona alami.
             </p>
             <p>
-              <strong className="text-rose-300">2. Proporsi Geometris:</strong> Potongan siluet produk ini dirancang untuk melengkapi bentuk wajah ({userProfile?.face_shape?.shape || "Oval"}) dan gaya {userProfile?.gender?.label_id === "female" ? "feminin" : "maskulin"} Anda sehingga menciptakan keseimbangan visual yang flattering.
+              <strong className="text-[#60A5FA]">2. Proporsi Geometris 3D:</strong> Potongan siluet produk ini dirancang proporsional terhadap kontur wajah ({userProfile?.face_shape?.shape || 'Oval'}) dan postur torso Anda.
             </p>
             <p>
-              <strong className="text-emerald-300">3. Konteks Acara:</strong> Disesuaikan untuk kebutuhan penggunaan <strong>{item.usage}</strong> dengan karakter bahan yang nyaman.
+              <strong className="text-[#93C5FD]">3. Konteks Acara &amp; Fit:</strong> Disesuaikan untuk skenario penggunaan <strong>{item.usage}</strong> dengan siluet bahan yang jatuh rapi.
             </p>
           </div>
         </div>
 
         {/* Close Modal Button */}
         <button
+          type="button"
           onClick={onClose}
-          className="w-full py-3.5 rounded-2xl font-bold text-sm text-white bg-indigo-600 hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/25"
+          className="w-full py-3.5 rounded-full font-bold text-sm text-white bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 border border-blue-400/30 transition-all cursor-pointer"
         >
           Kembali ke 3D Try-On
         </button>

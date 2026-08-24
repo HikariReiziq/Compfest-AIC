@@ -87,10 +87,31 @@ export default function PreviewGenerator() {
     rimLight.position.set(0, -2, -3);
     scene.add(rimLight);
 
+    (window as any).THREE = THREE;
+    (window as any).THREE_GLTFLoader = GLTFLoader;
+
     const loader = new GLTFLoader();
 
     // Attach global render function for Puppeteer or UI
-    (window as any).renderOneGLB = (url: string, cat: string) => {
+    (window as any).renderOneGLB = async (url: string, cat: string, rxParam?: number, ryParam?: number, rzParam?: number) => {
+      let rx = rxParam || 0;
+      let ry = ryParam || 0;
+      let rz = rzParam || 0;
+
+      // Automatically read rotation from manifest if not provided
+      if (rx === 0 && ry === 0 && rz === 0) {
+        try {
+          const res = await fetch("/images/products/glb_manifest.json");
+          if (res.ok) {
+            const manifest = await res.json();
+            const fn = url.split("/").pop() || "";
+            if (manifest[fn]?.rotation_correction) {
+              [rx, ry, rz] = manifest[fn].rotation_correction;
+            }
+          }
+        } catch {}
+      }
+
       return new Promise<string>((resolve, reject) => {
         for (let i = scene.children.length - 1; i >= 0; i--) {
           const c = scene.children[i];
@@ -107,52 +128,63 @@ export default function PreviewGenerator() {
           (gltf) => {
             const model = gltf.scene;
 
-            // 1. Initial orientation correction if model is lying flat
-            const rawBox = new THREE.Box3().setFromObject(model);
-            const rawSize = rawBox.getSize(new THREE.Vector3());
-            if (cat === "glasses" && rawSize.y > rawSize.z * 1.3) {
-              model.rotation.x = -Math.PI / 2;
+            // Apply model rotation correction if provided
+            if (rx || ry || rz) {
+              model.rotation.set(rx, ry, rz);
+              model.updateMatrixWorld(true);
             }
+
+            // 1. Normalize scale to standard 1.5 units across all 37 models
+            const scaledBox = new THREE.Box3().setFromObject(model);
+            const scaledSize = scaledBox.getSize(new THREE.Vector3());
+            const maxDim = Math.max(scaledSize.x, scaledSize.y, scaledSize.z) || 1.0;
+            const normScale = 1.5 / maxDim;
+            model.scale.set(normScale, normScale, normScale);
+            model.updateMatrixWorld(true);
+
+            // 2. Enable double-sided rendering, disable frustum culling, and preserve authentic textures
+            model.traverse((child) => {
+              if ((child as THREE.Mesh).isMesh) {
+                const mesh = child as THREE.Mesh;
+                mesh.frustumCulled = false;
+                if (mesh.geometry) {
+                  mesh.geometry.computeBoundingBox();
+                  mesh.geometry.computeBoundingSphere();
+                }
+
+                const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+                mats.forEach((mat: any) => {
+                  if (!mat) return;
+                  mat.side = THREE.DoubleSide;
+                  if (mat.map) {
+                    mat.map.colorSpace = THREE.SRGBColorSpace;
+                    mat.map.needsUpdate = true;
+                  }
+                  mat.needsUpdate = true;
+                });
+              }
+            });
 
             const wrapper = new THREE.Group();
             wrapper.add(model);
             scene.add(wrapper);
 
-            // 2. Uniform clean front-facing angle (facing directly front with subtle 8-degree depth)
-            if (cat === "glasses") {
-              wrapper.rotation.set(0.04, -0.18, 0);
-            } else if (cat === "hats") {
-              wrapper.rotation.set(0.08, -0.15, 0);
-            } else {
-              wrapper.rotation.set(0.0, -0.12, 0);
-            }
+            // Clean straight-on eye-level front view (no tilting from below or behind)
+            wrapper.rotation.set(0, 0, 0);
 
             // Force world matrix update so bounding box includes rotations
             wrapper.updateMatrixWorld(true);
 
-            // 3. Compute exact world bounding box of rotated model
+            // 3. Center wrapper precisely at (0, 0, 0)
             const worldBox = new THREE.Box3().setFromObject(wrapper);
             const worldCenter = worldBox.getCenter(new THREE.Vector3());
-            const worldSize = worldBox.getSize(new THREE.Vector3());
-
-            // 4. Center wrapper precisely at (0, 0, 0)
             wrapper.position.sub(worldCenter);
-
-            // Force update after centering
             wrapper.updateMatrixWorld(true);
 
-            // 5. Mathematical camera framing: object fills ~75% of frame (consistent padding, no cut-offs)
-            const fovRad = (camera.fov * Math.PI) / 180;
-            const distH = (worldSize.y / 2) / Math.tan(fovRad / 2);
-            const distW = (worldSize.x / 2) / Math.tan(fovRad / 2);
-            const maxDim = Math.max(worldSize.x, worldSize.y, worldSize.z);
-            const distMax = (maxDim / 2) / Math.tan(fovRad / 2);
-
-            const fitDistance = Math.max(distH, distW, distMax) * 1.30;
-
-            camera.position.set(0, 0, fitDistance);
-            camera.near = Math.max(0.01, fitDistance / 100);
-            camera.far = fitDistance * 100;
+            // 4. Straight eye-level front camera
+            camera.position.set(0, 0, 3.6);
+            camera.near = 0.01;
+            camera.far = 100;
             camera.lookAt(0, 0, 0);
             camera.updateProjectionMatrix();
 

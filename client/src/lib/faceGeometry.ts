@@ -440,11 +440,12 @@ export function sampleSkinLab(
   if (!ctx) return null;
   ctx.drawImage(video, 0, 0, W, H);
 
-  const r = Math.round(Math.max(4, W * 0.02)); // radius patch ~2% lebar frame
+  const r = Math.round(Math.max(4, W * 0.025)); // radius patch ~2.5% lebar frame
   const centers = [
-    { x: lm[10].x * W, y: (lm[10].y + 0.06) * H }, // dahi (sedikit di bawah garis rambut)
-    { x: lm[234].x * W, y: lm[234].y * H }, // pipi kiri
-    { x: lm[454].x * W, y: lm[454].y * H }, // pipi kanan
+    { x: lm[151].x * W, y: lm[151].y * H }, // dahi tengah / glabella (bersih dari rambut)
+    { x: lm[117].x * W, y: lm[117].y * H }, // pipi kiri bagian dalam (malar, bersih dari cambang/rambut)
+    { x: lm[346].x * W, y: lm[346].y * H }, // pipi kanan bagian dalam (malar, bersih dari cambang/rambut)
+    { x: lm[6].x * W, y: lm[6].y * H },     // tengah batang hidung
   ];
   let sl = 0, sa = 0, sb = 0, n = 0;
   for (const c of centers) {

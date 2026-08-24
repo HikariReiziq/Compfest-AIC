@@ -52,7 +52,7 @@ export default function RepositionTool({ photoDataUrl, onConfirm, onBack }: Repo
 
     const t = trRef.current;
     ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = "#0f172a";
+    ctx.fillStyle = "#0D070A";
     ctx.fillRect(0, 0, W, H);
 
     if (img) {
@@ -68,14 +68,14 @@ export default function RepositionTool({ photoDataUrl, onConfirm, onBack }: Repo
     // menemukan wajah terpusat dan tidak mengganggu FaceLandmarker).
     ctx.setLineDash([12, 10]);
     ctx.lineWidth = 3;
-    ctx.strokeStyle = "#fb923c";
+    ctx.strokeStyle = "#38BDF8";
     ctx.beginPath();
     ctx.ellipse(OVAL.cx, OVAL.cy, OVAL.rx, OVAL.ry, 0, 0, Math.PI * 2);
     ctx.stroke();
     ctx.setLineDash([]);
 
     // Penanda horizon dahi / mata / dagu di dalam oval
-    ctx.strokeStyle = "rgba(251,146,60,0.35)";
+    ctx.strokeStyle = "rgba(56,189,248,0.4)";
     ctx.lineWidth = 1.5;
     [0.18, 0.46, 0.74].forEach((f) => {
       const y = OVAL.cy - OVAL.ry + OVAL.ry * 2 * f;
@@ -181,28 +181,28 @@ export default function RepositionTool({ photoDataUrl, onConfirm, onBack }: Repo
 
   return (
     <div className="w-full space-y-4">
-      <p className="text-center text-sm text-slate-300 flex items-center justify-center gap-2">
-        <Move className="w-4 h-4 text-orange-400" />
+      <p className="text-center text-sm text-[#94A3B8] flex items-center justify-center gap-2">
+        <Move className="w-4 h-4 text-[#38BDF8]" />
         Geser (drag), perbesar (scroll / tombol), dan putar foto hingga{" "}
-        <strong className="text-orange-300">dahi, mata, dan dagu</strong> berada di dalam oval.
+        <strong className="text-[#38BDF8]">dahi, mata, dan dagu</strong> berada di dalam oval.
       </p>
 
       <canvas
         ref={canvasRef}
         width={W}
         height={H}
-        className="w-full max-w-xl mx-auto rounded-2xl border border-white/10 shadow-2xl touch-none cursor-grab active:cursor-grabbing bg-slate-900"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
         onWheel={onWheel}
+        className="w-full aspect-[4/3] rounded-3xl border border-blue-500/30 bg-[#060B14] touch-none cursor-grab active:cursor-grabbing shadow-2xl block mx-auto"
       />
 
       <div className="max-w-xl mx-auto space-y-3">
         {/* Rotasi */}
         <div className="flex items-center gap-3">
-          <span className="text-[10px] font-mono text-slate-400 w-14 shrink-0">ROTASI</span>
+          <span className="text-[10px] font-mono text-[#94A3B8] w-14 shrink-0">ROTASI</span>
           <input
             type="range"
             min={-ROTATE_RANGE}
@@ -210,10 +210,10 @@ export default function RepositionTool({ photoDataUrl, onConfirm, onBack }: Repo
             value={rotation}
             step={1}
             aria-label="Rotasi foto"
-            className="flex-1 accent-orange-500"
+            className="flex-1 accent-blue-500"
             onChange={(e) => setRotationDeg(Number(e.target.value))}
           />
-          <span className="text-[10px] font-mono text-slate-300 w-12 text-right">
+          <span className="text-[10px] font-mono text-[#93C5FD] w-12 text-right">
             {rotation}°
           </span>
           <button
@@ -221,7 +221,7 @@ export default function RepositionTool({ photoDataUrl, onConfirm, onBack }: Repo
             onClick={resetTransform}
             aria-label="Reset posisi"
             title="Reset posisi"
-            className="p-2 rounded-lg border border-white/10 bg-surface-50 hover:bg-slate-800 text-slate-300 transition-colors"
+            className="p-2 rounded-full border border-blue-500/30 bg-[#0B1528] hover:bg-blue-600 hover:text-white text-[#93C5FD] transition-colors cursor-pointer"
           >
             <RotateCcw className="w-4 h-4" />
           </button>
@@ -229,18 +229,18 @@ export default function RepositionTool({ photoDataUrl, onConfirm, onBack }: Repo
 
         {/* Zoom */}
         <div className="flex items-center gap-3">
-          <span className="text-[10px] font-mono text-slate-400 w-14 shrink-0">ZOOM</span>
+          <span className="text-[10px] font-mono text-[#94A3B8] w-14 shrink-0">ZOOM</span>
           <button
             type="button"
             onClick={() => zoomBy(1 / 1.15)}
             aria-label="Perkecil"
-            className="p-2 rounded-lg border border-white/10 bg-surface-50 hover:bg-slate-800 text-slate-300 transition-colors"
+            className="p-2 rounded-full border border-blue-500/30 bg-[#0B1528] hover:bg-blue-600 hover:text-white text-[#93C5FD] transition-colors cursor-pointer"
           >
             <ZoomOut className="w-4 h-4" />
           </button>
-          <div className="flex-1 h-1.5 rounded-full bg-slate-800 overflow-hidden">
+          <div className="flex-1 h-2 rounded-full bg-[#08101E] overflow-hidden border border-blue-500/20">
             <div
-              className="h-full bg-gradient-to-r from-orange-600 to-amber-400 transition-all"
+              className="h-full bg-gradient-to-r from-blue-600 to-sky-400 transition-all"
               style={{ width: `${Math.min(100, (scaleLabel / MAX_SCALE) * 100)}%` }}
             />
           </div>
@@ -248,21 +248,21 @@ export default function RepositionTool({ photoDataUrl, onConfirm, onBack }: Repo
             type="button"
             onClick={() => zoomBy(1.15)}
             aria-label="Perbesar"
-            className="p-2 rounded-lg border border-white/10 bg-surface-50 hover:bg-slate-800 text-slate-300 transition-colors"
+            className="p-2 rounded-full border border-blue-500/30 bg-[#0B1528] hover:bg-blue-600 hover:text-white text-[#93C5FD] transition-colors cursor-pointer"
           >
             <ZoomIn className="w-4 h-4" />
           </button>
-          <span className="text-[10px] font-mono text-slate-300 w-10 text-right">
+          <span className="text-[10px] font-mono text-[#93C5FD] w-10 text-right">
             {scaleLabel}×
           </span>
         </div>
 
         {/* Aksi */}
-        <div className="flex gap-3 pt-1">
+        <div className="flex gap-3 pt-2">
           <button
             type="button"
             onClick={onBack}
-            className="flex-1 py-3 rounded-xl border border-white/10 bg-surface-50 hover:bg-slate-800 font-semibold text-slate-200 transition-colors"
+            className="flex-1 py-3 rounded-full border border-blue-500/30 bg-[#08101E] hover:bg-white/10 font-semibold font-mono text-xs text-white transition-colors cursor-pointer"
           >
             Ganti Foto
           </button>
@@ -270,9 +270,9 @@ export default function RepositionTool({ photoDataUrl, onConfirm, onBack }: Repo
             type="button"
             onClick={confirm}
             disabled={!imgReady}
-            className="flex-[2] py-3 rounded-xl bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 hover:scale-[1.01] disabled:opacity-50 text-white font-bold flex items-center justify-center gap-2 shadow-lg shadow-orange-600/30 transition-all"
+            className="flex-[2] py-3 rounded-full bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 disabled:opacity-50 text-white font-bold font-mono text-xs flex items-center justify-center gap-2 border border-blue-400/30 transition-all cursor-pointer"
           >
-            <ScanFace className="w-5 h-5" />
+            <ScanFace className="w-4 h-4" />
             Analisis Wajah
           </button>
         </div>

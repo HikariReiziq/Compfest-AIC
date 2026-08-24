@@ -70,12 +70,13 @@ def classify_face_shape(ratios: Dict[str, float]) -> Dict[str, Any]:
             + (DIAMOND_RULE["chin_sharpness_max"] - chin_sharp) / DIAMOND_RULE["chin_sharpness_max"]
         )
         confidence = round(min(0.95, 0.82 + margins), 2)
+        clean_ratios = {k: float(v) for k, v in ratios.items() if v is not None}
         return {
             "shape": "Diamond",
             "label_indonesian": FACE_SHAPE_LABELS_ID["Diamond"],
             "confidence": confidence,
             "method": "rule_override",
-            "ratios": ratios,
+            "ratios": clean_ratios,
             "glasses_recommendations": _DIAMOND_ADVICE["glasses"],
             "hat_recommendations": _DIAMOND_ADVICE["hats"],
             "styling_advice": _DIAMOND_ADVICE["advice"],

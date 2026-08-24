@@ -43,14 +43,17 @@ function decodeImage(dataUrl: string): Promise<HTMLImageElement> {
 }
 
 export interface PhotoUploadProps {
+  subcategory?: "glasses" | "hats" | "shirts" | string;
   onPhotoLoaded: (dataUrl: string, width: number, height: number) => void;
 }
 
-export default function PhotoUpload({ onPhotoLoaded }: PhotoUploadProps) {
+export default function PhotoUpload({ onPhotoLoaded, subcategory }: PhotoUploadProps) {
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const isBody = subcategory === "shirts";
 
   const handleFile = useCallback(
     async (file: File) => {
@@ -93,7 +96,7 @@ export default function PhotoUpload({ onPhotoLoaded }: PhotoUploadProps) {
       <div
         role="button"
         tabIndex={0}
-        aria-label="Unggah foto wajah"
+        aria-label={isBody ? "Unggah foto tubuh" : "Unggah foto wajah"}
         onClick={() => inputRef.current?.click()}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") inputRef.current?.click();
@@ -111,23 +114,27 @@ export default function PhotoUpload({ onPhotoLoaded }: PhotoUploadProps) {
         }}
         className={`w-full border-2 border-dashed rounded-2xl p-8 flex flex-col items-center gap-3 cursor-pointer transition-colors ${
           isDragging
-            ? "border-orange-500 bg-orange-500/10"
-            : "border-slate-600 hover:border-orange-400 hover:bg-orange-500/5"
+            ? "border-blue-500 bg-blue-500/10"
+            : "border-blue-500/30 hover:border-blue-400 hover:bg-blue-500/5 bg-[#0B1528]/90 backdrop-blur-xl"
         }`}
       >
-        <div className="w-14 h-14 rounded-2xl bg-orange-500/15 border border-orange-500/30 flex items-center justify-center">
+        <div className="w-14 h-14 rounded-2xl bg-[#071120] border border-blue-500/20 flex items-center justify-center">
           {isProcessing ? (
-            <Upload className="w-7 h-7 text-orange-400 animate-pulse" />
+            <Upload className="w-7 h-7 text-[#38BDF8] animate-pulse" />
           ) : (
-            <ImageIcon className="w-7 h-7 text-orange-400" />
+            <ImageIcon className="w-7 h-7 text-[#38BDF8]" />
           )}
         </div>
-        <span className="font-semibold text-slate-100">
-          {isProcessing ? "Memvalidasi foto..." : "Unggah Foto Wajah"}
+        <span className="font-semibold text-white">
+          {isProcessing
+            ? "Memvalidasi foto..."
+            : isBody
+            ? "Unggah Foto Tubuh & Torso"
+            : "Unggah Foto Wajah"}
         </span>
-        <span className="text-xs text-slate-400 text-center max-w-xs leading-relaxed">
-          Tarik & lepas foto ke sini, atau klik untuk memilih · PNG / JPG / JPEG · maks 8 MB · foto
-          frontal dengan pencahayaan merata
+        <span className="text-xs text-[#94A3B8] text-center max-w-xs leading-relaxed">
+          Tarik &amp; lepas foto ke sini, atau klik untuk memilih · PNG / JPG / JPEG · maks 8 MB · foto
+          {isBody ? " tubuh bagian atas (bahu & dada)" : " frontal wajah"} dengan pencahayaan merata
         </span>
       </div>
 

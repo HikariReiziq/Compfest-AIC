@@ -80,6 +80,16 @@ export interface UserPersonalProfile {
   };
   /** Snapshot reposisi — HANYA hidup di React state sesi (ADR-015, tanpa persistensi). */
   scan_snapshot_dataurl?: string;
+  body_measurements_cm?: {
+    shoulder_width_cm?: number;
+    torso_height_cm?: number;
+    chest_width_cm?: number;
+    hip_width_cm?: number;
+  };
+  body_shape_classification?: {
+    body_shape?: string;
+    confidence?: number;
+  };
 }
 
 export interface RecommendationItem {

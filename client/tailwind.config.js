@@ -24,8 +24,9 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ["var(--font-outfit)", "system-ui", "sans-serif"],
-        mono: ["var(--font-space-grotesk)", "monospace"],
+        sans: ["var(--font-poppins)", "Poppins", "sans-serif"],
+        mono: ["var(--font-poppins)", "Poppins", "sans-serif"],
+        display: ["var(--font-poppins)", "Poppins", "sans-serif"],
       },
       backgroundImage: {
         "radial-cyber": "radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.15), transparent 70%)",

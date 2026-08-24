@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import React from "react";
-import { Glasses, HardHat, Shirt, ArrowRight, Sparkles } from "lucide-react";
+import React from 'react';
+import { Glasses, Crown, Shirt, ArrowRight } from 'lucide-react';
 
 interface CategorySelectorProps {
   onSelectCategory: (
-    domain: "accessories" | "apparel",
-    subcategory: "glasses" | "hats" | "shirts"
+    domain: 'accessories' | 'apparel',
+    subcategory: 'glasses' | 'hats' | 'shirts'
   ) => void;
 }
 
@@ -14,136 +14,127 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
   onSelectCategory,
 }) => {
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-8 animate-fadeIn">
+    <div className="w-full max-w-6xl mx-auto space-y-9 animate-fadeIn text-white">
       {/* Top Header */}
-      <div className="text-center space-y-2">
-        <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-mono">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>TAHAP 1: PILIH KATEGORI FESYEN & GAYA 3D</span>
+      <div className="text-center space-y-4">
+        <div className="inline-flex items-center gap-3 px-6 py-2.5 rounded-full bg-[#0B1528] border border-blue-500/30 text-[#93C5FD] text-sm sm:text-base font-mono font-bold shadow-2xl tracking-wider">
+          <span>TAHAP 1: PILIH KATEGORI FESYEN &amp; GAYA 3D</span>
         </div>
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-          Pilih Kategori Busana & Aksesoris Anda
+        <h1 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
+          Pilih Kategori Busana &amp; Aksesori Anda
         </h1>
-        <p className="text-slate-400 text-sm max-w-xl mx-auto">
-          Pilih item yang ingin Anda coba secara Virtual 3D GLB. AI COBA akan menyesuaikan analisis biometrik wajah & proporsi tubuh untuk kurasi gaya paling sempurna.
+        <p className="text-[#94A3B8] text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
+          Pilih item yang ingin Anda coba secara Virtual 3D. AI COBA akan menyesuaikan analisis biometrik wajah &amp; proporsi tubuh untuk kurasi gaya paling sempurna.
         </p>
       </div>
 
-      {/* 3 Cards Grid (3 col on Desktop, 1 col on Mobile) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+      {/* 3 Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-7 pt-2 items-stretch">
         {/* 1. Kacamata (Glasses) */}
         <div
-          onClick={() => onSelectCategory("accessories", "glasses")}
-          className="glass-panel glass-card-hover rounded-3xl p-7 cursor-pointer group flex flex-col justify-between space-y-6 relative overflow-hidden border border-indigo-500/30 hover:border-indigo-400 hover:shadow-2xl hover:shadow-indigo-500/20 transition-all duration-300"
+          onClick={() => onSelectCategory('accessories', 'glasses')}
+          className="bg-[#0B1528]/90 rounded-3xl p-8 cursor-pointer group flex flex-col justify-between h-full relative overflow-hidden border border-blue-500/20 hover:border-blue-500 transition-all duration-300 backdrop-blur-xl shadow-xl hover:scale-[1.01]"
         >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-indigo-500/20 transition-all" />
-
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div className="flex items-center justify-between">
-              <div className="w-14 h-14 rounded-2xl bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                <Glasses className="w-7 h-7 text-indigo-400" />
+              <div className="w-16 h-16 rounded-2xl bg-[#071120] border border-blue-500/20 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
+                <Glasses className="w-8 h-8 text-[#38BDF8]" />
               </div>
-              <span className="text-[10px] font-mono px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-bold">
-                ✓ 7 Model 3D GLB
+              <span className="text-xs font-mono px-3.5 py-1 rounded-full bg-blue-500/20 text-[#93C5FD] border border-blue-500/30 font-bold">
+                ✓ 7 Model 3D
               </span>
             </div>
 
-            <div className="space-y-1">
-              <span className="text-[11px] font-mono uppercase tracking-widest text-indigo-400 font-semibold">
-                Aksesoris Wajah • Eyewear
+            <div className="space-y-1.5">
+              <span className="text-xs font-mono uppercase tracking-widest text-[#38BDF8] font-semibold">
+                Aksesori Wajah • Eyewear
               </span>
-              <h2 className="text-2xl font-bold text-white group-hover:text-indigo-300 transition-colors">
+              <h2 className="text-2xl sm:text-3xl font-bold text-white group-hover:text-[#38BDF8] transition-colors">
                 Kacamata
               </h2>
             </div>
 
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Analisis kontur wajah (6 bentuk wajah, warna kulit) untuk kurasi bingkai (*Wayfarer, Aviator, Geometric, Browline*) dan lensa kaca transparan fotorealistik.
+            <p className="text-sm sm:text-base text-[#94A3B8] leading-relaxed">
+              Analisis kontur wajah (6 bentuk wajah, rona kulit Monk Scale) untuk kurasi bingkai (Wayfarer, Aviator, Geometric, Browline) dan lensa fotorealistik.
             </p>
           </div>
 
-          <div className="flex items-center justify-between text-xs font-bold text-indigo-400 pt-4 border-t border-white/5 group-hover:text-indigo-300">
-            <span>Pindai Wajah & Coba 3D</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          <div className="flex items-center justify-between text-sm font-bold text-[#38BDF8] pt-6 mt-6 border-t border-white/10 group-hover:text-white">
+            <span>Pindai Wajah &amp; Coba 3D</span>
+            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform text-[#FACC15]" />
           </div>
         </div>
 
         {/* 2. Topi (Hats) */}
         <div
-          onClick={() => onSelectCategory("accessories", "hats")}
-          className="glass-panel glass-card-hover rounded-3xl p-7 cursor-pointer group flex flex-col justify-between space-y-6 relative overflow-hidden border border-rose-500/30 hover:border-rose-400 hover:shadow-2xl hover:shadow-rose-500/20 transition-all duration-300"
+          onClick={() => onSelectCategory('accessories', 'hats')}
+          className="bg-[#0B1528]/90 rounded-3xl p-8 cursor-pointer group flex flex-col justify-between h-full relative overflow-hidden border border-blue-500/20 hover:border-blue-500 transition-all duration-300 backdrop-blur-xl shadow-xl hover:scale-[1.01]"
         >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-rose-500/20 transition-all" />
-
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div className="flex items-center justify-between">
-              <div className="w-14 h-14 rounded-2xl bg-rose-600/20 border border-rose-500/40 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                <HardHat className="w-7 h-7 text-rose-400" />
+              <div className="w-16 h-16 rounded-2xl bg-[#071120] border border-blue-500/20 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
+                <Crown className="w-8 h-8 text-[#60A5FA] fill-current" />
               </div>
-              <span className="text-[10px] font-mono px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-bold">
-                ✓ 11 Model 3D GLB
+              <span className="text-xs font-mono px-3.5 py-1 rounded-full bg-blue-500/20 text-[#93C5FD] border border-blue-500/30 font-bold">
+                ✓ 11 Model 3D
               </span>
             </div>
 
-            <div className="space-y-1">
-              <span className="text-[11px] font-mono uppercase tracking-widest text-rose-400 font-semibold">
+            <div className="space-y-1.5">
+              <span className="text-xs font-mono uppercase tracking-widest text-[#60A5FA] font-semibold">
                 Penutup Kepala • Headwear
               </span>
-              <h2 className="text-2xl font-bold text-white group-hover:text-rose-300 transition-colors">
+              <h2 className="text-2xl sm:text-3xl font-bold text-white group-hover:text-[#60A5FA] transition-colors">
                 Topi
               </h2>
             </div>
 
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Kurasi siluet *Fedora, Western Cowboy, Beach Sunhat, Straw Voyager, Bicorn,* dan *Propeller Cap* yang membungkus dahi dan kepala secara anatomis.
+            <p className="text-sm sm:text-base text-[#94A3B8] leading-relaxed">
+              Kurasi siluet Fedora, Western Cowboy, Sun Beach Hat, Renaissance Bonnet, Bicorn, dan Pith Helmet yang pas di proporsi kepala.
             </p>
           </div>
 
-          <div className="flex items-center justify-between text-xs font-bold text-rose-400 pt-4 border-t border-white/5 group-hover:text-rose-300">
-            <span>Pindai Kepala & Coba 3D</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          <div className="flex items-center justify-between text-sm font-bold text-[#60A5FA] pt-6 mt-6 border-t border-white/10 group-hover:text-white">
+            <span>Pindai Wajah &amp; Coba 3D</span>
+            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform text-[#FACC15]" />
           </div>
         </div>
 
-        {/* 3. Baju (Shirts & Tops - Koleksi Pria & Wanita) */}
+        {/* 3. Pakaian (Shirts) */}
         <div
-          onClick={() => onSelectCategory("apparel", "shirts")}
-          className="glass-panel glass-card-hover rounded-3xl p-7 cursor-pointer group flex flex-col justify-between space-y-6 relative overflow-hidden border border-blue-500/30 hover:border-blue-400 hover:shadow-2xl hover:shadow-blue-500/20 transition-all duration-300"
+          onClick={() => onSelectCategory('apparel', 'shirts')}
+          className="bg-[#0B1528]/90 rounded-3xl p-8 cursor-pointer group flex flex-col justify-between h-full relative overflow-hidden border border-blue-500/20 hover:border-blue-500 transition-all duration-300 backdrop-blur-xl shadow-xl hover:scale-[1.01]"
         >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-blue-500/20 transition-all" />
-
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div className="flex items-center justify-between">
-              <div className="w-14 h-14 rounded-2xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                <Shirt className="w-7 h-7 text-blue-400" />
+              <div className="w-16 h-16 rounded-2xl bg-[#071120] border border-blue-500/20 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
+                <Shirt className="w-8 h-8 text-[#38BDF8] fill-current" />
               </div>
-              <span className="text-[10px] font-mono px-3 py-1 rounded-full bg-blue-500/15 text-blue-300 border border-blue-500/30 font-bold">
-                ✓ 19 Model (Pria & Wanita)
+              <span className="text-xs font-mono px-3.5 py-1 rounded-full bg-blue-500/20 text-[#93C5FD] border border-blue-500/30 font-bold">
+                ✓ 19 Model 3D
               </span>
             </div>
 
-            <div className="space-y-1">
-              <span className="text-[11px] font-mono uppercase tracking-widest text-blue-400 font-semibold">
-                Pakaian Atasan • Pria & Wanita
+            <div className="space-y-1.5">
+              <span className="text-xs font-mono uppercase tracking-widest text-[#38BDF8] font-semibold">
+                Busana Tubuh • Apparel
               </span>
-              <h2 className="text-2xl font-bold text-white group-hover:text-blue-300 transition-colors">
-                Baju (T-Shirt & Kemeja)
+              <h2 className="text-2xl sm:text-3xl font-bold text-white group-hover:text-[#38BDF8] transition-colors">
+                Pakaian &amp; Kemeja
               </h2>
             </div>
 
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Koleksi terbagi untuk **Pria** (*Oxford, Supima Tee, Polo, Jersey, Techwear*) & **Wanita** (*Off-Shoulder Blouse, Satin Shirt, Knit Sweater, V-Neck*).
+            <p className="text-sm sm:text-base text-[#94A3B8] leading-relaxed">
+              Analisis lebar bahu, rasio V-shape, dan siluet torso dengan Invisible Depth Occluder anti-nembus untuk kemeja pria &amp; blus wanita.
             </p>
           </div>
 
-          <div className="flex items-center justify-between text-xs font-bold text-blue-400 pt-4 border-t border-white/5 group-hover:text-blue-300">
-            <span>Pindai & Coba Koleksi 3D</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          <div className="flex items-center justify-between text-sm font-bold text-[#38BDF8] pt-6 mt-6 border-t border-white/10 group-hover:text-white">
+            <span>Pindai Torso &amp; Coba 3D</span>
+            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform text-[#FACC15]" />
           </div>
         </div>
       </div>
     </div>
   );
 };
-
-export default CategorySelector;

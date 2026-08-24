@@ -4,14 +4,13 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import {
-  Sparkles,
   Move3d,
   Sliders,
   RotateCcw,
   RefreshCw,
-  Zap,
   Box,
   ShieldCheck,
+  Lock,
 } from "lucide-react";
 import { RecommendationItem } from "../lib/mockData";
 
@@ -20,6 +19,7 @@ export interface BodyOutfitViewerProps {
   subcategory: string;
   mediaStream?: MediaStream | null;
   userSnapshotUrl?: string | null;
+  inputMode?: "camera" | "upload";
 }
 
 export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
@@ -27,6 +27,7 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
   subcategory,
   mediaStream,
   userSnapshotUrl,
+  inputMode = "camera",
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -34,16 +35,22 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const garmentGroupRef = useRef<THREE.Group | null>(null);
+  const occluderGroupRef = useRef<THREE.Group | null>(null);
   const poseLandmarkerRef = useRef<any>(null);
   const rafRef = useRef<number>(0);
   const localStreamRef = useRef<MediaStream | null>(null);
 
+  const isUploadMode = inputMode === "upload" || Boolean(userSnapshotUrl && !mediaStream);
+
   // View Mode: 'ar' (Live 3D Body Fitting) vs 'studio' (3D 360° Inspection)
-  const [viewMode, setViewMode] = useState<"ar" | "studio">("ar");
+  // If uploaded photo, AR mode is locked and defaults to studio inspection
+  const [viewMode, setViewMode] = useState<"ar" | "studio">(isUploadMode ? "studio" : "ar");
   const [isRotating, setIsRotating] = useState(true);
   const [isTrackingLive, setIsTrackingLive] = useState(false);
   const [fitStyle, setFitStyle] = useState<"regular" | "oversized" | "slim">("regular");
   const [offsetY, setOffsetY] = useState<number>(0);
+  const [offsetZ, setOffsetZ] = useState<number>(0);
+  const [scaleMultiplier, setScaleMultiplier] = useState<number>(100);
   const [garmentOpacity, setGarmentOpacity] = useState<number>(100);
   const [modelSource, setModelSource] = useState<string>("Memuat 3D GLB...");
 
@@ -180,13 +187,39 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
     dirLight.position.set(3, 4, 5);
     scene.add(dirLight);
 
-    const rimLight = new THREE.DirectionalLight(0x38bdf8, 1.8);
+    const rimLight = new THREE.DirectionalLight(0xfb7185, 1.8);
     rimLight.position.set(-3, -2, 2);
     scene.add(rimLight);
 
     const garmentGroup = new THREE.Group();
+    garmentGroup.renderOrder = 1;
     garmentGroupRef.current = garmentGroup;
     scene.add(garmentGroup);
+
+    // Invisible Occluder System for 360° Body Wrapping (Neck & Torso Depth Mask)
+    const occluderGroup = new THREE.Group();
+    occluderGroup.renderOrder = 0;
+    occluderGroupRef.current = occluderGroup;
+
+    const occluderMat = new THREE.MeshBasicMaterial({
+      colorWrite: false,
+      depthWrite: true,
+    });
+
+    // 1. Neck Occluder (Cylinder)
+    const neckGeo = new THREE.CylinderGeometry(0.38, 0.42, 1.2, 32);
+    const neckMesh = new THREE.Mesh(neckGeo, occluderMat);
+    neckMesh.position.set(0, 0.45, 0);
+    occluderGroup.add(neckMesh);
+
+    // 2. Torso Occluder Core (Elliptical Cylinder)
+    const torsoGeo = new THREE.CylinderGeometry(0.70, 0.65, 2.4, 32);
+    torsoGeo.scale(1.0, 1.0, 0.55);
+    const torsoMesh = new THREE.Mesh(torsoGeo, occluderMat);
+    torsoMesh.position.set(0, -0.65, -0.05);
+    occluderGroup.add(torsoMesh);
+
+    scene.add(occluderGroup);
 
     // Load Categorized Shirt / Baju Model (GLB preferred, OBJ fallback)
     loadCategorizedGarmentGLB(garmentGroup);
@@ -200,16 +233,20 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
       const landmarker = poseLandmarkerRef.current;
 
       if (viewMode === "ar" && video && video.readyState >= 2 && landmarker) {
+        if (occluderGroup) {
+          occluderGroup.visible = true;
+        }
         if (video.currentTime !== lastVideoTime) {
           lastVideoTime = video.currentTime;
           try {
             const result = landmarker.detectForVideo(video, performance.now());
             if (result && result.landmarks && result.landmarks.length > 0) {
               setIsTrackingLive(true);
-              applyPoseLandmarksTo3D(result.landmarks[0], garmentGroup);
+              applyPoseLandmarksTo3D(result.landmarks[0], garmentGroup, occluderGroup);
             } else {
               setIsTrackingLive(false);
               garmentGroup.position.lerp(new THREE.Vector3(0, -0.2, 0), 0.05);
+              occluderGroup.position.lerp(new THREE.Vector3(0, -0.2, 0), 0.05);
             }
           } catch {
             // Frame skip
@@ -217,6 +254,9 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
         }
       } else if (viewMode === "studio") {
         setIsTrackingLive(false);
+        if (occluderGroup) {
+          occluderGroup.visible = false;
+        }
         if (isRotating && garmentGroup) {
           garmentGroup.rotation.y += 0.015;
           garmentGroup.position.lerp(new THREE.Vector3(0, 0, 0), 0.08);
@@ -245,27 +285,28 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
       cancelAnimationFrame(rafRef.current);
       renderer.dispose();
     };
-  }, [viewMode, isRotating, offsetY, activeItem, subcategory, garmentOpacity, fitStyle]);
+  }, [viewMode, isRotating, offsetY, offsetZ, scaleMultiplier, activeItem, subcategory, garmentOpacity, fitStyle]);
+
+  // Skeletal Armature Rigging References
+  const skeletalRigRef = useRef<{
+    isRigged: boolean;
+    bones: { [key: string]: THREE.Bone };
+    leftArmPivot?: THREE.Group;
+    rightArmPivot?: THREE.Group;
+    torsoGroup?: THREE.Group;
+  }>({ isRigged: false, bones: {} });
+
+  const [skeletalRiggingActive, setSkeletalRiggingActive] = useState(true);
 
   /* ------------------------------------------------------------------ */
-  /*  4. Load Categorized Shirt / Baju Model using GLTFLoader           */
+  /*  4. Load Categorized Shirt / Baju Model with Skeletal Rigging      */
   /* ------------------------------------------------------------------ */
-  const loadCategorizedGarmentGLB = (group: THREE.Group) => {
+  const loadCategorizedGarmentGLB = async (group: THREE.Group) => {
     while (group.children.length > 0) {
       group.remove(group.children[0]);
     }
 
     const widthScale = fitStyle === "oversized" ? 1.18 : fitStyle === "slim" ? 0.9 : 1.0;
-
-    const matGarment = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(activeColorHex),
-      roughness: 0.65,
-      metalness: 0.1,
-      clearcoat: 0.15,
-      transparent: garmentOpacity < 100,
-      opacity: garmentOpacity / 100,
-      side: THREE.DoubleSide,
-    });
 
     let modelPath = activeItem.model_3d_path || "/images/products/shirts/Pria/color_blocked_shirt.glb";
     const filename = modelPath.split("/").pop() || "";
@@ -273,12 +314,11 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
     // Fetch calibration manifest
     let modelConfig: any = null;
     try {
-      fetch("/images/products/glb_manifest.json")
-        .then((res) => (res.ok ? res.json() : null))
-        .then((manifest) => {
-          if (manifest) modelConfig = manifest[filename];
-        })
-        .catch(() => {});
+      const res = await fetch("/images/products/glb_manifest.json");
+      if (res.ok) {
+        const manifest = await res.json();
+        modelConfig = manifest[filename] || null;
+      }
     } catch {}
 
     const gltfLoader = new GLTFLoader();
@@ -286,6 +326,13 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
       modelPath,
       (gltf) => {
         const model = gltf.scene;
+
+        // 1. Initial orientation correction for shirts
+        const initialBox = new THREE.Box3().setFromObject(model);
+        const rawSize = initialBox.getSize(new THREE.Vector3());
+        if (rawSize.y > rawSize.z * 1.5 && rawSize.x < rawSize.z) {
+          model.rotation.y = Math.PI / 2;
+        }
 
         // Apply manifest rotation if any
         if (modelConfig?.rotation_correction) {
@@ -295,48 +342,92 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
           model.rotation.z += rz;
         }
 
-        // Auto center and scale model
-        const box = new THREE.Box3().setFromObject(model);
-        const size = box.getSize(new THREE.Vector3());
-        const center = box.getCenter(new THREE.Vector3());
+        // 2. Scale model vertices to comfortable framing scale (max dimension ~1.35 units) BEFORE centering
+        const orientedBox = new THREE.Box3().setFromObject(model);
+        const orientedSize = orientedBox.getSize(new THREE.Vector3());
+        const maxDimension = Math.max(orientedSize.x, orientedSize.y, orientedSize.z);
+        const customScaleFactor = modelConfig?.scale_factor || 1.0;
+        const normScale = (1.35 / (maxDimension || 1.0)) * customScaleFactor;
+        model.scale.set(normScale * widthScale, normScale, normScale * widthScale);
 
-        model.position.sub(center);
-        model.position.y += 0.35;
+        // Force world matrix update so bounding box reflects scaled vertices
+        model.updateMatrixWorld(true);
+
+        // 3. Wrap in wrapper group and center in world space at exact (0, 0, 0)
+        const wrapper = new THREE.Group();
+        wrapper.add(model);
+        wrapper.updateMatrixWorld(true);
+
+        const worldBox = new THREE.Box3().setFromObject(wrapper);
+        const worldCenter = worldBox.getCenter(new THREE.Vector3());
+        wrapper.position.sub(worldCenter);
 
         // Apply manifest pivot offset
         if (modelConfig?.pivot_offset) {
           const [ox, oy, oz] = modelConfig.pivot_offset;
-          model.position.x += ox;
-          model.position.y += oy;
-          model.position.z += oz;
+          wrapper.position.x += ox;
+          wrapper.position.y += oy;
+          wrapper.position.z += oz;
         }
 
-        // Normalize model width (size.x) to ~1.8 standard torso units
-        const targetW = size.x > 0 ? size.x : 1.0;
-        const customScaleFactor = modelConfig?.scale_factor || 1.0;
-        const normScale = (1.85 / targetW) * customScaleFactor;
-        model.scale.set(normScale * widthScale, normScale, normScale * widthScale);
+        // 4. Setup Skeletal Armature Rigging & Bone Hierarchy
+        const detectedBones: { [key: string]: THREE.Bone } = {};
+        let hasNativeBones = false;
 
         model.traverse((child) => {
+          if ((child as THREE.Bone).isBone) {
+            const bone = child as THREE.Bone;
+            detectedBones[bone.name.toLowerCase()] = bone;
+            hasNativeBones = true;
+          }
           if ((child as THREE.Mesh).isMesh) {
             const mesh = child as THREE.Mesh;
             mesh.castShadow = true;
             mesh.receiveShadow = true;
+            mesh.frustumCulled = false;
 
-            const existingMat = mesh.material as THREE.MeshStandardMaterial;
-            if (!existingMat || !existingMat.map) {
-              mesh.material = matGarment;
-            } else if (existingMat) {
-              existingMat.transparent = garmentOpacity < 100;
-              existingMat.opacity = garmentOpacity / 100;
-              existingMat.side = THREE.DoubleSide;
-            }
+            const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+            mats.forEach((mat: any) => {
+              if (!mat) return;
+              mat.side = THREE.DoubleSide;
+              mat.transparent = garmentOpacity < 100;
+              mat.opacity = garmentOpacity / 100;
+              if (mat.map) {
+                mat.map.colorSpace = THREE.SRGBColorSpace;
+                mat.map.needsUpdate = true;
+              }
+              if (mat.normalMap) mat.normalMap.needsUpdate = true;
+              if (mat.roughnessMap) mat.roughnessMap.needsUpdate = true;
+              if (mat.metalnessMap) mat.metalnessMap.needsUpdate = true;
+              mat.needsUpdate = true;
+            });
           }
         });
 
-        group.add(model);
+        // Procedural Armature Rig for Standard Meshes
+        const leftArmPivot = new THREE.Group();
+        leftArmPivot.name = "ProceduralRig_LeftShoulder";
+        leftArmPivot.position.set(worldBox.max.x * 0.42, worldBox.max.y * 0.22, 0);
+
+        const rightArmPivot = new THREE.Group();
+        rightArmPivot.name = "ProceduralRig_RightShoulder";
+        rightArmPivot.position.set(worldBox.min.x * 0.42, worldBox.max.y * 0.22, 0);
+
+        wrapper.add(leftArmPivot);
+        wrapper.add(rightArmPivot);
+
+        skeletalRigRef.current = {
+          isRigged: true,
+          bones: detectedBones,
+          leftArmPivot,
+          rightArmPivot,
+          torsoGroup: wrapper,
+        };
+
+        group.add(wrapper);
+
         const filename = modelPath.split("/").pop();
-        setModelSource(`3D Dataset GLB (${filename})`);
+        setModelSource(hasNativeBones ? `3D Rigged GLB (${filename})` : `3D Skeletal Mesh (${filename})`);
       },
       undefined,
       (err) => {
@@ -346,33 +437,87 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
   };
 
   /* ------------------------------------------------------------------ */
-  /*  5. Real-Time 3D Pose Landmark Anchoring & Deformation             */
+  /*  5. Real-Time 3D Pose Landmark Anchoring & Skeletal Arm Kinematics */
   /* ------------------------------------------------------------------ */
   const applyPoseLandmarksTo3D = useCallback(
-    (landmarks: any[], group: THREE.Group) => {
+    (landmarks: any[], garmentGroup: THREE.Group, occluderGroup?: THREE.Group) => {
+      if (!videoRef.current || !containerRef.current) return;
+
+      const nose = landmarks[0];
       const leftShoulder = landmarks[11];
       const rightShoulder = landmarks[12];
+      const leftElbow = landmarks[13];
+      const rightElbow = landmarks[14];
+      const leftWrist = landmarks[15];
+      const rightWrist = landmarks[16];
       const leftHip = landmarks[23];
       const rightHip = landmarks[24];
 
       if (!leftShoulder || !rightShoulder) return;
 
+      const video = videoRef.current;
+      const container = containerRef.current;
+      const cw = container.clientWidth;
+      const ch = container.clientHeight;
+
+      const vw = video.videoWidth || 1280;
+      const vh = video.videoHeight || 720;
+      const videoAspect = vw / vh;
+      const containerAspect = cw / ch;
+
+      let renderedWidth = cw;
+      let renderedHeight = ch;
+      let offsetX = 0;
+      let offsetYPixel = 0;
+
+      if (containerAspect > videoAspect) {
+        renderedHeight = ch;
+        renderedWidth = ch * videoAspect;
+        offsetX = (cw - renderedWidth) / 2;
+      } else {
+        renderedWidth = cw;
+        renderedHeight = cw / videoAspect;
+        offsetYPixel = (ch - renderedHeight) / 2;
+      }
+
+      // Anatomical midpoint of shoulders (Collar / Neck Base Anchor)
       const midShoulderX = (leftShoulder.x + rightShoulder.x) / 2;
       const midShoulderY = (leftShoulder.y + rightShoulder.y) / 2;
 
-      const posX = (0.5 - midShoulderX) * 4.4;
-      const posY = (0.5 - midShoulderY) * 3.6 + offsetY * 0.01 - 0.15;
-      const posZ = (((leftShoulder.z || 0) + (rightShoulder.z || 0)) / 2) * -3.2;
+      // Screen Pixel Coordinates (Mirrored Video Feed: 1 - X)
+      const screenX = offsetX + (1 - midShoulderX) * renderedWidth;
+      const screenY = offsetYPixel + midShoulderY * renderedHeight;
+
+      // Convert Screen Pixels to Three.js NDC (-1 to +1)
+      const ndcX = (screenX / cw) * 2 - 1;
+      const ndcY = 1 - (screenY / ch) * 2;
+
+      // Camera Frustum Dimensions at Z = 0 (Camera Z = 4.0, FOV = 45 deg)
+      const halfH = Math.tan((45 * Math.PI) / 360) * 4.0;
+      const halfW = halfH * (cw / ch);
+
+      const worldX = ndcX * halfW;
+      const worldY = ndcY * halfH + offsetY * 0.012 - 0.28;
+      const worldZ = (((leftShoulder.z || 0) + (rightShoulder.z || 0)) / 2) * -3.2 + offsetZ * 0.015;
+
+      // Screen Positions of Both Shoulders for True Pixel Distance
+      const screenLeftShoulderX = offsetX + (1 - leftShoulder.x) * renderedWidth;
+      const screenLeftShoulderY = offsetYPixel + leftShoulder.y * renderedHeight;
+      const screenRightShoulderX = offsetX + (1 - rightShoulder.x) * renderedWidth;
+      const screenRightShoulderY = offsetYPixel + rightShoulder.y * renderedHeight;
+
+      // Mirrored delta: Right shoulder appears on left on mirrored screen
+      const deltaX = screenLeftShoulderX - screenRightShoulderX;
+      const deltaY = screenLeftShoulderY - screenRightShoulderY;
+      const pixelDist = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
       // 1. Roll: Shoulder slope
-      const dx = rightShoulder.x - leftShoulder.x;
-      const dy = rightShoulder.y - leftShoulder.y;
-      const rollAngle = Math.atan2(dy, dx);
-      const safeRoll = THREE.MathUtils.clamp(-rollAngle, -0.65, 0.65);
+      const rollAngle = Math.atan2(deltaY, deltaX);
+      const safeRoll = THREE.MathUtils.clamp(rollAngle, -0.65, 0.65);
 
       // 2. Yaw: Torso rotation around Y
       const depthDiff = (leftShoulder.z || 0) - (rightShoulder.z || 0);
-      const yawAngle = Math.atan2(depthDiff * 2.8, Math.abs(dx) + 0.001);
+      const yawAngle = Math.atan2(depthDiff * 2.8, Math.abs(deltaX) / (renderedWidth || 1) + 0.001);
       const safeYaw = THREE.MathUtils.clamp(yawAngle, -0.75, 0.75);
 
       // 3. Pitch: Torso leaning forward / backward
@@ -384,29 +529,80 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
         safePitch = THREE.MathUtils.clamp(pitchDelta, -0.45, 0.45);
       }
 
-      const shoulderDist = Math.sqrt(dx * dx + dy * dy);
-      const baseScale = shoulderDist * 2.95;
+      // World Space Scale (Baju scales proportionally with real shoulder width in pixels)
+      const worldShoulderSpan = (pixelDist / cw) * (2 * halfW);
+      const baseScale = worldShoulderSpan * 1.82 * (scaleMultiplier / 100);
 
       const fitMultiplier = fitStyle === "oversized" ? 1.15 : fitStyle === "slim" ? 0.9 : 1.0;
       const finalScale = baseScale * fitMultiplier;
 
-      group.position.x = THREE.MathUtils.lerp(group.position.x, posX, 0.45);
-      group.position.y = THREE.MathUtils.lerp(group.position.y, posY, 0.45);
-      group.position.z = THREE.MathUtils.lerp(group.position.z, posZ, 0.45);
+      // Update 3D Garment Group
+      garmentGroup.position.x = THREE.MathUtils.lerp(garmentGroup.position.x, worldX, 0.45);
+      garmentGroup.position.y = THREE.MathUtils.lerp(garmentGroup.position.y, worldY, 0.45);
+      garmentGroup.position.z = THREE.MathUtils.lerp(garmentGroup.position.z, worldZ, 0.45);
 
-      group.rotation.z = THREE.MathUtils.lerp(group.rotation.z, safeRoll, 0.45);
-      group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw, 0.45);
-      group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, safePitch, 0.45);
+      garmentGroup.rotation.z = THREE.MathUtils.lerp(garmentGroup.rotation.z, safeRoll, 0.45);
+      garmentGroup.rotation.y = THREE.MathUtils.lerp(garmentGroup.rotation.y, safeYaw, 0.45);
+      garmentGroup.rotation.x = THREE.MathUtils.lerp(garmentGroup.rotation.x, safePitch, 0.45);
 
-      group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.45);
+      garmentGroup.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.45);
+
+      // 4. Skeletal Arm Kinematics & Joint Deformations
+      if (skeletalRiggingActive && skeletalRigRef.current.isRigged) {
+        const rig = skeletalRigRef.current;
+
+        // Left Arm Vector (Shoulder 11 -> Elbow 13 -> Wrist 15)
+        if (leftElbow) {
+          const ldx = (1 - leftElbow.x) - (1 - leftShoulder.x);
+          const ldy = leftElbow.y - leftShoulder.y;
+          const leftArmAngle = Math.atan2(ldy, ldx); // Angle from horizontal
+          const leftElevation = THREE.MathUtils.clamp(-(leftArmAngle + Math.PI / 2), -1.2, 1.2);
+
+          if (rig.leftArmPivot) {
+            rig.leftArmPivot.rotation.z = THREE.MathUtils.lerp(rig.leftArmPivot.rotation.z, leftElevation * 0.7, 0.35);
+          }
+          const leftBone = rig.bones["arm.l"] || rig.bones["upperarm.l"] || rig.bones["upper_arm.l"] || rig.bones["leftarm"];
+          if (leftBone) {
+            leftBone.rotation.z = THREE.MathUtils.lerp(leftBone.rotation.z, leftElevation, 0.35);
+          }
+        }
+
+        // Right Arm Vector (Shoulder 12 -> Elbow 14 -> Wrist 16)
+        if (rightElbow) {
+          const rdx = (1 - rightElbow.x) - (1 - rightShoulder.x);
+          const rdy = rightElbow.y - rightShoulder.y;
+          const rightArmAngle = Math.atan2(rdy, rdx);
+          const rightElevation = THREE.MathUtils.clamp(rightArmAngle - Math.PI / 2, -1.2, 1.2);
+
+          if (rig.rightArmPivot) {
+            rig.rightArmPivot.rotation.z = THREE.MathUtils.lerp(rig.rightArmPivot.rotation.z, rightElevation * 0.7, 0.35);
+          }
+          const rightBone = rig.bones["arm.r"] || rig.bones["upperarm.r"] || rig.bones["upper_arm.r"] || rig.bones["rightarm"];
+          if (rightBone) {
+            rightBone.rotation.z = THREE.MathUtils.lerp(rightBone.rotation.z, rightElevation, 0.35);
+          }
+        }
+      }
+
+      // Synchronize Invisible Occluder Group (Neck & Torso Core)
+      if (occluderGroup) {
+        occluderGroup.position.x = garmentGroup.position.x;
+        occluderGroup.position.y = garmentGroup.position.y;
+        occluderGroup.position.z = garmentGroup.position.z - 0.05;
+
+        occluderGroup.rotation.z = garmentGroup.rotation.z;
+        occluderGroup.rotation.y = garmentGroup.rotation.y;
+        occluderGroup.rotation.x = garmentGroup.rotation.x;
+
+        occluderGroup.scale.lerp(new THREE.Vector3(finalScale * 0.95, finalScale * 0.95, finalScale * 0.95), 0.45);
+      }
     },
-    [fitStyle, offsetY]
+    [fitStyle, offsetY, offsetZ, scaleMultiplier, skeletalRiggingActive]
   );
-
   return (
     <div className="w-full flex flex-col space-y-4">
       {/* 3D AR Body Fitting Viewport */}
-      <div className="relative w-full h-[520px] sm:h-[580px] rounded-3xl overflow-hidden bg-slate-950 border border-white/10 shadow-2xl flex items-center justify-center">
+      <div className="relative w-full h-[520px] sm:h-[580px] rounded-3xl overflow-hidden bg-[#060B14] border border-blue-500/20 shadow-2xl flex items-center justify-center">
         {/* 3D WebGL Canvas Layer */}
         <div ref={containerRef} className="absolute inset-0 w-full h-full z-10 pointer-events-none" />
 
@@ -417,7 +613,7 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
               <img
                 src={userSnapshotUrl}
                 alt="Body Scan Snapshot"
-                className="w-full h-full object-contain -scale-x-100"
+                className="w-full h-full object-contain"
               />
             ) : (
               <video
@@ -430,42 +626,52 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
             )}
 
             {isTrackingLive && (
-              <div className="absolute top-4 left-4 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono z-30">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                <span>3D BODY POSE TRACKING (60 FPS)</span>
+              <div className="absolute top-4 left-4 flex flex-col gap-1.5 z-30 pointer-events-none">
+                <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-blue-500/20 text-[#93C5FD] border border-blue-500/30 text-[10px] font-mono shadow-md backdrop-blur-md">
+                  <span className="w-2 h-2 rounded-full bg-blue-400 animate-ping" />
+                  <span>3D POSE TRACKING (60 FPS)</span>
+                </div>
+                {skeletalRiggingActive && (
+                  <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono shadow-md backdrop-blur-md">
+                    <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                    <span>SKELETAL RIGGING &amp; ARM KINEMATICS AKTIF</span>
+                  </div>
+                )}
               </div>
             )}
           </div>
         ) : (
           /* Mode 2: 3D Studio Turntable */
-          <div className="relative w-full h-full flex items-center justify-center bg-gradient-to-b from-surface-200/50 via-surface-100/40 to-slate-950">
-            <div className="absolute bottom-6 w-80 h-80 rounded-full bg-blue-500/10 border border-blue-500/20 blur-sm pointer-events-none" />
-            <div className="absolute top-4 left-4 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-mono z-20">
-              <Sparkles className="w-3 h-3 text-blue-400" />
+          <div className="relative w-full h-full flex items-center justify-center bg-gradient-to-b from-[#0B1528] via-[#060B14] to-[#040810]">
+            <div className="absolute top-4 left-4 inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-[#0B1528] text-[#93C5FD] border border-blue-500/30 text-[11px] font-mono z-20 shadow-lg">
+              <Box className="w-3.5 h-3.5 text-[#38BDF8]" />
               <span>3D STUDIO GARMENT INSPECTION</span>
             </div>
           </div>
         )}
 
         {/* Top Floating View Controls */}
-        <div className="absolute top-4 right-4 z-30 flex items-center space-x-1.5 bg-slate-900/90 backdrop-blur-md p-1 rounded-2xl border border-white/15 shadow-2xl">
+        <div className="absolute top-4 right-4 z-30 flex items-center space-x-2 bg-[#0B1528]/90 backdrop-blur-2xl p-1.5 rounded-full border border-blue-500/30 shadow-2xl">
           <button
             onClick={() => setViewMode("ar")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all ${
+            disabled={isUploadMode}
+            className={`px-4 py-2 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer ${
               viewMode === "ar"
-                ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20"
-                : "text-slate-400 hover:text-white"
+                ? "bg-blue-600 text-white shadow-md"
+                : isUploadMode
+                ? "text-[#64748B] cursor-not-allowed opacity-50"
+                : "text-[#94A3B8] hover:text-white"
             }`}
           >
-            <Zap className="w-3.5 h-3.5 text-amber-300" />
-            <span>Pasang ke Badan (AR 3D)</span>
+            {isUploadMode ? <Lock className="w-3.5 h-3.5" /> : <Box className="w-3.5 h-3.5 text-[#38BDF8]" />}
+            <span>{isUploadMode ? "AR Mode Terkunci" : "Pasang ke Badan (AR 3D)"}</span>
           </button>
           <button
             onClick={() => setViewMode("studio")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all ${
+            className={`px-4 py-2 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer ${
               viewMode === "studio"
-                ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md shadow-purple-500/20"
-                : "text-slate-400 hover:text-white"
+                ? "bg-blue-600 text-white shadow-md"
+                : "text-[#94A3B8] hover:text-white"
             }`}
           >
             <Move3d className="w-3.5 h-3.5" />
@@ -474,73 +680,127 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
         </div>
 
         {/* Bottom Floating Info Badge */}
-        <div className="absolute bottom-4 left-4 z-20 hidden sm:flex items-center space-x-2.5 px-3.5 py-1.5 rounded-2xl bg-slate-900/85 backdrop-blur-md border border-white/10 text-xs shadow-lg">
-          <Box className="w-3.5 h-3.5 text-blue-400" />
+        <div className="absolute bottom-4 left-4 z-20 hidden sm:flex items-center space-x-2.5 px-4 py-2 rounded-full bg-[#0B1528]/90 backdrop-blur-2xl border border-blue-500/20 text-xs shadow-xl">
+          <Box className="w-4 h-4 text-[#38BDF8]" />
           <span className="font-semibold text-white">{activeItem.name}</span>
-          <span className="text-emerald-400 text-[11px] font-mono font-bold">
+          <span className="text-[#FACC15] text-xs font-mono font-bold">
             [{modelSource}]
           </span>
         </div>
       </div>
 
       {/* Interactive Micro-Adjustments & Fit Controls */}
-      <div className="glass-panel p-4 rounded-3xl border border-white/10 bg-surface-100/60 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center space-x-3 text-xs">
-          <Sliders className="w-4 h-4 text-blue-400" />
-          <span className="font-semibold text-slate-300">Potongan Siluet (Fit):</span>
-          <div className="inline-flex rounded-xl bg-slate-900/80 p-1 border border-white/10">
-            {(["slim", "regular", "oversized"] as const).map((style) => (
-              <button
-                key={style}
-                onClick={() => setFitStyle(style)}
-                className={`px-3 py-1 rounded-lg text-xs font-medium capitalize transition-all ${
-                  fitStyle === style
-                    ? "bg-blue-600 text-white shadow-sm"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                {style}
-              </button>
-            ))}
+      <div className="p-4 sm:p-5 rounded-3xl border border-blue-500/20 bg-[#0B1528]/90 backdrop-blur-xl shadow-xl flex flex-wrap items-center justify-between gap-4">
+        {/* Fit Style & Skeletal Rigging Toggle */}
+        <div className="flex items-center space-x-3 text-xs flex-wrap gap-2">
+          <div className="flex items-center space-x-2">
+            <Sliders className="w-4 h-4 text-[#38BDF8]" />
+            <span className="font-semibold text-[#94A3B8]">Siluet:</span>
+            <div className="inline-flex rounded-full bg-[#071120] p-1 border border-blue-500/20">
+              {(["slim", "regular", "oversized"] as const).map((style) => (
+                <button
+                  key={style}
+                  onClick={() => setFitStyle(style)}
+                  className={`px-3.5 py-1 rounded-full text-xs font-medium capitalize transition-all cursor-pointer ${
+                    fitStyle === style
+                      ? "bg-blue-600 text-white shadow-sm"
+                      : "text-[#94A3B8] hover:text-white"
+                  }`}
+                >
+                  {style}
+                </button>
+              ))}
+            </div>
           </div>
+
+          <button
+            onClick={() => setSkeletalRiggingActive((prev) => !prev)}
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer border ${
+              skeletalRiggingActive
+                ? "bg-emerald-600/30 text-emerald-300 border-emerald-500/40 shadow-sm"
+                : "bg-[#071120] text-[#64748B] border-blue-500/20 hover:text-white"
+            }`}
+            title="Aktifkan/Nonaktifkan Pelacakan Lengan & Tulang Gerak"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Skeletal Rig: {skeletalRiggingActive ? "ON" : "OFF"}</span>
+          </button>
         </div>
 
-        <div className="flex items-center space-x-3 text-xs">
-          <span className="text-slate-400 font-semibold">Posisi Bahu:</span>
-          <div className="flex items-center space-x-1.5">
+        {/* Vertical Position & Depth Controls */}
+        <div className="flex items-center space-x-4 text-xs">
+          <div className="flex items-center space-x-2">
+            <span className="text-[#94A3B8] font-semibold">Tinggi:</span>
             <button
               onClick={() => setOffsetY((prev) => prev + 2)}
-              className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 font-bold text-xs"
+              className="px-2.5 py-1 rounded-full bg-[#071120] hover:bg-blue-600 text-white border border-blue-500/30 font-bold text-xs transition-colors"
               title="Geser Naik"
             >
-              ▲ Naik
+              ▲
             </button>
             <button
               onClick={() => setOffsetY((prev) => prev - 2)}
-              className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 font-bold text-xs"
+              className="px-2.5 py-1 rounded-full bg-[#071120] hover:bg-blue-600 text-white border border-blue-500/30 font-bold text-xs transition-colors"
               title="Geser Turun"
             >
-              ▼ Turun
-            </button>
-            <button
-              onClick={() => setOffsetY(0)}
-              className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-white/10"
-              title="Reset Posisi"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
+              ▼
             </button>
           </div>
+
+          <div className="flex items-center space-x-2">
+            <span className="text-[#94A3B8] font-semibold">Kedalaman:</span>
+            <button
+              onClick={() => setOffsetZ((prev) => prev - 2)}
+              className="px-3 py-1 rounded-full bg-[#071120] hover:bg-blue-600 text-white border border-blue-500/30 font-semibold text-xs transition-colors"
+              title="Maju ke Depan"
+            >
+              + Maju
+            </button>
+            <button
+              onClick={() => setOffsetZ((prev) => prev + 2)}
+              className="px-3 py-1 rounded-full bg-[#071120] hover:bg-blue-600 text-white border border-blue-500/30 font-semibold text-xs transition-colors"
+              title="Mundur ke Belakang"
+            >
+              - Mundur
+            </button>
+          </div>
+
+          <button
+            onClick={() => {
+              setOffsetY(0);
+              setOffsetZ(0);
+              setScaleMultiplier(100);
+            }}
+            className="p-2 rounded-full bg-[#071120] hover:bg-blue-600 text-[#93C5FD] hover:text-white border border-blue-500/30 transition-colors"
+            title="Reset Posisi &amp; Skala"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+          </button>
         </div>
 
-        <div className="flex items-center space-x-3 text-xs">
-          <span className="text-slate-400 font-mono">Transparansi: <strong className="text-blue-400">{garmentOpacity}%</strong></span>
+        {/* Shoulder Scale Multiplier */}
+        <div className="flex items-center space-x-2.5 text-xs">
+          <span className="text-[#94A3B8] font-mono">Lebar: <strong className="text-[#93C5FD]">{scaleMultiplier}%</strong></span>
+          <input
+            type="range"
+            min={80}
+            max={125}
+            value={scaleMultiplier}
+            onChange={(e) => setScaleMultiplier(Number(e.target.value))}
+            className="w-24 h-2 bg-[#071120] rounded-full appearance-none cursor-pointer accent-blue-500"
+          />
+        </div>
+
+        {/* Transparency */}
+        <div className="flex items-center space-x-2.5 text-xs">
+          <span className="text-[#94A3B8] font-mono">Opasitas: <strong className="text-[#93C5FD]">{garmentOpacity}%</strong></span>
           <input
             type="range"
             min={30}
             max={100}
             value={garmentOpacity}
             onChange={(e) => setGarmentOpacity(Number(e.target.value))}
-            className="w-24 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
+            className="w-24 h-2 bg-[#071120] rounded-full appearance-none cursor-pointer accent-blue-500"
           />
         </div>
       </div>

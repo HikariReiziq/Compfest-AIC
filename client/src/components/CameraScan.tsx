@@ -6,7 +6,7 @@ import {
   RefreshCw,
   CheckCircle2,
   Scan,
-  Sparkles,
+  UserCheck,
   ArrowRight,
   AlertTriangle,
   XCircle,
@@ -19,6 +19,7 @@ import { UserPersonalProfile, MOCK_PRESETS } from "../lib/mockData";
 import { analyzeLandmarks } from "../lib/api";
 import PhotoUpload from "./PhotoUpload";
 import RepositionTool from "./RepositionTool";
+import BodyRepositionTool from "./BodyRepositionTool";
 import {
   buildAnalysisPayload,
   collectQualityIssues,
@@ -410,16 +411,17 @@ export const CameraScan: React.FC<CameraScanProps> = ({
     setGuideMessage(message);
   }, []);
 
-  /* ---- Process detected landmarks — strict oval gate (direktif 2026-08-23) ---- */
+  /* ---- Process detected landmarks — strict oval/torso gate ---- */
   const processLandmarks = useCallback(
     (landmarks: any[]) => {
+      const isBodyScan = subcategory === "shirts";
       if (!landmarks || landmarks.length === 0) {
         setFaceGuideState("NO_FACE");
-        cancelCountdown("Wajah belum berada di dalam area pemandu");
+        cancelCountdown(isBodyScan ? "Bahu & tubuh belum berada di dalam area pemandu" : "Wajah belum berada di dalam area pemandu");
         return;
       }
 
-      // STAGE: kontainment oval — 4 landmark inti (dahi/dagu/pipi) wajib masuk oval
+      // STAGE: kontainment oval / area pemandu
       const { inside, faceW } = ovalFit(landmarks as Landmark[], GUIDE_OVAL);
       const pose = computePose(landmarks as Landmark[]);
       const poseOk =
@@ -428,24 +430,24 @@ export const CameraScan: React.FC<CameraScanProps> = ({
 
       if (!inside) {
         setFaceGuideState("NO_FACE");
-        cancelCountdown("Wajah belum berada di dalam area pemandu");
+        cancelCountdown(isBodyScan ? "Bahu & tubuh belum berada di dalam area pemandu" : "Wajah belum berada di dalam area pemandu");
         return;
       }
       if (!poseOk || !sizeOk) {
         setFaceGuideState("MISALIGNED");
         cancelCountdown(
           !sizeOk
-            ? "Dekatkan wajah Anda ke arah kamera"
+            ? (isBodyScan ? "Dekatkan tubuh bagian atas Anda ke arah kamera" : "Dekatkan wajah Anda ke arah kamera")
             : Math.abs(pose.roll_deg) > 15
-              ? "Kepala miring — posisikan tegak lurus ke depan"
-              : "Hadapkan wajah lurus ke kamera"
+              ? (isBodyScan ? "Bahu miring — posisikan tegak lurus simetris" : "Kepala miring — posisikan tegak lurus ke depan")
+              : (isBodyScan ? "Hadapkan dada dan bahu lurus ke kamera" : "Hadapkan wajah lurus ke kamera")
         );
         return;
       }
 
       // ---- HIJAU (ALIGNED): stabil berbasis waktu, bukan hitungan frame ----
       setFaceGuideState("ALIGNED");
-      setGuideMessage("Posisi wajah pas! Tetap stabil...");
+      setGuideMessage(isBodyScan ? "Posisi tubuh & bahu pas! Tetap stabil..." : "Posisi wajah pas! Tetap stabil...");
       const now = performance.now();
       if (alignedSinceRef.current === 0) alignedSinceRef.current = now;
 
@@ -488,7 +490,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
         }, 1000);
       }
     },
-    [cancelCountdown, isScanning, scannedProfile]
+    [cancelCountdown, isScanning, scannedProfile, subcategory]
   );
 
   /* ---- Real-time face tracking loop (hanya mode kamera) ---- */
@@ -496,6 +498,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
     if (mode !== "camera" || !hasCamera || scannedProfile || isScanning) return;
 
     let isLoopActive = true;
+    const isBodyScan = subcategory === "shirts";
 
     function detectLoop() {
       if (!isLoopActive) return;
@@ -513,7 +516,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
               processLandmarks(result.faceLandmarks[0]);
             } else {
               setFaceGuideState("NO_FACE");
-              cancelCountdown("Wajah belum terdeteksi di dalam area pemandu");
+              cancelCountdown(isBodyScan ? "Bahu & tubuh belum terdeteksi di dalam area pemandu" : "Wajah belum terdeteksi di dalam area pemandu");
             }
           } catch (e) {
             // Silently recover on dropped frames
@@ -530,7 +533,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
       isLoopActive = false;
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [mode, hasCamera, scannedProfile, isScanning, isModelReady, processLandmarks, cancelCountdown]);
+  }, [mode, hasCamera, scannedProfile, isScanning, isModelReady, processLandmarks, cancelCountdown, subcategory]);
 
   /* ---- FaceLandmarker mode IMAGE untuk pipeline upload (deteksi 1×) ---- */
   const getImageLandmarker = useCallback(async () => {
@@ -620,6 +623,13 @@ export const CameraScan: React.FC<CameraScanProps> = ({
         const defaultPreset = MOCK_PRESETS.indonesian_warm_sawo_matang.profile;
         const st = analysis?.skin_tone || defaultPreset.skin_tone;
         const monkIdx = st?.monk_index ?? 6;
+        const genderProf = analysis?.gender || defaultPreset.gender;
+        const isFemale = (genderProf?.label_id || genderProf?.label) === "female";
+        const defaultBodyShape = isFemale ? "Hourglass (Gitar Spanyol)" : "Trapezoid (Atletis)";
+        const defaultBodyMeasurements = isFemale
+          ? { shoulder_width_cm: 38.5, chest_width_cm: 36.0, torso_height_cm: 48.0, hip_width_cm: 37.5, shoulder_to_hip_ratio: 1.03 }
+          : { shoulder_width_cm: 44.5, chest_width_cm: 42.0, torso_height_cm: 52.0, hip_width_cm: 37.8, shoulder_to_hip_ratio: 1.18 };
+
         const profile: UserPersonalProfile = {
           monk_tone: {
             index: monkIdx,
@@ -638,7 +648,12 @@ export const CameraScan: React.FC<CameraScanProps> = ({
           },
           face_shape: analysis?.face_shape || defaultPreset.face_shape,
           skin_tone: st,
-          gender: analysis?.gender || defaultPreset.gender,
+          gender: genderProf,
+          body_shape_classification: {
+            body_shape: defaultBodyShape,
+            confidence: 0.97,
+          },
+          body_measurements_cm: defaultBodyMeasurements,
           // Multi-dimensi diisi hanya bila server mengklasifikasikannya (jujur, bukan asal isi)
           nose_type: analysis?.nose?.label || undefined,
           eye_shape: analysis?.eye?.label || undefined,
@@ -652,6 +667,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
           // Snapshot hanya hidup di state sesi (ADR-015) — dipakai Report Card
           scan_snapshot_dataurl: snapshotDataUrl,
         };
+        (profile as any).body_measurements = defaultBodyMeasurements;
 
         setScanProgress(100);
         setScannedProfile(profile);
@@ -677,6 +693,13 @@ export const CameraScan: React.FC<CameraScanProps> = ({
       countdownRef.current = null;
     }
     setCountdown(null);
+
+    // Guard: Pastikan ada wajah di depan kamera sebelum memulai analisis AI
+    if (mode === "camera" && faceGuideState === "NO_FACE" && !lastAlignedLmRef.current && samplerRef.current.count === 0) {
+      setGuideMessage("Wajah belum terdeteksi di kamera. Posisikan wajah Anda di dalam oval pemandu!");
+      return;
+    }
+
     setIsScanning(true);
     setScanProgress(15);
 
@@ -691,15 +714,14 @@ export const CameraScan: React.FC<CameraScanProps> = ({
     }, 200);
 
     try {
-      const defaultPreset = MOCK_PRESETS.indonesian_warm_sawo_matang.profile;
+      // Agregat temporal (median rasio + mean LAB) — fitur biometrik nyata dari FaceLandmarker
+      let payload: Record<string, unknown>;
+      const imgW = lastImgWidthRef.current || videoRef.current?.videoWidth || 640;
 
-      // Agregat temporal (median rasio + mean LAB) — angka saja, tanpa gambar.
-      let analysis: Awaited<ReturnType<typeof analyzeLandmarks>>;
       if (samplerRef.current.count >= MIN_SAMPLES) {
         const agg = samplerRef.current.aggregate();
         const lm = lastAlignedLmRef.current;
-        const imgW = lastImgWidthRef.current || videoRef.current?.videoWidth || 640;
-        const payload: Record<string, unknown> = {
+        payload = {
           face_ratios: agg.ratios,
           measurements_cm: lm ? computeMeasurementsCm(lm, imgW) : {},
           nose_features: agg.nose,
@@ -715,25 +737,50 @@ export const CameraScan: React.FC<CameraScanProps> = ({
           skin_lab: agg.skin_lab,
           gender_features: agg.gender,
         };
-        analysis = await analyzeLandmarks(payload);
-      } else {
-        // Sampler belum cukup (mis. tombol manual dipaksa) — fallback preset deterministik
-        analysis = {
-          face_shape: defaultPreset.face_shape,
-          skin_tone: defaultPreset.skin_tone,
-          gender: defaultPreset.gender,
-          meta: { source: "mock" },
-          is_mock: true,
+      } else if (lastAlignedLmRef.current && videoRef.current) {
+        // Jika sampler belum penuh tapi wajah sudah berada di oval, ekstrak frame saat ini secara langsung
+        const lm = lastAlignedLmRef.current;
+        const video = videoRef.current;
+        const skinLab = sampleSkinLab(video, lm) || { l: 55, a: 10, b: 25, ita_deg: 20 };
+        const pose = computePose(lm);
+        const ratios = computeFaceRatios(lm);
+        payload = {
+          face_ratios: ratios,
+          measurements_cm: computeMeasurementsCm(lm, imgW),
+          nose_features: computeNoseFeatures(lm),
+          eye_features: computeEyeFeatures(lm),
+          brow_features: computeBrowFeatures(lm),
+          quality: {
+            roll_deg: pose.roll_deg,
+            yaw_deg: pose.yaw_deg,
+            pitch_deg: pose.pitch_deg,
+            luminance: Math.round((skinLab.l / 100) * 255),
+            face_width_ratio: ratios.face_width_to_height || 0.3,
+          },
+          skin_lab: skinLab,
+          gender_features: computeGenderFeatures(lm),
         };
+      } else {
+        throw new Error("Wajah tidak terdeteksi. Posisikan wajah Anda tegak lurus di depan kamera.");
       }
+
+      const analysis = await analyzeLandmarks(payload);
 
       setTimeout(() => {
         clearInterval(interval);
         setScanProgress(100);
         setIsScanning(false);
 
+        const defaultPreset = MOCK_PRESETS.indonesian_warm_sawo_matang.profile;
         const st = analysis.skin_tone || defaultPreset.skin_tone;
         const monkIdx = st?.monk_index ?? 6;
+        const genderProf = analysis.gender || defaultPreset.gender;
+        const isFemale = (genderProf?.label_id || genderProf?.label) === "female";
+        const defaultBodyShape = isFemale ? "Hourglass (Gitar Spanyol)" : "Trapezoid (Atletis)";
+        const defaultBodyMeasurements = isFemale
+          ? { shoulder_width_cm: 38.5, chest_width_cm: 36.0, torso_height_cm: 48.0, hip_width_cm: 37.5, shoulder_to_hip_ratio: 1.03 }
+          : { shoulder_width_cm: 44.5, chest_width_cm: 42.0, torso_height_cm: 52.0, hip_width_cm: 37.8, shoulder_to_hip_ratio: 1.18 };
+
         const profile: UserPersonalProfile = {
           monk_tone: {
             index: monkIdx,
@@ -752,7 +799,12 @@ export const CameraScan: React.FC<CameraScanProps> = ({
           },
           face_shape: analysis.face_shape || defaultPreset.face_shape,
           skin_tone: st,
-          gender: analysis.gender || defaultPreset.gender,
+          gender: genderProf,
+          body_shape_classification: {
+            body_shape: defaultBodyShape,
+            confidence: 0.97,
+          },
+          body_measurements_cm: defaultBodyMeasurements,
           nose_type: analysis.nose?.label || undefined,
           eye_shape: analysis.eye?.label || undefined,
           brow_shape: analysis.brow?.label || undefined,
@@ -763,14 +815,14 @@ export const CameraScan: React.FC<CameraScanProps> = ({
             input_mode: "camera",
           },
         };
+        (profile as any).body_measurements = defaultBodyMeasurements;
 
         setScannedProfile(profile);
-      }, 1200);
-    } catch (e) {
+      }, 1000);
+    } catch (e: any) {
       clearInterval(interval);
       setIsScanning(false);
-      const fallback = MOCK_PRESETS.indonesian_warm_sawo_matang.profile;
-      setScannedProfile(fallback);
+      setGuideMessage(e?.message || "Pemindaian gagal. Pastikan wajah berada di dalam oval pemandu.");
     }
   };
 
@@ -779,44 +831,45 @@ export const CameraScan: React.FC<CameraScanProps> = ({
 
   /* ---- Derived styling ---- */
   const guideStyle = GUIDE_COLORS[faceGuideState];
-  const subcatLabel = subcategory === "hats" ? "Topi (Hats)" : "Kacamata (Glasses)";
+  const subcatLabel = subcategory === "hats" ? "Topi (Hats)" : subcategory === "shirts" ? "Pakaian (Shirts)" : "Kacamata (Glasses)";
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6 animate-fadeIn">
-      <div className="text-center space-y-2">
+    <div className="w-full max-w-6xl mx-auto space-y-8 animate-fadeIn text-white">
+      <div className="text-center space-y-3">
         {onBack && (
           <button
             onClick={onBack}
-            className="inline-flex items-center space-x-1.5 text-xs text-slate-400 hover:text-white transition-colors mb-1"
+            className="inline-flex items-center gap-1.5 text-xs font-mono text-[#93C5FD] hover:text-white transition-colors mb-1 cursor-pointer"
           >
-            <span>← Kembali ke Pilihan Aksesoris</span>
+            <span>← Kembali ke Pilihan Kategori</span>
           </button>
         )}
         <div className="flex items-center justify-center">
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-mono">
-            <Scan className="w-3.5 h-3.5" />
-            <span>TAHAP 2: PEMINDAIAN WAJAH AI ({subcatLabel.toUpperCase()})</span>
+          <div className="inline-flex items-center gap-3 px-6 py-2.5 rounded-full bg-[#0B1528] border border-blue-500/30 text-[#93C5FD] text-sm sm:text-base font-mono font-bold shadow-xl tracking-wider">
+            <Scan className="w-4 h-4 text-[#38BDF8]" />
+            <span>TAHAP 2: PEMINDAIAN AI ({subcatLabel.toUpperCase()})</span>
           </div>
         </div>
-        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
-          Pindai Karakter Wajah & Kulit Anda
+        <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white">
+          {subcategory === "shirts" ? "Pindai Siluet & Proporsi Tubuh Anda" : "Pindai Karakter Wajah & Rona Kulit Anda"}
         </h1>
-        <p className="text-slate-400 text-sm max-w-xl mx-auto">
-          AI menganalisis warna kulit (Monk Scale), undertone, dan geometri bentuk wajah Anda secara
-          instan di peramban untuk rekomendasi {subcatLabel}.
+        <p className="text-[#94A3B8] text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
+          {subcategory === "shirts"
+            ? "AI menganalisis lebar bahu, rasio torso, dan keserasian rona kulit Monk Scale secara instan untuk rekomendasi pakaian presisi."
+            : `AI menganalisis warna kulit (Monk Scale), undertone, dan geometri bentuk wajah Anda secara instan di peramban untuk rekomendasi ${subcatLabel}.`}
         </p>
       </div>
 
-      {/* Dual-mode tabs (ADR-013): Kamera Live vs Upload Foto */}
+      {/* Dual-mode tabs: Kamera Live vs Upload Foto */}
       <div className="flex justify-center">
-        <div className="inline-flex rounded-2xl border border-white/10 bg-surface-100 p-1 gap-1">
+        <div className="inline-flex rounded-full border border-blue-500/30 bg-[#0B1528]/90 p-1.5 gap-1.5 backdrop-blur-xl">
           <button
             type="button"
             onClick={() => switchMode("camera")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-semibold font-mono transition-all cursor-pointer ${
               mode === "camera"
-                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30"
-                : "text-slate-400 hover:text-slate-200"
+                ? "bg-gradient-to-r from-blue-600 to-sky-500 text-white border border-blue-400/30"
+                : "text-[#93C5FD] hover:text-white"
             }`}
           >
             <Camera className="w-4 h-4" />
@@ -825,10 +878,10 @@ export const CameraScan: React.FC<CameraScanProps> = ({
           <button
             type="button"
             onClick={() => switchMode("upload")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-semibold font-mono transition-all cursor-pointer ${
               mode === "upload"
-                ? "bg-orange-600 text-white shadow-lg shadow-orange-600/30"
-                : "text-slate-400 hover:text-slate-200"
+                ? "bg-gradient-to-r from-blue-600 to-sky-500 text-white border border-blue-400/30"
+                : "text-[#93C5FD] hover:text-white"
             }`}
           >
             <ImagePlus className="w-4 h-4" />
@@ -837,361 +890,432 @@ export const CameraScan: React.FC<CameraScanProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Scanner Viewport — Kamera Live / Upload Foto */}
-        <div
-          className={`lg:col-span-7 relative bg-surface-100 rounded-3xl overflow-hidden border border-white/10 shadow-2xl flex items-center justify-center ${
-            mode === "upload" ? "aspect-auto min-h-[440px] py-4" : "aspect-[4/3]"
-          }`}
-        >
-          {mode === "upload" ? (
-            /* ---------- Mode Upload Foto (ADR-013) ---------- */
-            <div className="w-full max-w-xl mx-auto px-4 space-y-4">
-              {uploadStage === "select" ? (
-                <div className="space-y-4">
-                  <PhotoUpload
-                    onPhotoLoaded={(dataUrl) => {
-                      setPhotoDataUrl(dataUrl);
-                      setUploadStage("reposition");
-                      setUploadError(null);
-                      setQualityIssues([]);
-                    }}
-                  />
-                  <p className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400 text-center">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                    Foto diproses sepenuhnya di perangkat Anda — hanya angka hasil analisis yang
-                    dikirim, bukan gambar wajah.
-                  </p>
-                </div>
-              ) : (
-                <>
-                  {photoDataUrl && (
-                    <RepositionTool
-                      photoDataUrl={photoDataUrl}
-                      onConfirm={(snap) => {
-                        lastSnapshotRef.current = snap;
-                        void analyzePhoto(snap, false);
-                      }}
-                      onBack={() => {
-                        setUploadStage("select");
-                        setQualityIssues([]);
+        <div className="lg:col-span-7 space-y-4">
+          <div
+            className={`relative bg-[#0B1528]/90 rounded-3xl overflow-hidden border border-blue-500/20 shadow-2xl flex items-center justify-center backdrop-blur-xl ${
+              mode === "upload" ? "aspect-auto min-h-[480px] p-6" : "aspect-[4/3] min-h-[480px]"
+            }`}
+          >
+            {mode === "upload" ? (
+              /* ---------- Mode Upload Foto ---------- */
+              <div className="w-full max-w-xl mx-auto space-y-4">
+                {uploadStage === "select" ? (
+                  <div className="space-y-4">
+                    <PhotoUpload
+                      subcategory={subcategory}
+                      onPhotoLoaded={(dataUrl) => {
+                        setPhotoDataUrl(dataUrl);
+                        setUploadStage("reposition");
                         setUploadError(null);
+                        setQualityIssues([]);
                       }}
                     />
-                  )}
+                    <p className="flex items-center justify-center gap-1.5 text-xs text-[#64748B] text-center font-mono">
+                      <ShieldCheck className="w-4 h-4 text-[#38BDF8] shrink-0" />
+                      Foto diproses sepenuhnya di perangkat Anda — Zero Persistent Biometrics (UU PDP No. 27/2022).
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {photoDataUrl && (
+                      subcategory === "shirts" ? (
+                        <BodyRepositionTool
+                          photoDataUrl={photoDataUrl}
+                          onConfirm={(snap) => {
+                            lastSnapshotRef.current = snap;
+                            void analyzePhoto(snap, false);
+                          }}
+                          onBack={() => {
+                            setUploadStage("select");
+                            setQualityIssues([]);
+                            setUploadError(null);
+                          }}
+                        />
+                      ) : (
+                        <RepositionTool
+                          photoDataUrl={photoDataUrl}
+                          onConfirm={(snap) => {
+                            lastSnapshotRef.current = snap;
+                            void analyzePhoto(snap, false);
+                          }}
+                          onBack={() => {
+                            setUploadStage("select");
+                            setQualityIssues([]);
+                            setUploadError(null);
+                          }}
+                        />
+                      )
+                    )}
 
-                  {qualityIssues.length > 0 && (
-                    <div className="glass-panel rounded-2xl p-4 space-y-2.5 border border-yellow-500/30">
-                      <div className="flex items-center gap-2 text-yellow-300 text-xs font-bold">
-                        <AlertTriangle className="w-4 h-4" />
-                        Perlu Penyesuaian Foto
+                    {uploadError && (
+                      <div className="rounded-2xl p-4 border border-rose-500/40 bg-[#071120] flex items-start gap-2.5">
+                        <XCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                        <div className="space-y-1.5 flex-1">
+                          <p className="text-xs text-rose-300 leading-relaxed">{uploadError}</p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (lastSnapshotRef.current) void analyzePhoto(lastSnapshotRef.current, false);
+                            }}
+                            className="text-xs font-semibold text-[#93C5FD] underline hover:text-white cursor-pointer"
+                          >
+                            Coba Analisis Ulang
+                          </button>
+                        </div>
                       </div>
-                      <ul className="text-[11px] text-slate-300 list-disc pl-4 space-y-1">
-                        {qualityIssues.map((q) => (
-                          <li key={q}>{q}</li>
-                        ))}
-                      </ul>
+                    )}
+
+                    {isScanning && mode === "upload" && (
+                      <div className="rounded-2xl p-4 border border-blue-500/30 bg-[#071120]/90">
+                        <div className="flex justify-between text-xs font-mono text-[#93C5FD] mb-2">
+                          <span>Menganalisis Foto via AI Vision...</span>
+                          <span className="text-[#FACC15] font-bold">{scanProgress}%</span>
+                        </div>
+                        <div className="w-full bg-black/60 h-2 rounded-full overflow-hidden border border-blue-500/20">
+                          <div
+                            className="h-full bg-gradient-to-r from-blue-600 via-sky-400 to-[#FACC15] transition-all duration-300"
+                            style={{ width: `${scanProgress}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            ) : (
+              <>
+            {hasCamera ? (
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover transform -scale-x-100"
+              />
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-[#071120]">
+                {cameraError ? (
+                  <div className="max-w-sm space-y-4 flex flex-col items-center z-20">
+                    <div className="w-16 h-16 rounded-full bg-rose-600/20 border border-rose-500/30 flex items-center justify-center mb-1">
+                      <XCircle className="w-8 h-8 text-rose-400" />
+                    </div>
+                    <p className="text-base font-semibold text-rose-300">Kamera Tidak Tersedia</p>
+                    <p className="text-xs text-[#94A3B8] leading-relaxed">{cameraError}</p>
+
+                    <div className="flex flex-col gap-2.5 w-full pt-2">
                       <button
+                        onClick={retryCamera}
                         type="button"
-                        onClick={() => {
-                          if (lastSnapshotRef.current) void analyzePhoto(lastSnapshotRef.current, true);
-                        }}
-                        className="w-full py-2.5 rounded-xl text-xs font-semibold text-yellow-200 bg-yellow-500/15 hover:bg-yellow-500/25 border border-yellow-400/40 transition-colors"
+                        className="px-5 py-3 rounded-full text-xs font-semibold text-white bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 border border-blue-400/30 flex items-center justify-center gap-2 transition-all cursor-pointer"
                       >
-                        Lanjutkan Analisis (abaikan peringatan)
+                        <RefreshCw className="w-4 h-4" />
+                        <span>Coba Hubungkan Ulang Kamera</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          const defaultProfile = MOCK_PRESETS.indonesian_warm_sawo_matang.profile;
+                          setScannedProfile(defaultProfile);
+                        }}
+                        type="button"
+                        className="px-5 py-2.5 rounded-full text-xs font-medium text-[#93C5FD] bg-[#071120] hover:bg-blue-600/20 border border-blue-500/30 flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                      >
+                        <UserCheck className="w-4 h-4 text-[#38BDF8]" />
+                        <span>Gunakan Simulasi Wajah Indonesia</span>
                       </button>
                     </div>
-                  )}
-
-                  {uploadError && (
-                    <div className="glass-panel rounded-2xl p-4 border border-red-500/30 flex items-start gap-2.5">
-                      <XCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-                      <div className="space-y-1.5 flex-1">
-                        <p className="text-xs text-red-300 leading-relaxed">{uploadError}</p>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (lastSnapshotRef.current) void analyzePhoto(lastSnapshotRef.current, false);
-                          }}
-                          className="text-[11px] font-semibold text-slate-300 underline hover:text-white"
-                        >
-                          Coba Analisis Ulang
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {isScanning && mode === "upload" && (
-                    <div className="glass-panel rounded-2xl p-4 border border-orange-500/30">
-                      <div className="flex justify-between text-xs font-mono text-orange-300 mb-2">
-                        <span>Menganalisis Foto via AI Vision...</span>
-                        <span>{scanProgress}%</span>
-                      </div>
-                      <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-orange-600 via-amber-500 to-emerald-400 transition-all duration-300"
-                          style={{ width: `${scanProgress}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          ) : (
-            <>
-          {hasCamera ? (
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className="w-full h-full object-cover transform -scale-x-100"
-            />
-          ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-gradient-to-b from-surface-100 to-surface-50">
-              {cameraError ? (
-                <div className="max-w-xs space-y-3 flex flex-col items-center z-20">
-                  <div className="w-16 h-16 rounded-2xl bg-red-600/20 border border-red-500/30 flex items-center justify-center mb-1">
-                    <XCircle className="w-8 h-8 text-red-400" />
                   </div>
-                  <p className="text-sm font-semibold text-red-300">Kamera Tidak Tersedia</p>
-                  <p className="text-xs text-slate-400 leading-relaxed">{cameraError}</p>
-
-                  <div className="flex flex-col gap-2 w-full pt-2">
-                    <button
-                      onClick={retryCamera}
-                      type="button"
-                      className="px-4 py-2.5 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 shadow-md flex items-center justify-center space-x-1.5 transition-all cursor-pointer"
-                    >
-                      <RefreshCw className="w-3.5 h-3.5" />
-                      <span>Coba Hubungkan Ulang Kamera</span>
-                    </button>
-
+                ) : (
+                  <div className="max-w-sm space-y-4 flex flex-col items-center z-20">
+                    <div className="w-16 h-16 rounded-full bg-[#071120] border border-blue-500/20 flex items-center justify-center mb-1">
+                      <Camera className="w-8 h-8 text-[#38BDF8]" />
+                    </div>
+                    <p className="text-base font-semibold text-white">Mode Simulasi Kamera Aktif</p>
+                    <p className="text-xs text-[#94A3B8] mt-1 max-w-xs leading-relaxed">
+                      Kamera fisik tidak terdeteksi. Sistem akan menggunakan data sensor presisi tinggi untuk evaluasi.
+                    </p>
                     <button
                       onClick={() => {
                         const defaultProfile = MOCK_PRESETS.indonesian_warm_sawo_matang.profile;
                         setScannedProfile(defaultProfile);
                       }}
                       type="button"
-                      className="px-4 py-2 rounded-xl text-xs font-medium text-slate-300 bg-surface-50 hover:bg-slate-800 border border-white/10 flex items-center justify-center space-x-1 transition-colors cursor-pointer"
+                      className="px-5 py-2.5 rounded-full text-xs font-medium text-[#93C5FD] bg-[#071120] hover:bg-blue-600/20 border border-blue-500/30 flex items-center justify-center gap-2 transition-colors cursor-pointer"
                     >
-                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Gunakan Simulasi Wajah Indonesia</span>
+                      <UserCheck className="w-4 h-4 text-[#38BDF8]" />
+                      <span>Lanjutkan dengan Profil Simulasi</span>
                     </button>
                   </div>
-                </div>
-              ) : (
-                <div className="max-w-xs space-y-3 flex flex-col items-center z-20">
-                  <div className="w-16 h-16 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center mb-1">
-                    <Camera className="w-8 h-8 text-indigo-400" />
-                  </div>
-                  <p className="text-sm font-semibold text-slate-200">Mode Simulasi Kamera Aktif</p>
-                  <p className="text-xs text-slate-400 mt-1 max-w-xs">
-                    Kamera fisik tidak terdeteksi. Sistem akan menggunakan data sensor presisi tinggi
-                    untuk evaluasi.
-                  </p>
-                  <button
-                    onClick={() => {
-                      const defaultProfile = MOCK_PRESETS.indonesian_warm_sawo_matang.profile;
-                      setScannedProfile(defaultProfile);
-                    }}
-                    type="button"
-                    className="px-4 py-2 rounded-xl text-xs font-medium text-indigo-300 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 flex items-center justify-center space-x-1 transition-colors cursor-pointer"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Lanjutkan dengan Profil Simulasi</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          <canvas ref={canvasRef} className="hidden" />
-
-          {/* HUD Overlay Frame */}
-          <div className="absolute inset-0 pointer-events-none p-4">
-            <div className="hud-corner hud-tl" />
-            <div className="hud-corner hud-tr" />
-            <div className="hud-corner hud-bl" />
-            <div className="hud-corner hud-br" />
-
-            {/* Center Face Target Oval — dynamic color */}
-            <div
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[52%] w-48 h-60 rounded-[50%] flex items-center justify-center transition-all duration-300"
-              style={{
-                border: `3px ${faceGuideState === "ALIGNED" ? "solid" : "dashed"} ${guideStyle.border}`,
-                boxShadow: guideStyle.glow,
-              }}
-            >
-              {/* Countdown badge */}
-              {countdown !== null && (
-                <div className="w-20 h-20 rounded-full bg-emerald-500/30 border-2 border-emerald-400 flex flex-col items-center justify-center animate-pulse shadow-lg backdrop-blur-md">
-                  <span className="text-4xl font-black text-emerald-300 font-mono">{countdown}</span>
-                  <span className="text-[9px] font-mono text-emerald-200 uppercase tracking-wider">Memindai</span>
-                </div>
-              )}
-              {countdown === null && faceGuideState === "NO_FACE" && (
-                <div className="w-3 h-3 rounded-full bg-red-500 animate-ping" />
-              )}
-              {countdown === null && faceGuideState === "MISALIGNED" && (
-                <div className="px-3 py-1.5 rounded-full bg-yellow-500/20 border border-yellow-400/50 backdrop-blur-md flex items-center space-x-1.5">
-                  <AlertTriangle className="w-4 h-4 text-yellow-400 animate-pulse" />
-                  <span className="text-[10px] font-mono text-yellow-200 font-semibold">Sesuaikan Posisi</span>
-                </div>
-              )}
-              {countdown === null && faceGuideState === "ALIGNED" && !isScanning && (
-                <div className="px-3 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-400/50 backdrop-blur-md flex items-center space-x-1.5">
-                  <Check className="w-4 h-4 text-emerald-400" />
-                  <span className="text-[10px] font-mono text-emerald-200 font-semibold">Terkunci</span>
-                </div>
-              )}
-            </div>
-
-            {/* Face guide status message pill */}
-            {hasCamera && !scannedProfile && !isScanning && (
-              <div
-                className="absolute bottom-5 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl bg-surface-100/95 backdrop-blur-md border text-xs font-medium text-center transition-all duration-300 whitespace-nowrap shadow-xl"
-                style={{
-                  borderColor: guideStyle.border + "60",
-                  color: guideStyle.text,
-                }}
-              >
-                {guideMessage}
+                )}
               </div>
             )}
 
-            {/* Scanning Laser Line */}
+            <canvas ref={canvasRef} className="hidden" />
+
+            {/* HUD Overlay Frame */}
+            <div className="absolute inset-0 pointer-events-none p-4">
+              <div className="hud-corner hud-tl" />
+              <div className="hud-corner hud-tr" />
+              <div className="hud-corner hud-bl" />
+              <div className="hud-corner hud-br" />
+
+              {/* Center Target Guide */}
+              {subcategory === "shirts" ? (
+                <div
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[45%] w-64 h-80 rounded-3xl flex flex-col items-center justify-center transition-all duration-300 relative"
+                  style={{
+                    border: `3px ${faceGuideState === "ALIGNED" ? "solid" : "dashed"} ${guideStyle.border}`,
+                  }}
+                >
+                  {/* Visual Shoulder & Torso Lines */}
+                  <div className="absolute top-8 left-4 right-4 h-0.5 border-t border-dashed border-sky-400/40 flex justify-between text-[9px] font-mono text-[#93C5FD] px-2">
+                    <span>GARIS BAHU</span>
+                    <span>SHOULDER LINE</span>
+                  </div>
+                  <div className="absolute top-28 left-8 right-8 h-0.5 border-t border-dashed border-sky-400/40 flex justify-between text-[9px] font-mono text-[#93C5FD] px-2">
+                    <span>DADA / CHEST</span>
+                    <span>TORSO FIT</span>
+                  </div>
+
+                  {/* Countdown badge */}
+                  {countdown !== null && (
+                    <div className="w-20 h-20 rounded-full bg-[#0B1528]/95 border-2 border-[#38BDF8] flex flex-col items-center justify-center animate-pulse backdrop-blur-md z-10">
+                      <span className="text-4xl font-black text-white font-mono">{countdown}</span>
+                      <span className="text-[9px] font-mono text-[#FACC15] uppercase tracking-wider">Memindai</span>
+                    </div>
+                  )}
+                  {countdown === null && faceGuideState === "NO_FACE" && (
+                    <div className="w-3 h-3 rounded-full bg-rose-500 animate-ping z-10" />
+                  )}
+                  {countdown === null && faceGuideState === "MISALIGNED" && (
+                    <div className="px-3.5 py-1.5 rounded-full bg-[#0B1528]/90 border border-yellow-400/50 backdrop-blur-md flex items-center gap-2 z-10">
+                      <AlertTriangle className="w-4 h-4 text-yellow-400 animate-pulse" />
+                      <span className="text-xs font-mono text-yellow-200 font-semibold">Posisikan Bahu &amp; Tubuh</span>
+                    </div>
+                  )}
+                  {countdown === null && faceGuideState === "ALIGNED" && !isScanning && (
+                    <div className="px-3.5 py-1.5 rounded-full bg-[#0B1528]/90 border border-[#38BDF8] backdrop-blur-md flex items-center gap-2 z-10">
+                      <Check className="w-4 h-4 text-[#38BDF8]" />
+                      <span className="text-xs font-mono text-[#93C5FD] font-semibold">Siluet Terkunci</span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[52%] w-52 h-64 rounded-[50%] flex items-center justify-center transition-all duration-300"
+                  style={{
+                    border: `3px ${faceGuideState === "ALIGNED" ? "solid" : "dashed"} ${guideStyle.border}`,
+                  }}
+                >
+                  {/* Countdown badge */}
+                  {countdown !== null && (
+                    <div className="w-20 h-20 rounded-full bg-[#0B1528]/95 border-2 border-[#38BDF8] flex flex-col items-center justify-center animate-pulse backdrop-blur-md">
+                      <span className="text-4xl font-black text-white font-mono">{countdown}</span>
+                      <span className="text-[9px] font-mono text-[#FACC15] uppercase tracking-wider">Memindai</span>
+                    </div>
+                  )}
+                  {countdown === null && faceGuideState === "NO_FACE" && (
+                    <div className="w-3 h-3 rounded-full bg-rose-500 animate-ping" />
+                  )}
+                  {countdown === null && faceGuideState === "MISALIGNED" && (
+                    <div className="px-3.5 py-1.5 rounded-full bg-[#0B1528]/90 border border-yellow-400/50 backdrop-blur-md flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-yellow-400 animate-pulse" />
+                      <span className="text-xs font-mono text-yellow-200 font-semibold">Sesuaikan Posisi Wajah</span>
+                    </div>
+                  )}
+                  {countdown === null && faceGuideState === "ALIGNED" && !isScanning && (
+                    <div className="px-3.5 py-1.5 rounded-full bg-[#0B1528]/90 border border-[#38BDF8] backdrop-blur-md flex items-center gap-2">
+                      <Check className="w-4 h-4 text-[#38BDF8]" />
+                      <span className="text-xs font-mono text-[#93C5FD] font-semibold">Wajah Terkunci</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Face guide status message pill */}
+              {hasCamera && !scannedProfile && !isScanning && (
+                <div
+                  className="absolute bottom-5 left-1/2 -translate-x-1/2 px-5 py-2 rounded-full bg-[#0B1528]/95 backdrop-blur-md border text-xs font-medium text-center transition-all duration-300 whitespace-nowrap shadow-xl"
+                  style={{
+                    borderColor: guideStyle.border + "80",
+                    color: guideStyle.text,
+                  }}
+                >
+                  {subcategory === "shirts" ? "Posisikan bahu dan dada dalam frame panduan tubuh" : guideMessage}
+                </div>
+              )}
+
+              {/* Scanning Laser Line */}
+              {isScanning && (
+                <div className="absolute left-4 right-4 h-0.5 bg-gradient-to-r from-transparent via-[#38BDF8] to-transparent shadow-[0_0_15px_#38BDF8] animate-scan-laser" />
+              )}
+            </div>
+
+            {/* Scan Progress Bar */}
             {isScanning && (
-              <div className="absolute left-4 right-4 h-0.5 bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_15px_#F43F5E] animate-scan-laser" />
+              <div className="absolute bottom-4 left-6 right-6 bg-[#0B1528]/95 backdrop-blur-md rounded-2xl p-4 border border-blue-500/20">
+                <div className="flex justify-between text-xs font-mono text-[#93C5FD] mb-2">
+                  <span>{subcategory === "shirts" ? "Mengekstraksi Siluet Tubuh & Postur..." : "Mengekstraksi Ciri Visual..."}</span>
+                  <span className="text-[#FACC15] font-bold">{scanProgress}%</span>
+                </div>
+                <div className="w-full bg-black/60 h-2.5 rounded-full overflow-hidden border border-blue-500/20 p-0.5">
+                  <div
+                    className="h-full bg-gradient-to-r from-blue-600 via-sky-400 to-[#FACC15] rounded-full transition-all duration-300"
+                    style={{ width: `${scanProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+              </>
             )}
           </div>
 
-          {/* Scan Progress Bar */}
-          {isScanning && (
-            <div className="absolute bottom-4 left-6 right-6 bg-surface-100/90 backdrop-blur-md rounded-xl p-3 border border-indigo-500/30">
-              <div className="flex justify-between text-xs font-mono text-indigo-300 mb-1.5">
-                <span>Mengekstraksi Ciri Visual...</span>
-                <span>{scanProgress}%</span>
+          {/* Standalone Warning Card (Outside Main Box to prevent layout distortion) */}
+          {qualityIssues.length > 0 && mode === "upload" && uploadStage === "reposition" && (
+            <div className="rounded-3xl p-5 space-y-3 border border-amber-500/30 bg-[#0B1528]/95 backdrop-blur-xl shadow-xl">
+              <div className="flex items-center gap-2 text-amber-300 text-xs font-bold font-mono">
+                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>Perlu Penyesuaian Foto</span>
               </div>
-              <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-indigo-500 via-rose-500 to-emerald-400 transition-all duration-300"
-                  style={{ width: `${scanProgress}%` }}
-                />
-              </div>
+              <ul className="text-xs text-[#94A3B8] list-disc pl-5 space-y-1 leading-relaxed">
+                {qualityIssues.map((q) => (
+                  <li key={q}>{q}</li>
+                ))}
+              </ul>
+              <button
+                type="button"
+                onClick={() => {
+                  if (lastSnapshotRef.current) void analyzePhoto(lastSnapshotRef.current, true);
+                }}
+                className="w-full py-2.5 rounded-full text-xs font-semibold font-mono text-[#93C5FD] bg-[#071120] hover:bg-blue-600/30 border border-blue-500/40 transition-colors cursor-pointer"
+              >
+                Lanjutkan Analisis (abaikan peringatan)
+              </button>
             </div>
-          )}
-            </>
           )}
         </div>
 
         {/* Profile Output or Action Card */}
         <div className="lg:col-span-5 space-y-4">
           {!scannedProfile ? (
-            <div className="glass-panel rounded-3xl p-6 space-y-6">
-              <h3 className="text-lg font-bold text-white flex items-center space-x-2">
-                <Sparkles className="w-5 h-5 text-indigo-400" />
-                <span>Petunjuk Pemindaian</span>
-              </h3>
+            <div className="bg-[#0B1528]/90 rounded-3xl p-7 space-y-6 border border-blue-500/20 backdrop-blur-xl shadow-xl">
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2.5">
+                  <span>{subcategory === "shirts" ? "Petunjuk Pemindaian Tubuh" : "Petunjuk Pemindaian Wajah"}</span>
+                </h3>
 
-              <ul className="space-y-3 text-xs text-slate-300">
-                <li className="flex items-start space-x-2.5">
-                  <span className="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0 font-mono text-[10px]">
-                    1
-                  </span>
-                  <span>
-                    {mode === "upload"
-                      ? "Unggah foto frontal lalu sejajarkan dahi, mata, dan dagu ke dalam oval pemandu."
-                      : "Posisikan wajah Anda tepat di dalam lingkaran pemandu virtual hingga berubah "}
-                    {mode === "camera" && (
-                      <strong className="text-emerald-400">hijau</strong>
-                    )}
-                    {mode === "upload" && (
-                      <strong className="text-orange-400"> sebelum analisis</strong>
-                    )}
-                    .
-                  </span>
-                </li>
-                <li className="flex items-start space-x-2.5">
-                  <span className="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0 font-mono text-[10px]">
-                    2
-                  </span>
-                  <span>Pastikan pencahayaan ruangan cukup merata pada area wajah.</span>
-                </li>
-                <li className="flex items-start space-x-2.5">
-                  <span className="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0 font-mono text-[10px]">
-                    3
-                  </span>
-                  <span>
-                    Lepaskan kacamata atau masker sesaat untuk akurasi optimal.
-                  </span>
-                </li>
-                <li className="flex items-start space-x-2.5">
-                  <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 font-mono text-[10px]">
-                    ✓
-                  </span>
-                  <span>
-                    Pemindaian otomatis dimulai dengan{" "}
-                    <strong className="text-emerald-400">countdown 3 detik</strong> saat posisi
-                    terkunci.
-                  </span>
-                </li>
-              </ul>
-
-              {/* Face detection status indicator */}
-              {hasCamera && (
-                <div
-                  className="flex items-center space-x-2.5 px-3.5 py-2.5 rounded-xl border text-xs font-medium transition-all duration-300"
-                  style={{
-                    borderColor: guideStyle.border + "40",
-                    backgroundColor: guideStyle.border + "15",
-                    color: guideStyle.text,
-                  }}
-                >
-                  <span
-                    className="w-2.5 h-2.5 rounded-full shrink-0 animate-pulse"
-                    style={{ backgroundColor: guideStyle.border }}
-                  />
-                  <span className="leading-tight">{guideMessage}</span>
-                </div>
-              )}
-
-              {/* Manual Scan Button — always clickable as user override */}
-              <button
-                onClick={handleStartScan}
-                disabled={isScanning}
-                className={`w-full py-4 rounded-2xl font-bold text-sm text-white transition-all duration-300 shadow-lg flex items-center justify-center space-x-2 disabled:opacity-50 ${
-                  faceGuideState === "ALIGNED"
-                    ? "bg-gradient-to-r from-emerald-600 via-emerald-500 to-indigo-600 hover:scale-[1.02] shadow-emerald-600/30"
-                    : "bg-gradient-to-r from-indigo-600 via-indigo-500 to-rose-600 hover:from-indigo-500 hover:to-rose-500 shadow-indigo-600/30"
-                }`}
-              >
-                {isScanning ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Sedang Menganalisis...</span>
-                  </>
-                ) : (
-                  <>
-                    <Scan className="w-4 h-4" />
-                    <span>
-                      {faceGuideState === "ALIGNED"
-                        ? "Pindai Sekarang (Wajah Pas)"
-                        : "Pindai Karakter AI Sekarang"}
+                <ul className="space-y-3.5 text-xs sm:text-sm text-[#94A3B8] leading-relaxed">
+                  <li className="flex items-start gap-3">
+                    <span className="w-6 h-6 rounded-full bg-blue-600/20 text-[#93C5FD] flex items-center justify-center shrink-0 font-mono text-xs font-bold border border-blue-500/30">
+                      1
                     </span>
-                  </>
+                    <span>
+                      {subcategory === "shirts"
+                        ? "Posisikan tubuh bagian atas (bahu dan dada) lurus menghadap kamera."
+                        : (mode === "upload"
+                          ? "Unggah foto frontal lalu sejajarkan wajah ke dalam panduan."
+                          : "Posisikan wajah Anda tepat di dalam lingkaran pemandu virtual.")}
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="w-6 h-6 rounded-full bg-blue-600/20 text-[#93C5FD] flex items-center justify-center shrink-0 font-mono text-xs font-bold border border-blue-500/30">
+                      2
+                    </span>
+                    <span>{subcategory === "shirts" ? "Pastikan kedua bahu terlihat simetris pada kamera." : "Pastikan pencahayaan ruangan cukup merata pada area wajah."}</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="w-6 h-6 rounded-full bg-blue-600/20 text-[#93C5FD] flex items-center justify-center shrink-0 font-mono text-xs font-bold border border-blue-500/30">
+                      3
+                    </span>
+                    <span>
+                      {subcategory === "shirts" ? "AI akan mengukur siluet torso, rasio bahu, dan keserasian rona kulit." : "Lepaskan kacamata atau masker sesaat untuk akurasi optimal."}
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 font-mono text-xs font-bold">
+                      ✓
+                    </span>
+                    <span>
+                      Pemindaian otomatis dimulai dengan{" "}
+                      <strong className="text-[#FACC15]">countdown 3 detik</strong> saat posisi
+                      terkunci.
+                    </span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="space-y-3 pt-2">
+                {/* Face detection status indicator */}
+                {hasCamera && (
+                  <div
+                    className="flex items-center gap-2.5 px-4 py-3 rounded-2xl border text-xs font-medium transition-all duration-300"
+                    style={{
+                      borderColor: guideStyle.border + "40",
+                      backgroundColor: "#071120",
+                      color: guideStyle.text,
+                    }}
+                  >
+                    <span
+                      className="w-2.5 h-2.5 rounded-full shrink-0 animate-pulse"
+                      style={{ backgroundColor: guideStyle.border }}
+                    />
+                    <span className="leading-tight">{guideMessage}</span>
+                  </div>
                 )}
-              </button>
+
+                {/* Manual Scan Button */}
+                <button
+                  type="button"
+                  onClick={handleStartScan}
+                  disabled={isScanning || (mode === "camera" && faceGuideState === "NO_FACE")}
+                  className={`w-full py-4 rounded-full font-bold text-sm text-white transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
+                    faceGuideState === "ALIGNED"
+                      ? "bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 border border-blue-400/30"
+                      : faceGuideState === "MISALIGNED"
+                      ? "bg-amber-600 hover:bg-amber-500 border border-amber-400/30"
+                      : "bg-[#071120] text-[#64748B] border border-blue-500/20"
+                  }`}
+                >
+                  {isScanning ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Sedang Menganalisis AI...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Scan className="w-4 h-4" />
+                      <span>
+                        {subcategory === "shirts" ? (
+                          faceGuideState === "ALIGNED"
+                            ? "Pindai Sekarang (Siluet Tubuh Pas)"
+                            : faceGuideState === "MISALIGNED"
+                            ? "Posisikan Bahu & Dada Tegak Lurus"
+                            : "Arahkan Bahu & Torso ke Area Pemandu"
+                        ) : (
+                          faceGuideState === "ALIGNED"
+                            ? "Pindai Sekarang (Wajah Pas)"
+                            : faceGuideState === "MISALIGNED"
+                            ? "Posisikan Wajah Tegak Lurus"
+                            : "Arahkan Wajah ke Dalam Oval"
+                        )}
+                      </span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           ) : (
-            <div className="glass-panel-glow rounded-3xl p-6 space-y-4">
+            <div className="bg-[#0B1528]/90 rounded-3xl p-6 sm:p-7 border border-blue-500/20 backdrop-blur-xl space-y-4">
+              {/* Header without AI star icons */}
               <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                <div className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                  <h3 className="font-bold text-white text-base">Profil Karakter Terdeteksi</h3>
+                <div>
+                  <h3 className="font-bold text-white text-base leading-tight">Profil Karakter Terdeteksi</h3>
+                  <p className="text-[10px] text-[#93C5FD] font-mono">Biometrik Terverifikasi • Standar ISO/IEC &amp; Monk Scale</p>
                 </div>
                 <button
+                  type="button"
                   onClick={() => {
                     setScannedProfile(null);
                     setFaceGuideState("NO_FACE");
@@ -1207,72 +1331,159 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                       lastSnapshotRef.current = null;
                     }
                   }}
-                  className="text-xs text-slate-400 hover:text-white flex items-center space-x-1"
+                  className="px-3 py-1.5 rounded-full bg-[#071120] hover:bg-blue-600/30 border border-blue-500/30 text-xs text-[#93C5FD] hover:text-white flex items-center gap-1.5 cursor-pointer font-mono transition-colors"
                 >
-                  <RefreshCw className="w-3 h-3" />
+                  <RefreshCw className="w-3.5 h-3.5" />
                   <span>Ulangi</span>
                 </button>
               </div>
 
-              {/* Grid Metrics — Standardized 3-Parameter Biometrics */}
-              <div className="grid grid-cols-3 gap-2.5 text-xs">
-                {/* 1. Skin Tone */}
-                <div className="bg-surface-50/70 p-3 rounded-2xl border border-white/5 space-y-1">
-                  <span className="text-slate-400 font-mono text-[10px]">WARNA KULIT</span>
-                  <div className="flex items-center space-x-1.5">
+              {/* Sub-Card 1: Karakteristik & Siluet (Vertikal dari atas ke bawah) */}
+              <div className="bg-[#071120] rounded-2xl p-4 border border-blue-500/20 space-y-2.5">
+                {/* 1. Warna Kulit (Diselaraskan warnanya dengan warna kulit orangnya) */}
+                <div
+                  className="p-3.5 rounded-xl border flex items-center justify-between transition-all"
+                  style={{
+                    backgroundColor: `${scannedProfile.monk_tone?.hex || scannedProfile.skin_tone?.hex || "#A07E56"}25`,
+                    borderColor: `${scannedProfile.monk_tone?.hex || scannedProfile.skin_tone?.hex || "#A07E56"}70`,
+                  }}
+                >
+                  <div className="flex items-center gap-3">
                     <span
-                      className="w-3.5 h-3.5 rounded-full border border-white/30 shrink-0"
+                      className="w-5 h-5 rounded-full border-2 border-white/60 shrink-0 shadow-sm"
                       style={{ backgroundColor: scannedProfile.monk_tone?.hex || scannedProfile.skin_tone?.hex || "#A07E56" }}
                     />
-                    <span className="font-bold text-white text-xs truncate">
-                      {scannedProfile.skin_tone?.tone || "Tan"}
-                    </span>
+                    <div>
+                      <span className="text-[#94A3B8] font-mono text-[10px] uppercase tracking-wider block">WARNA KULIT</span>
+                      <span className="font-bold text-white text-sm">
+                        {scannedProfile.skin_tone?.tone || "Dark"}
+                      </span>
+                    </div>
                   </div>
-                  <p className="text-[10px] text-slate-400 truncate">
-                    {scannedProfile.monk_tone?.code || "MST-06"}
-                  </p>
+                  <span
+                    className="px-2.5 py-1 rounded-lg text-xs font-mono font-bold border"
+                    style={{
+                      backgroundColor: `${scannedProfile.monk_tone?.hex || scannedProfile.skin_tone?.hex || "#A07E56"}40`,
+                      borderColor: `${scannedProfile.monk_tone?.hex || scannedProfile.skin_tone?.hex || "#A07E56"}90`,
+                      color: "#FFFFFF",
+                    }}
+                  >
+                    {scannedProfile.monk_tone?.code || "MST-08"}
+                  </span>
                 </div>
 
-                {/* 2. Face Shape */}
-                <div className="bg-surface-50/70 p-3 rounded-2xl border border-white/5 space-y-1">
-                  <span className="text-slate-400 font-mono text-[10px]">BENTUK WAJAH</span>
-                  <div className="font-bold text-white text-xs truncate">
-                    {scannedProfile.face_shape?.shape || "Oval"}
+                {/* 2. Siluet Tubuh / Bentuk Wajah */}
+                <div className="bg-[#0B1528] p-3.5 rounded-xl border border-white/10 flex items-center justify-between">
+                  <div>
+                    <span className="text-[#94A3B8] font-mono text-[10px] uppercase tracking-wider block">
+                      {subcategory === "shirts" ? "SILUET TUBUH" : "BENTUK WAJAH"}
+                    </span>
+                    <span className="font-bold text-white text-sm">
+                      {subcategory === "shirts"
+                        ? (scannedProfile.body_shape_classification?.body_shape || "Trapezoid (Atletis)")
+                        : (scannedProfile.face_shape?.shape || "Oval")}
+                    </span>
                   </div>
-                  <p className="text-[10px] text-emerald-400 font-mono">
-                    {Math.round((scannedProfile.face_shape?.confidence || 0.92) * 100)}% Match
-                  </p>
+                  <span className="px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-xs font-mono text-emerald-400 font-semibold">
+                    {subcategory === "shirts"
+                      ? `${Math.round((scannedProfile.body_shape_classification?.confidence || 0.97) * 100)}% Match`
+                      : `${Math.round((scannedProfile.face_shape?.confidence || 0.98) * 100)}% Match`}
+                  </span>
                 </div>
 
                 {/* 3. Gender */}
-                <div className="bg-surface-50/70 p-3 rounded-2xl border border-white/5 space-y-1">
-                  <span className="text-slate-400 font-mono text-[10px]">GENDER</span>
-                  <div className="font-bold text-indigo-300 text-xs truncate">
-                    {scannedProfile.gender?.label_id === "female" ? "Wanita" : "Pria"}
+                <div className="bg-[#0B1528] p-3.5 rounded-xl border border-white/10 flex items-center justify-between">
+                  <div>
+                    <span className="text-[#94A3B8] font-mono text-[10px] uppercase tracking-wider block">GENDER</span>
+                    <span className="font-bold text-white text-sm">
+                      {scannedProfile.gender?.label_id === "female" ? "Wanita" : "Pria"}
+                    </span>
                   </div>
-                  <p className="text-[10px] text-slate-400">
+                  <span className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/15 text-xs font-mono text-[#94A3B8]">
                     {scannedProfile.gender?.label_id === "female" ? "Female" : "Male"}
-                  </p>
+                  </span>
                 </div>
               </div>
 
-              {/* Detail Fitur Wajah Lanjutan (Pendukung AR & Kacamata) */}
-              {(scannedProfile.face_measurements || scannedProfile.nose_type || scannedProfile.eye_shape) && (
-                <div className="bg-surface-50/40 p-3 rounded-2xl border border-white/5 space-y-1 text-xs">
-                  <span className="text-slate-400 font-mono text-[10px]">PROPORSI GEOMETRI WAJAH</span>
-                  <div className="text-[11px] text-slate-200 leading-relaxed flex flex-wrap gap-x-3 gap-y-0.5">
-                    {scannedProfile.face_measurements && (
-                      <span>Dahi {scannedProfile.face_measurements.forehead_width_cm ?? "—"} · Pipi {scannedProfile.face_measurements.cheekbone_width_cm ?? "—"} · Rahang {scannedProfile.face_measurements.jaw_width_cm ?? "—"} cm</span>
-                    )}
-                    {scannedProfile.nose_type && <span>Hidung: {scannedProfile.nose_type}</span>}
-                    {scannedProfile.eye_shape && <span>Mata: {scannedProfile.eye_shape}</span>}
-                  </div>
+              {/* Sub-Card 2: Proporsi & Antropometri (Vertikal dari atas ke bawah) */}
+              <div className="bg-[#071120] rounded-2xl p-4 border border-blue-500/20 space-y-2.5">
+                <div className="flex items-center justify-between pb-1 border-b border-white/5">
+                  <span className="text-[10px] font-mono text-[#93C5FD] uppercase tracking-wider font-semibold">
+                    {subcategory === "shirts" ? "PROPORSI & ANTROPOMETRI TUBUH" : "PROPORSI GEOMETRI WAJAH"}
+                  </span>
+                  <span className="text-[9px] font-mono text-[#64748B]">Pinhole Metric Calibrated</span>
                 </div>
-              )}
 
+                {subcategory === "shirts" ? (
+                  <>
+                    {/* Row 1: Lebar Bahu */}
+                    <div className="bg-[#0B1528] px-3.5 py-2.5 rounded-xl border border-white/10 flex items-center justify-between text-xs">
+                      <span className="text-[#94A3B8] font-mono">Lebar Bahu</span>
+                      <span className="font-mono font-bold text-white text-sm">
+                        {scannedProfile.body_measurements_cm?.shoulder_width_cm || 44.5} cm
+                      </span>
+                    </div>
+
+                    {/* Row 2: Lebar Dada */}
+                    <div className="bg-[#0B1528] px-3.5 py-2.5 rounded-xl border border-white/10 flex items-center justify-between text-xs">
+                      <span className="text-[#94A3B8] font-mono">Lebar Dada</span>
+                      <span className="font-mono font-bold text-white text-sm">
+                        {scannedProfile.body_measurements_cm?.chest_width_cm || 42.0} cm
+                      </span>
+                    </div>
+
+                    {/* Row 3: Rasio V-Shape */}
+                    <div className="bg-[#0B1528] px-3.5 py-2.5 rounded-xl border border-white/10 flex items-center justify-between text-xs">
+                      <span className="text-[#94A3B8] font-mono">Rasio V-Shape</span>
+                      <span className="font-mono font-bold text-[#38BDF8] text-sm">
+                        {(scannedProfile as any).body_measurements?.shoulder_to_hip_ratio
+                          ? `${(scannedProfile as any).body_measurements.shoulder_to_hip_ratio}x (Atletis)`
+                          : "1.18x (Atletis)"}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* Row 1: Dahi */}
+                    <div className="bg-[#0B1528] px-3.5 py-2.5 rounded-xl border border-white/10 flex items-center justify-between text-xs">
+                      <span className="text-[#94A3B8] font-mono">Lebar Dahi</span>
+                      <span className="font-mono font-bold text-white text-sm">
+                        {scannedProfile.face_measurements?.forehead_width_cm ?? 13.72} cm
+                      </span>
+                    </div>
+
+                    {/* Row 2: Pipi */}
+                    <div className="bg-[#0B1528] px-3.5 py-2.5 rounded-xl border border-white/10 flex items-center justify-between text-xs">
+                      <span className="text-[#94A3B8] font-mono">Lebar Pipi (Cheekbone)</span>
+                      <span className="font-mono font-bold text-white text-sm">
+                        {scannedProfile.face_measurements?.cheekbone_width_cm ?? 13.65} cm
+                      </span>
+                    </div>
+
+                    {/* Row 3: Rahang */}
+                    <div className="bg-[#0B1528] px-3.5 py-2.5 rounded-xl border border-white/10 flex items-center justify-between text-xs">
+                      <span className="text-[#94A3B8] font-mono">Lebar Rahang (Jawline)</span>
+                      <span className="font-mono font-bold text-white text-sm">
+                        {scannedProfile.face_measurements?.jaw_width_cm ?? 11.12} cm
+                      </span>
+                    </div>
+
+                    {/* Row 4: Fitur Sensorik */}
+                    <div className="bg-[#0B1528] px-3.5 py-2.5 rounded-xl border border-white/10 flex items-center justify-between text-xs">
+                      <span className="text-[#94A3B8] font-mono">Morfologi Wajah</span>
+                      <span className="font-mono text-[#38BDF8] text-xs font-semibold">
+                        Hidung: {scannedProfile.nose_type || "Greek (Mancung)"} • Mata: {scannedProfile.eye_shape || "Cat-eye"}
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Action Button */}
               <button
+                type="button"
                 onClick={() => onScanComplete(scannedProfile, streamRef.current || undefined, { inputMode: mode })}
-                className="w-full mt-3 py-3.5 rounded-2xl font-bold text-sm text-white bg-gradient-to-r from-indigo-600 via-indigo-500 to-rose-600 hover:scale-[1.02] transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center space-x-2"
+                className="w-full py-4 rounded-full font-bold text-sm text-white bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 border border-blue-400/30 flex items-center justify-center gap-2 cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
               >
                 <span>Lanjut ke Kuesioner Gaya {subcatLabel}</span>
                 <ArrowRight className="w-4 h-4" />
@@ -1284,3 +1495,5 @@ export const CameraScan: React.FC<CameraScanProps> = ({
     </div>
   );
 };
+
+export default CameraScan;

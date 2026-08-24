@@ -1,5 +1,13 @@
 import type { Metadata } from "next";
+import { Poppins } from "next/font/google";
 import "./globals.css";
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
+  variable: "--font-poppins",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "COBA — Smart AI & AR Fashion Style Recommendation Engine",
@@ -13,8 +21,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id" className="dark">
-      <body className="bg-background text-slate-100 min-h-screen selection:bg-indigo-500 selection:text-white">
+    <html lang="id" className={`dark ${poppins.variable}`}>
+      <body className={`${poppins.className} bg-background text-slate-100 min-h-screen selection:bg-blue-600 selection:text-white`}>
         {children}
       </body>
     </html>

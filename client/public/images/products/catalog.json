@@ -1,501 +1,544 @@
 {
-  "version": "5.0.0",
+  "version": "6.0.0",
   "total_products": 37,
   "items": [
     {
       "id": "glass-01",
-      "name": "Khronos PBR Designer Eyewear",
+      "name": "Khronos Aviator Pilot Sunglasses",
       "category": "Accessories",
       "subcategory": "glasses",
-      "modelType": "wayfarer",
-      "baseColour": "Gold",
-      "hex_colour": "#D4AF37",
+      "modelType": "aviator",
+      "baseColour": "Midnight Black & Silver Chrome",
+      "hex_colour": "#09090B",
       "usage": "Casual",
       "priceIdr": "Rp349.000",
       "model_3d_path": "/images/products/glasses/glasses_01_khronos_pbr.glb",
       "preview_image_url": "/images/products/preview/glass-01.png",
       "flatteringFaceShapes": [
-        "Round",
+        "Square",
         "Oval",
-        "Heart"
+        "Heart",
+        "Diamond",
+        "Oblong"
       ],
       "styleTags": [
-        "wayfarer",
-        "pbr",
-        "gold",
-        "designer",
-        "luxury"
+        "aviator",
+        "pilot",
+        "silver",
+        "black",
+        "chrome",
+        "classic"
       ],
-      "description": "Khronos PBR Designer Eyewear dengan bingkai gold mewah yang menyeimbangkan proporsi wajah bulat dan oval.",
+      "description": "Khronos Aviator Pilot Sunglasses dengan bingkai double-bridge silver chrome dan lensa hitam pekat beraksen modern.",
       "gender": "Unisex"
     },
     {
       "id": "glass-02",
-      "name": "Ray-Ban Aviator Pilot Edition",
+      "name": "Classic Wayfarer Black Acetate Sunglasses",
       "category": "Accessories",
       "subcategory": "glasses",
-      "modelType": "aviator",
-      "baseColour": "Charcoal Grey",
-      "hex_colour": "#36454F",
+      "modelType": "wayfarer",
+      "baseColour": "Jet Black",
+      "hex_colour": "#18181B",
       "usage": "Formal",
       "priceIdr": "Rp450.000",
       "model_3d_path": "/images/products/glasses/glasses_02_rayban_pilot.glb",
       "preview_image_url": "/images/products/preview/glass-02.png",
       "flatteringFaceShapes": [
-        "Square",
+        "Round",
+        "Oval",
         "Heart",
-        "Oval"
+        "Square"
       ],
       "styleTags": [
-        "aviator",
-        "pilot",
+        "wayfarer",
+        "black",
+        "acetate",
         "classic",
-        "titanium",
+        "timeless",
         "formal"
       ],
-      "description": "Ray-Ban Aviator Pilot Edition dengan material titanium charcoal grey yang memberikan aksen wibawa.",
+      "description": "Classic Wayfarer Sunglasses dengan bingkai full-rim black acetate elegan yang cocok untuk segala bentuk wajah.",
       "gender": "Unisex"
     },
     {
       "id": "glass-03",
-      "name": "FaceFit Urban Geometric Frame",
+      "name": "Modern Rectangular Matte Black Optical Eyeglasses",
       "category": "Accessories",
       "subcategory": "glasses",
-      "modelType": "geometric",
-      "baseColour": "Terracotta",
-      "hex_colour": "#E2725B",
-      "usage": "Party",
+      "modelType": "rectangular",
+      "baseColour": "Matte Black",
+      "hex_colour": "#1E293B",
+      "usage": "Formal",
       "priceIdr": "Rp389.000",
       "model_3d_path": "/images/products/glasses/glasses_03_facefit_geometric.glb",
       "preview_image_url": "/images/products/preview/glass-03.png",
       "flatteringFaceShapes": [
         "Round",
         "Oval",
-        "Diamond"
+        "Diamond",
+        "Oblong"
       ],
       "styleTags": [
-        "geometric",
-        "octagonal",
-        "terracotta",
-        "modern",
-        "bold"
+        "rectangular",
+        "optical",
+        "matte-black",
+        "smart",
+        "minimalist",
+        "formal"
       ],
-      "description": "FaceFit Urban Geometric Frame dengan siluet oktagon kontemporer berwarna terracotta hangat.",
+      "description": "Kacamata optik persegi modern dengan bingkai matte black ringan dan presisi untuk tampilan profesional dan cerdas.",
       "gender": "Unisex"
     },
     {
       "id": "glass-04",
-      "name": "FaceFit Vintage Browline Classic",
+      "name": "Vintage Round Bronze Metal Sunglasses",
       "category": "Accessories",
       "subcategory": "glasses",
-      "modelType": "browline",
-      "baseColour": "Dark Tortoiseshell",
-      "hex_colour": "#3E2723",
-      "usage": "Formal",
+      "modelType": "round",
+      "baseColour": "Vintage Bronze",
+      "hex_colour": "#92400E",
+      "usage": "Casual",
       "priceIdr": "Rp420.000",
       "model_3d_path": "/images/products/glasses/glasses_04_facefit_browline.glb",
       "preview_image_url": "/images/products/preview/glass-04.png",
       "flatteringFaceShapes": [
-        "Oval",
         "Square",
-        "Diamond"
+        "Heart",
+        "Diamond",
+        "Oblong"
       ],
       "styleTags": [
-        "browline",
-        "clubmaster",
-        "tortoise",
+        "round",
         "vintage",
-        "smart"
+        "bronze",
+        "copper",
+        "retro",
+        "artistic"
       ],
-      "description": "FaceFit Vintage Browline Classic dengan aksen garis alis tegas bernuansa dark tortoise.",
+      "description": "Kacamata bulat klasik bernuansa vintage bronze dengan lensa gelap yang menonjolkan karakter artistik dan retro.",
       "gender": "Unisex"
     },
     {
       "id": "glass-05",
-      "name": "FaceFit Slim Wire Aviator",
+      "name": "Retro 8-Bit Pixelated Meme Sunglasses (Thug Life)",
       "category": "Accessories",
       "subcategory": "glasses",
-      "modelType": "aviator",
-      "baseColour": "Silver Steel",
-      "hex_colour": "#94A3B8",
-      "usage": "Casual",
-      "priceIdr": "Rp329.000",
+      "modelType": "geometric",
+      "baseColour": "Pixel Black & White",
+      "hex_colour": "#09090B",
+      "usage": "Party",
+      "priceIdr": "Rp199.000",
       "model_3d_path": "/images/products/glasses/glasses_05_facefit_slim_aviator.glb",
       "preview_image_url": "/images/products/preview/glass-05.png",
       "flatteringFaceShapes": [
+        "Round",
+        "Oval",
         "Square",
         "Heart",
-        "Oblong"
+        "Diamond"
       ],
       "styleTags": [
-        "aviator",
-        "slim",
-        "silver",
-        "minimalist",
-        "cool"
+        "pixel",
+        "8-bit",
+        "meme",
+        "thug-life",
+        "retro",
+        "bold",
+        "party"
       ],
-      "description": "FaceFit Slim Wire Aviator dengan kawat perak ultra-ringan yang memberikan kesan sejuk dan berdimensi.",
+      "description": "Kacamata unik bergaya 8-bit pixel art dengan aksen pantulan cahaya retro untuk penampilan bold dan jenaka.",
       "gender": "Unisex"
     },
     {
       "id": "glass-06",
-      "name": "FaceFit Horn-Rimmed Retro",
+      "name": "Steampunk Flip-Up Round Chrome Sunglasses",
       "category": "Accessories",
       "subcategory": "glasses",
       "modelType": "round",
-      "baseColour": "Havana Amber",
-      "hex_colour": "#B45309",
-      "usage": "Casual",
-      "priceIdr": "Rp375.000",
+      "baseColour": "Silver Chrome & Smoke Grey",
+      "hex_colour": "#94A3B8",
+      "usage": "Party",
+      "priceIdr": "Rp489.000",
       "model_3d_path": "/images/products/glasses/glasses_06_facefit_hornrimmed.glb",
       "preview_image_url": "/images/products/preview/glass-06.png",
       "flatteringFaceShapes": [
         "Square",
-        "Oblong",
-        "Diamond"
+        "Heart",
+        "Diamond",
+        "Oblong"
       ],
       "styleTags": [
-        "hornrimmed",
-        "amber",
-        "retro",
-        "academic",
-        "warm"
+        "steampunk",
+        "flip-up",
+        "chrome",
+        "industrial",
+        "retro-future",
+        "bold"
       ],
-      "description": "FaceFit Horn-Rimmed Retro dengan bingkai lengkung amber yang melembutkan rahang bersiku.",
+      "description": "Kacamata steampunk dengan mekanisme flip-up dobel dan bingkai silver metalik unik bernuansa futuristik industrial.",
       "gender": "Unisex"
     },
     {
       "id": "glass-07",
-      "name": "SunFit Performance Wrap Sport",
+      "name": "Matte Black Sport Wrap Optical Frames",
       "category": "Accessories",
       "subcategory": "glasses",
-      "modelType": "geometric",
-      "baseColour": "Matte Onyx",
-      "hex_colour": "#0F172A",
+      "modelType": "sport",
+      "baseColour": "Matte Carbon Black",
+      "hex_colour": "#18181B",
       "usage": "Sports",
-      "priceIdr": "Rp299.000",
+      "priceIdr": "Rp319.000",
       "model_3d_path": "/images/products/glasses/glasses_07_sunfit_sport.glb",
       "preview_image_url": "/images/products/preview/glass-07.png",
       "flatteringFaceShapes": [
-        "Round",
         "Oval",
-        "Heart"
+        "Round",
+        "Diamond"
       ],
       "styleTags": [
         "sport",
         "wrap",
-        "matte",
-        "aerodynamic",
+        "matte-black",
+        "ergonomic",
         "active"
       ],
-      "description": "SunFit Performance Wrap Sport dengan desain aerodinamis yang kokoh untuk aktivitas dinamis.",
+      "description": "Bingkai kacamata semi-sporty berwarna hitam matte dengan lekuk ergonomis untuk kenyamanan harian dan mobilitas tinggi.",
       "gender": "Unisex"
     },
     {
       "id": "hat-01",
-      "name": "Imperial Bicorn Admiral Hat",
+      "name": "Napoleonic Officer Bicorne Hat with Tricolore Cockade",
       "category": "Accessories",
       "subcategory": "hats",
-      "modelType": "fedora",
-      "baseColour": "Navy Blue",
-      "hex_colour": "#1E3A8A",
-      "usage": "Formal",
-      "priceIdr": "Rp385.000",
-      "model_3d_path": "/images/products/hats/bicorn_hat.glb",
+      "modelType": "costume",
+      "baseColour": "Black Velvet & Tricolore Ribbon",
+      "hex_colour": "#18181B",
+      "usage": "Party",
+      "priceIdr": "Rp499.000",
+      "model_3d_path": "/images/products/hats/18th-century_bicorne_hat.glb",
       "preview_image_url": "/images/products/preview/hat-01.png",
       "flatteringFaceShapes": [
         "Oval",
         "Heart",
-        "Diamond"
+        "Diamond",
+        "Round"
       ],
       "styleTags": [
-        "bicorn",
+        "bicorne",
+        "napoleon",
+        "historical",
         "vintage",
-        "navy",
-        "admiral",
-        "statement"
+        "costume",
+        "party"
       ],
-      "description": "Imperial Bicorn Hat bernuansa navy dengan siluet klasik bersejarah untuk penampilan berkarakter.",
+      "description": "Topi perwira era Napoleon klasik berbalut beludru hitam dengan aksen pita kokade merah-putih-biru autentik.",
       "gender": "Unisex"
     },
     {
       "id": "hat-02",
-      "name": "Western Rancher Leather Cowboy Hat",
+      "name": "Western Cattleman Rustic Leather Cowboy Hat",
       "category": "Accessories",
       "subcategory": "hats",
-      "modelType": "fedora",
-      "baseColour": "Camel Brown",
+      "modelType": "cowboy",
+      "baseColour": "Rustic Saddle Brown",
       "hex_colour": "#854D0E",
       "usage": "Casual",
-      "priceIdr": "Rp350.000",
-      "model_3d_path": "/images/products/hats/cowboy hat2.glb",
+      "priceIdr": "Rp389.000",
+      "model_3d_path": "/images/products/hats/cowboy_hat.glb",
       "preview_image_url": "/images/products/preview/hat-02.png",
       "flatteringFaceShapes": [
         "Square",
+        "Round",
         "Oval",
-        "Oblong"
+        "Heart"
       ],
       "styleTags": [
         "cowboy",
-        "leather",
         "western",
-        "outdoor",
-        "rugged"
+        "leather",
+        "brown",
+        "adventurous",
+        "rustic"
       ],
-      "description": "Western Rancher Cowboy Hat berbahan kulit cokelat camel yang tangguh dan memproteksi dari terik matahari.",
+      "description": "Topi koboi kulit asli berwarna saddle brown dengan tali aksen rivet metalik yang gagah dan berjiwa petualang.",
       "gender": "Unisex"
     },
     {
       "id": "hat-03",
-      "name": "Outlaw Dark Leather Western Hat",
+      "name": "Wide Flat-Brim Bolero Gambler Hat",
       "category": "Accessories",
       "subcategory": "hats",
-      "modelType": "fedora",
-      "baseColour": "Dark Brown",
-      "hex_colour": "#3E2723",
+      "modelType": "bolero",
+      "baseColour": "Jet Black & Leather Belt",
+      "hex_colour": "#18181B",
       "usage": "Casual",
-      "priceIdr": "Rp360.000",
-      "model_3d_path": "/images/products/hats/cowboy hat5.glb",
+      "priceIdr": "Rp359.000",
+      "model_3d_path": "/images/products/hats/hat.glb",
       "preview_image_url": "/images/products/preview/hat-03.png",
       "flatteringFaceShapes": [
-        "Square",
         "Round",
-        "Oval"
-      ],
-      "styleTags": [
-        "cowboy",
-        "western",
-        "dark",
-        "leather",
-        "rugged"
-      ],
-      "description": "Outlaw Dark Leather Western Hat dengan brim lebar yang memberikan kesan maskulin dan tegas.",
-      "gender": "Unisex"
-    },
-    {
-      "id": "hat-04",
-      "name": "Riviera Wide-Brim Sun Beach Hat",
-      "category": "Accessories",
-      "subcategory": "hats",
-      "modelType": "straw",
-      "baseColour": "Warm Sand",
-      "hex_colour": "#E5D0B1",
-      "usage": "Casual",
-      "priceIdr": "Rp299.000",
-      "model_3d_path": "/images/products/hats/female_beach_hat.glb",
-      "preview_image_url": "/images/products/preview/hat-04.png",
-      "flatteringFaceShapes": [
-        "Oval",
-        "Heart",
-        "Square"
-      ],
-      "styleTags": [
-        "beach",
-        "sunhat",
-        "straw",
-        "summer",
-        "elegant"
-      ],
-      "description": "Riviera Wide-Brim Sun Beach Hat bernuansa natural sand yang anggun untuk liburan pantai dan resort.",
-      "gender": "Women"
-    },
-    {
-      "id": "hat-05",
-      "name": "Classic Sartorial Wool Fedora",
-      "category": "Accessories",
-      "subcategory": "hats",
-      "modelType": "fedora",
-      "baseColour": "Charcoal Grey",
-      "hex_colour": "#334155",
-      "usage": "Formal",
-      "priceIdr": "Rp320.000",
-      "model_3d_path": "/images/products/hats/hat.glb",
-      "preview_image_url": "/images/products/preview/hat-05.png",
-      "flatteringFaceShapes": [
-        "Round",
-        "Oval",
-        "Heart"
-      ],
-      "styleTags": [
-        "fedora",
-        "wool",
-        "charcoal",
-        "classic",
-        "formal"
-      ],
-      "description": "Classic Sartorial Wool Fedora dengan crown terstruktur rapi yang memberi ilusi wajah lebih jenjang.",
-      "gender": "Unisex"
-    },
-    {
-      "id": "hat-06",
-      "name": "Straw Voyager Adventure Hat",
-      "category": "Accessories",
-      "subcategory": "hats",
-      "modelType": "straw",
-      "baseColour": "Straw Yellow",
-      "hex_colour": "#CA8A04",
-      "usage": "Casual",
-      "priceIdr": "Rp260.000",
-      "model_3d_path": "/images/products/hats/luffys_straw_hat.glb",
-      "preview_image_url": "/images/products/preview/hat-06.png",
-      "flatteringFaceShapes": [
-        "Oval",
-        "Square",
-        "Round"
-      ],
-      "styleTags": [
-        "straw",
-        "yellow",
-        "adventure",
-        "summer",
-        "casual"
-      ],
-      "description": "Straw Voyager Adventure Hat dari anyaman jerami alami dengan aksen pita merah yang ikonik.",
-      "gender": "Unisex"
-    },
-    {
-      "id": "hat-07",
-      "name": "Noir Mafia Noir Fedora",
-      "category": "Accessories",
-      "subcategory": "hats",
-      "modelType": "fedora",
-      "baseColour": "Pitch Black",
-      "hex_colour": "#0F172A",
-      "usage": "Formal",
-      "priceIdr": "Rp310.000",
-      "model_3d_path": "/images/products/hats/mafia_hat_spy_hat.glb",
-      "preview_image_url": "/images/products/preview/hat-07.png",
-      "flatteringFaceShapes": [
-        "Round",
-        "Heart",
-        "Oval"
-      ],
-      "styleTags": [
-        "mafia",
-        "spy",
-        "noir",
-        "black",
-        "sleek"
-      ],
-      "description": "Noir Mafia Noir Fedora berwarna hitam pekat misterius yang menambah karisma penampilan formal.",
-      "gender": "Men"
-    },
-    {
-      "id": "hat-08",
-      "name": "Retro Carnival Propeller Cap",
-      "category": "Accessories",
-      "subcategory": "hats",
-      "modelType": "cap",
-      "baseColour": "Multi-Color",
-      "hex_colour": "#3B82F6",
-      "usage": "Party",
-      "priceIdr": "Rp199.000",
-      "model_3d_path": "/images/products/hats/propeller_hat.glb",
-      "preview_image_url": "/images/products/preview/hat-08.png",
-      "flatteringFaceShapes": [
-        "Round",
-        "Oval",
-        "Heart"
-      ],
-      "styleTags": [
-        "propeller",
-        "fun",
-        "carnival",
-        "party",
-        "playful"
-      ],
-      "description": "Retro Carnival Propeller Cap penuh warna ceria untuk festival, pesta kostum, dan acara santai seru.",
-      "gender": "Unisex"
-    },
-    {
-      "id": "hat-09",
-      "name": "Noble Renaissance Velvet Bonnet",
-      "category": "Accessories",
-      "subcategory": "hats",
-      "modelType": "beret",
-      "baseColour": "Burgundy Red",
-      "hex_colour": "#881337",
-      "usage": "Formal",
-      "priceIdr": "Rp375.000",
-      "model_3d_path": "/images/products/hats/renaissance_hat.glb",
-      "preview_image_url": "/images/products/preview/hat-09.png",
-      "flatteringFaceShapes": [
-        "Square",
-        "Oblong",
-        "Oval"
-      ],
-      "styleTags": [
-        "renaissance",
-        "velvet",
-        "burgundy",
-        "vintage",
-        "regal"
-      ],
-      "description": "Noble Renaissance Velvet Bonnet berbahan beludru burgundy mewah untuk aksen artistik klasik.",
-      "gender": "Unisex"
-    },
-    {
-      "id": "hat-10",
-      "name": "Sahara Safari Weathered Pith Helmet",
-      "category": "Accessories",
-      "subcategory": "hats",
-      "modelType": "fedora",
-      "baseColour": "Desert Khaki",
-      "hex_colour": "#A8A29E",
-      "usage": "Casual",
-      "priceIdr": "Rp290.000",
-      "model_3d_path": "/images/products/hats/weathered_pith_hat.glb",
-      "preview_image_url": "/images/products/preview/hat-10.png",
-      "flatteringFaceShapes": [
         "Oval",
         "Heart",
         "Diamond"
       ],
       "styleTags": [
-        "safari",
-        "pith",
-        "khaki",
-        "adventure",
-        "outdoor"
+        "bolero",
+        "gambler",
+        "flat-brim",
+        "black",
+        "minimalist",
+        "statement"
       ],
-      "description": "Sahara Safari Weathered Pith Helmet yang kokoh dan sejuk untuk penjelajahan alam terbuka.",
+      "description": "Topi bolero bertepi datar lebar dengan material felt hitam pekat dan sabuk kulit cokelat bergesper klasik.",
+      "gender": "Unisex"
+    },
+    {
+      "id": "hat-04",
+      "name": "Woven Straw Bell Sun Hat with Tangerine Ribbon",
+      "category": "Accessories",
+      "subcategory": "hats",
+      "modelType": "sunhat",
+      "baseColour": "Golden Straw & Tangerine Orange",
+      "hex_colour": "#FB923C",
+      "usage": "Casual",
+      "priceIdr": "Rp269.000",
+      "model_3d_path": "/images/products/hats/hat__cap.glb",
+      "preview_image_url": "/images/products/preview/hat-04.png",
+      "flatteringFaceShapes": [
+        "Square",
+        "Diamond",
+        "Oblong",
+        "Heart"
+      ],
+      "styleTags": [
+        "sunhat",
+        "straw",
+        "summer",
+        "orange",
+        "beach",
+        "resort"
+      ],
+      "description": "Topi anyaman jerami alami bertepi lebar dengan pita jingga cerah dan tali dagu untuk liburan pantai dan musim panas.",
+      "gender": "Unisex"
+    },
+    {
+      "id": "hat-05",
+      "name": "Steampunk Alchemist Leather Top Hat with Vials",
+      "category": "Accessories",
+      "subcategory": "hats",
+      "modelType": "tophat",
+      "baseColour": "Dark Walnut Leather",
+      "hex_colour": "#451A03",
+      "usage": "Party",
+      "priceIdr": "Rp520.000",
+      "model_3d_path": "/images/products/hats/hat_alchemist.glb",
+      "preview_image_url": "/images/products/preview/hat-05.png",
+      "flatteringFaceShapes": [
+        "Round",
+        "Oval",
+        "Heart",
+        "Diamond"
+      ],
+      "styleTags": [
+        "steampunk",
+        "tophat",
+        "alchemist",
+        "leather",
+        "vintage",
+        "fantasy",
+        "party"
+      ],
+      "description": "Top hat kulit cokelat bertekstur antik dengan sabuk botol ramuan kaca dan aksen kartu untuk gaya steampunk unik.",
+      "gender": "Unisex"
+    },
+    {
+      "id": "hat-06",
+      "name": "Mugiwara Anime Straw Hat with Crimson Band",
+      "category": "Accessories",
+      "subcategory": "hats",
+      "modelType": "strawhat",
+      "baseColour": "Sunny Yellow Straw & Crimson Red",
+      "hex_colour": "#DC2626",
+      "usage": "Casual",
+      "priceIdr": "Rp239.000",
+      "model_3d_path": "/images/products/hats/luffys_straw_hat.glb",
+      "preview_image_url": "/images/products/preview/hat-06.png",
+      "flatteringFaceShapes": [
+        "Square",
+        "Oval",
+        "Heart",
+        "Round"
+      ],
+      "styleTags": [
+        "strawhat",
+        "mugiwara",
+        "anime",
+        "luffy",
+        "red-ribbon",
+        "summer",
+        "adventure"
+      ],
+      "description": "Topi jerami legendaris beraksen pita merah menyala, terinspirasi dari karakter kapten anime petualang samudra.",
+      "gender": "Unisex"
+    },
+    {
+      "id": "hat-07",
+      "name": "Sleek Noir Fedora with Cobalt Blue Underbrim",
+      "category": "Accessories",
+      "subcategory": "hats",
+      "modelType": "fedora",
+      "baseColour": "Noir Black & Cobalt Blue",
+      "hex_colour": "#1E3A8A",
+      "usage": "Formal",
+      "priceIdr": "Rp379.000",
+      "model_3d_path": "/images/products/hats/panama_hat.glb",
+      "preview_image_url": "/images/products/preview/hat-07.png",
+      "flatteringFaceShapes": [
+        "Round",
+        "Oval",
+        "Heart",
+        "Diamond"
+      ],
+      "styleTags": [
+        "fedora",
+        "noir",
+        "black",
+        "cobalt-blue",
+        "formal",
+        "jazz",
+        "elegant"
+      ],
+      "description": "Topi fedora modern bertekstur satin hitam halus dengan sentuhan garis biru kobalt di balik tepi topi.",
+      "gender": "Unisex"
+    },
+    {
+      "id": "hat-08",
+      "name": "Novelty Whimsical Propeller Helipad Cap",
+      "category": "Accessories",
+      "subcategory": "hats",
+      "modelType": "baseball",
+      "baseColour": "Metallic Silver Grey",
+      "hex_colour": "#94A3B8",
+      "usage": "Party",
+      "priceIdr": "Rp189.000",
+      "model_3d_path": "/images/products/hats/propeller_cap.glb",
+      "preview_image_url": "/images/products/preview/hat-08.png",
+      "flatteringFaceShapes": [
+        "Oval",
+        "Heart",
+        "Square",
+        "Round"
+      ],
+      "styleTags": [
+        "propeller",
+        "novelty",
+        "silver",
+        "playful",
+        "party",
+        "whimsical"
+      ],
+      "description": "Topi unik bernuansa silver metalik dengan baling-baling helikopter di puncaknya untuk pesta dan ekspresi playful.",
+      "gender": "Unisex"
+    },
+    {
+      "id": "hat-09",
+      "name": "Elizabethan Pearl White Feathered Velvet Beret",
+      "category": "Accessories",
+      "subcategory": "hats",
+      "modelType": "beret",
+      "baseColour": "Pearl White & Soft Feather",
+      "hex_colour": "#F8FAFC",
+      "usage": "Party",
+      "priceIdr": "Rp460.000",
+      "model_3d_path": "/images/products/hats/renaissance_hat.glb",
+      "preview_image_url": "/images/products/preview/hat-09.png",
+      "flatteringFaceShapes": [
+        "Square",
+        "Oval",
+        "Diamond",
+        "Heart"
+      ],
+      "styleTags": [
+        "beret",
+        "renaissance",
+        "elizabethan",
+        "white",
+        "feather",
+        "regal",
+        "luxury"
+      ],
+      "description": "Baret beludru putih mutiara khas bangsawan Renaisans dengan hiasan bulu halus dan bros permata elegan.",
+      "gender": "Unisex"
+    },
+    {
+      "id": "hat-10",
+      "name": "Safari Expedition Pith Helmet with Explorer Goggles",
+      "category": "Accessories",
+      "subcategory": "hats",
+      "modelType": "safari",
+      "baseColour": "Khaki Sand & Leather Brown",
+      "hex_colour": "#D4B996",
+      "usage": "Sports",
+      "priceIdr": "Rp349.000",
+      "model_3d_path": "/images/products/hats/safari_hat.glb",
+      "preview_image_url": "/images/products/preview/hat-10.png",
+      "flatteringFaceShapes": [
+        "Square",
+        "Round",
+        "Diamond",
+        "Oblong"
+      ],
+      "styleTags": [
+        "safari",
+        "pith-helmet",
+        "explorer",
+        "goggles",
+        "khaki",
+        "adventure"
+      ],
+      "description": "Topi safari penjelajah bernuansa khaki gurun yang dilengkapi kacamata goggle pilot kulit untuk petualangan alam.",
       "gender": "Unisex"
     },
     {
       "id": "hat-11",
-      "name": "Eclipse Mystic Pointed Brim Hat",
+      "name": "Archmage Megumin Wizard Hat with Crimson Eyes",
       "category": "Accessories",
       "subcategory": "hats",
-      "modelType": "fedora",
-      "baseColour": "Midnight Purple",
-      "hex_colour": "#4C1D95",
+      "modelType": "wizard",
+      "baseColour": "Obsidian Black, Gold & Crimson Red",
+      "hex_colour": "#DC2626",
       "usage": "Party",
-      "priceIdr": "Rp280.000",
-      "model_3d_path": "/images/products/hats/witch_hat.glb",
+      "priceIdr": "Rp420.000",
+      "model_3d_path": "/images/products/hats/wizard_hat.glb",
       "preview_image_url": "/images/products/preview/hat-11.png",
       "flatteringFaceShapes": [
         "Round",
         "Oval",
-        "Heart"
+        "Heart",
+        "Diamond"
       ],
       "styleTags": [
+        "wizard",
+        "megumin",
         "witch",
-        "mystic",
-        "purple",
-        "party",
-        "costume"
+        "magic",
+        "anime",
+        "cosplay",
+        "fantasy",
+        "party"
       ],
-      "description": "Eclipse Mystic Pointed Brim Hat dengan puncak meruncing dan brim melingkar bernuansa magis.",
-      "gender": "Women"
+      "description": "Topi penyihir kerucut dramatis berwarna hitam dengan motif mata kancing merah dan lis emas mistis.",
+      "gender": "Unisex"
     },
     {
       "id": "shirt-pria-01",
-      "name": "Urban Color-Blocked Streetwear Shirt",
+      "name": "Cobalt Split Plaid Color-Blocked Shirt",
       "category": "Apparel",
       "subcategory": "shirts",
       "modelType": "casual",
-      "baseColour": "Terracotta & Olive",
-      "hex_colour": "#C2410C",
+      "baseColour": "Cobalt Blue & White Plaid",
+      "hex_colour": "#3B82F6",
       "usage": "Casual",
       "priceIdr": "Rp289.000",
       "model_3d_path": "/images/products/shirts/Pria/color_blocked_shirt.glb",
@@ -510,22 +553,23 @@
       ],
       "styleTags": [
         "colorblock",
+        "plaid",
+        "blue",
         "streetwear",
-        "terracotta",
         "casual",
-        "relaxed"
+        "modern"
       ],
-      "description": "Urban Color-Blocked Shirt dengan perpaduan warna tanah modern untuk penampilan kasual trendi.",
+      "description": "Kemeja berpotongan modern dengan perpaduan setengah motif kotak-kotak biru-putih dan setengah biru solid kontemporer.",
       "gender": "Men"
     },
     {
       "id": "shirt-pria-02",
-      "name": "FC Barcelona Blaugrana Match Jersey",
+      "name": "FC Barcelona Stadium Special Edition Jersey",
       "category": "Apparel",
       "subcategory": "shirts",
       "modelType": "sport",
-      "baseColour": "Royal Navy & Crimson",
-      "hex_colour": "#1E3A8A",
+      "baseColour": "Cream & Coral Sunset",
+      "hex_colour": "#FB923C",
       "usage": "Sports",
       "priceIdr": "Rp450.000",
       "model_3d_path": "/images/products/shirts/Pria/football_shirt_fc_barcelona.glb",
@@ -542,22 +586,24 @@
         "football",
         "jersey",
         "barcelona",
+        "coral",
+        "cream",
         "sport",
         "athletic"
       ],
-      "description": "FC Barcelona Official Match Jersey dengan kain breathable berteknologi tinggi untuk kenyamanan maksimal.",
+      "description": "Jersey resmi FC Barcelona edisi khusus dengan gradasi warna krem dan oranye koral hangat yang sporty dan stylish.",
       "gender": "Men"
     },
     {
       "id": "shirt-pria-03",
-      "name": "Minimalist Essential Crewneck Tee",
+      "name": "Minimalist Pure White Mandarin Collar Shirt",
       "category": "Apparel",
       "subcategory": "shirts",
-      "modelType": "tshirt",
+      "modelType": "formal",
       "baseColour": "Pure White",
-      "hex_colour": "#F8FAFC",
-      "usage": "Casual",
-      "priceIdr": "Rp179.000",
+      "hex_colour": "#FFFFFF",
+      "usage": "Formal",
+      "priceIdr": "Rp299.000",
       "model_3d_path": "/images/products/shirts/Pria/free_shirt.glb",
       "preview_image_url": "/images/products/preview/shirt-pria-03.png",
       "flatteringFaceShapes": [
@@ -569,23 +615,24 @@
         "Oblong"
       ],
       "styleTags": [
-        "minimalist",
+        "mandarin-collar",
         "white",
-        "crewneck",
-        "cotton",
-        "basic"
+        "minimalist",
+        "clean",
+        "formal",
+        "zen"
       ],
-      "description": "Minimalist Essential Crewneck Tee berbahan 100% combed cotton yang lembut dan sejuk.",
+      "description": "Kemeja lengan panjang berkerah shanghai (mandarin collar) putih bersih dengan aksen logo monokrom minimalis.",
       "gender": "Men"
     },
     {
       "id": "shirt-pria-04",
-      "name": "Sartorial Crisp Oxford Shirt",
+      "name": "Tailored Crisp White Oxford Dress Shirt",
       "category": "Apparel",
       "subcategory": "shirts",
       "modelType": "formal",
-      "baseColour": "Sky Blue",
-      "hex_colour": "#60A5FA",
+      "baseColour": "Crisp White",
+      "hex_colour": "#F8FAFC",
       "usage": "Formal",
       "priceIdr": "Rp369.000",
       "model_3d_path": "/images/products/shirts/Pria/man_shirt.glb",
@@ -600,22 +647,23 @@
       ],
       "styleTags": [
         "oxford",
-        "buttondown",
+        "white",
         "formal",
-        "skyblue",
-        "executive"
+        "dress-shirt",
+        "executive",
+        "tailored"
       ],
-      "description": "Sartorial Crisp Oxford Shirt dengan potongan tailored fit yang memancarkan kesan profesional dan elegan.",
+      "description": "Kemeja oxford lengan panjang putih berpotongan slim-fit dengan saku dada dan kancing rapi untuk tampilan eksekutif.",
       "gender": "Men"
     },
     {
       "id": "shirt-pria-05",
-      "name": "Resort Breathable Linen Casual Shirt",
+      "name": "Heritage Tartan Flannel Button-Down Shirt",
       "category": "Apparel",
       "subcategory": "shirts",
       "modelType": "casual",
-      "baseColour": "Warm Beige",
-      "hex_colour": "#D4B996",
+      "baseColour": "Monochrome Plaid & Red Accent",
+      "hex_colour": "#1E293B",
       "usage": "Casual",
       "priceIdr": "Rp329.000",
       "model_3d_path": "/images/products/shirts/Pria/mens_casual_shirt.glb",
@@ -629,25 +677,27 @@
         "Oblong"
       ],
       "styleTags": [
-        "linen",
-        "resort",
-        "beige",
-        "relaxed",
-        "summer"
+        "flannel",
+        "tartan",
+        "plaid",
+        "monochrome",
+        "red-stripe",
+        "grunge",
+        "casual"
       ],
-      "description": "Resort Breathable Linen Shirt berbahan linen premium alami yang sangat nyaman untuk iklim tropis.",
+      "description": "Kemeja flanel tebal bermotif tartan klasik hitam-putih dengan aksen garis merah tajam yang maskulin dan hangat.",
       "gender": "Men"
     },
     {
       "id": "shirt-pria-06",
-      "name": "Party Starter Layered Dual-Tone Tee",
+      "name": "Cyber Rave Layered Graphic Longsleeve Tee",
       "category": "Apparel",
       "subcategory": "shirts",
       "modelType": "streetwear",
-      "baseColour": "Black & Crimson",
-      "hex_colour": "#991B1B",
+      "baseColour": "Neon Orange, Black & Checkerboard",
+      "hex_colour": "#EA580C",
       "usage": "Party",
-      "priceIdr": "Rp249.000",
+      "priceIdr": "Rp279.000",
       "model_3d_path": "/images/products/shirts/Pria/party_starter_-_layered_t-shirts.glb",
       "preview_image_url": "/images/products/preview/shirt-pria-06.png",
       "flatteringFaceShapes": [
@@ -659,25 +709,27 @@
         "Oblong"
       ],
       "styleTags": [
-        "layered",
-        "party",
-        "dual-tone",
         "streetwear",
+        "neon-orange",
+        "checkerboard",
+        "cyberpunk",
+        "rave",
+        "party",
         "bold"
       ],
-      "description": "Party Starter Layered Tee dengan efek layering modern yang memberi aksen percaya diri saat hangout malam.",
+      "description": "Kaos streetwear bertingkat dua lapis dengan pola geometris oranye neon dan lengan motif catur hitam-putih yang berani.",
       "gender": "Men"
     },
     {
       "id": "shirt-pria-07",
-      "name": "Classic Heavyweight Cotton T-Shirt",
+      "name": "Indigo Checkered Relaxed Flannel Shirt",
       "category": "Apparel",
       "subcategory": "shirts",
-      "modelType": "tshirt",
-      "baseColour": "Navy Blue",
-      "hex_colour": "#1E293B",
+      "modelType": "casual",
+      "baseColour": "Indigo Navy & Slate Blue",
+      "hex_colour": "#1E3A8A",
       "usage": "Casual",
-      "priceIdr": "Rp199.000",
+      "priceIdr": "Rp299.000",
       "model_3d_path": "/images/products/shirts/Pria/shirt.glb",
       "preview_image_url": "/images/products/preview/shirt-pria-07.png",
       "flatteringFaceShapes": [
@@ -689,25 +741,27 @@
         "Oblong"
       ],
       "styleTags": [
-        "heavyweight",
+        "indigo",
+        "flannel",
+        "checkered",
         "navy",
-        "classic",
-        "cotton",
-        "versatile"
+        "plaid",
+        "casual",
+        "relaxed"
       ],
-      "description": "Classic Heavyweight Cotton T-Shirt bernuansa navy pekat yang awet dan tidak mudah pudar.",
+      "description": "Kemeja flanel lengan panjang bernuansa kotak-kotak biru indigo yang sejuk dan serbaguna untuk gaya kasual sehari-hari.",
       "gender": "Men"
     },
     {
       "id": "shirt-pria-08",
-      "name": "Smart Knitted Collar Polo Shirt",
+      "name": "Formal Tuxedo Wing-Tip Pleated Dress Shirt",
       "category": "Apparel",
       "subcategory": "shirts",
-      "modelType": "polo",
-      "baseColour": "Olive Green",
-      "hex_colour": "#3F6212",
-      "usage": "Casual",
-      "priceIdr": "Rp279.000",
+      "modelType": "formal",
+      "baseColour": "Pure White",
+      "hex_colour": "#FFFFFF",
+      "usage": "Formal",
+      "priceIdr": "Rp489.000",
       "model_3d_path": "/images/products/shirts/Pria/shirt2.glb",
       "preview_image_url": "/images/products/preview/shirt-pria-08.png",
       "flatteringFaceShapes": [
@@ -719,24 +773,26 @@
         "Oblong"
       ],
       "styleTags": [
-        "polo",
-        "knit",
-        "olive",
-        "smartcasual",
-        "earthtone"
+        "tuxedo",
+        "formal",
+        "wingtip",
+        "bowtie",
+        "white",
+        "gala",
+        "luxury"
       ],
-      "description": "Smart Knitted Collar Polo Shirt bernuansa olive hangat yang pas untuk transisi dari kantor ke kafe.",
+      "description": "Kemeja tuksedo formal putih dengan kerah wingtip, dasi kupu-kupu, dan lipit dada klasik untuk pesta gala dan acara resmi.",
       "gender": "Men"
     },
     {
       "id": "shirt-pria-09",
-      "name": "Tailored Long Sleeve Flannel Shirt",
+      "name": "Midnight Navy Athletic Fitted Thermal Top",
       "category": "Apparel",
       "subcategory": "shirts",
-      "modelType": "casual",
-      "baseColour": "Burgundy & Charcoal",
-      "hex_colour": "#4C0519",
-      "usage": "Casual",
+      "modelType": "sport",
+      "baseColour": "Midnight Navy Blue",
+      "hex_colour": "#0F172A",
+      "usage": "Sports",
       "priceIdr": "Rp319.000",
       "model_3d_path": "/images/products/shirts/Pria/shirt_with_long_sleeves.glb",
       "preview_image_url": "/images/products/preview/shirt-pria-09.png",
@@ -749,25 +805,26 @@
         "Oblong"
       ],
       "styleTags": [
-        "longsleeve",
-        "flannel",
-        "burgundy",
-        "cozy",
-        "autumn"
+        "fitted",
+        "navy",
+        "athletic",
+        "thermal",
+        "body-fit",
+        "minimalist"
       ],
-      "description": "Tailored Long Sleeve Shirt dengan motif halus yang memberikan kehangatan dan dimensi gaya berkelas.",
+      "description": "Baju rajut lengan panjang berpotongan athletic body-fit berwarna navy pekat yang menonjolkan lekuk bahu dan dada atletis.",
       "gender": "Men"
     },
     {
       "id": "shirt-pria-10",
-      "name": "Gym & Outdoor Athletic Sleeveless Top",
+      "name": "Heather Denim Athletic Muscle Tank Top",
       "category": "Apparel",
       "subcategory": "shirts",
       "modelType": "sport",
-      "baseColour": "Charcoal Grey",
+      "baseColour": "Heather Denim Blue",
       "hex_colour": "#334155",
       "usage": "Sports",
-      "priceIdr": "Rp169.000",
+      "priceIdr": "Rp199.000",
       "model_3d_path": "/images/products/shirts/Pria/sleeveless_shirt.glb",
       "preview_image_url": "/images/products/preview/shirt-pria-10.png",
       "flatteringFaceShapes": [
@@ -779,25 +836,26 @@
         "Oblong"
       ],
       "styleTags": [
+        "tanktop",
         "sleeveless",
-        "tank",
-        "athletic",
+        "denim-blue",
         "gym",
+        "sport",
         "breathable"
       ],
-      "description": "Gym & Outdoor Athletic Sleeveless Top dengan bahan quick-dry yang menjaga tubuh tetap kering dan bebas gerak.",
+      "description": "Tank top tanpa lengan berbahan katun heather berpori yang nyaman untuk sesi latihan olahraga dan santai.",
       "gender": "Men"
     },
     {
       "id": "shirt-pria-11",
-      "name": "Premium Supima Regular Fit T-Shirt",
+      "name": "Nautical Breton Striped Polo Shirt",
       "category": "Apparel",
       "subcategory": "shirts",
-      "modelType": "tshirt",
-      "baseColour": "Heather Grey",
-      "hex_colour": "#64748B",
+      "modelType": "polo",
+      "baseColour": "Navy Blue & Crisp White",
+      "hex_colour": "#1E3A8A",
       "usage": "Casual",
-      "priceIdr": "Rp219.000",
+      "priceIdr": "Rp299.000",
       "model_3d_path": "/images/products/shirts/Pria/t-shirt.glb",
       "preview_image_url": "/images/products/preview/shirt-pria-11.png",
       "flatteringFaceShapes": [
@@ -809,25 +867,26 @@
         "Oblong"
       ],
       "styleTags": [
-        "supima",
-        "grey",
-        "regularfit",
-        "premium",
-        "soft"
+        "polo",
+        "nautical",
+        "striped",
+        "navy-white",
+        "smartcasual",
+        "preppy"
       ],
-      "description": "Premium Supima Regular Fit T-Shirt dari serat katun terpanjang untuk kelembutan ekstra tahan lama.",
+      "description": "Kaus polo berkerah dengan motif garis horizontal biru dongker dan putih khas gaya pelaut maritim klasik.",
       "gender": "Men"
     },
     {
       "id": "shirt-pria-12",
-      "name": "Cyber Techwear Multi-Pocket Tactical Shirt",
+      "name": "Avant-Garde Cross-Harness Techwear Shirt",
       "category": "Apparel",
       "subcategory": "shirts",
       "modelType": "streetwear",
-      "baseColour": "Matte Black",
+      "baseColour": "Obsidian Pitch Black",
       "hex_colour": "#09090B",
-      "usage": "Streetwear",
-      "priceIdr": "Rp399.000",
+      "usage": "Party",
+      "priceIdr": "Rp379.000",
       "model_3d_path": "/images/products/shirts/Pria/techwear_shirt.glb",
       "preview_image_url": "/images/products/preview/shirt-pria-12.png",
       "flatteringFaceShapes": [
@@ -840,24 +899,25 @@
       ],
       "styleTags": [
         "techwear",
-        "tactical",
-        "black",
-        "multipocket",
+        "harness",
+        "avant-garde",
+        "all-black",
+        "streetwear",
         "futuristic"
       ],
-      "description": "Cyber Techwear Tactical Shirt dengan saku modular dan material tahan air berdesain futuristik.",
+      "description": "Kemeja streetwear techwear hitam pekat dengan aksen tali selempang harness menyilang dan ring metalik futuristik.",
       "gender": "Men"
     },
     {
       "id": "shirt-pria-13",
-      "name": "Everyday Comfort Boxy Oversized Tee",
+      "name": "Essential Heavyweight White Crewneck T-Shirt",
       "category": "Apparel",
       "subcategory": "shirts",
       "modelType": "tshirt",
-      "baseColour": "Muted Sage",
-      "hex_colour": "#4D7C0F",
+      "baseColour": "Pure White",
+      "hex_colour": "#FFFFFF",
       "usage": "Casual",
-      "priceIdr": "Rp229.000",
+      "priceIdr": "Rp189.000",
       "model_3d_path": "/images/products/shirts/Pria/t_shirt.glb",
       "preview_image_url": "/images/products/preview/shirt-pria-13.png",
       "flatteringFaceShapes": [
@@ -869,26 +929,27 @@
         "Oblong"
       ],
       "styleTags": [
-        "boxy",
-        "oversized",
-        "sage",
-        "streetwear",
-        "relaxed"
+        "tshirt",
+        "white",
+        "basic",
+        "crewneck",
+        "minimalist",
+        "essential"
       ],
-      "description": "Everyday Comfort Boxy Tee dengan siluet drop-shoulder bernuansa sage green yang menenangkan.",
+      "description": "T-shirt crewneck putih polos berbahan combed cotton premium yang sangat lembut dan nyaman sepanjang hari.",
       "gender": "Men"
     },
     {
       "id": "shirt-wanita-01",
-      "name": "Boho Off-The-Shoulder Chic Blouse",
+      "name": "Sky Blue Ruffle Off-Shoulder Smocked Top",
       "category": "Apparel",
       "subcategory": "shirts",
-      "modelType": "blouse",
-      "baseColour": "Champagne Rose",
-      "hex_colour": "#FB7185",
-      "usage": "Party",
-      "priceIdr": "Rp299.000",
-      "model_3d_path": "/images/products/shirts/Wanita/off_the_shoulder_shirt_-_ngchipv.glb",
+      "modelType": "croptop",
+      "baseColour": "Pastel Sky Blue",
+      "hex_colour": "#93C5FD",
+      "usage": "Casual",
+      "priceIdr": "Rp259.000",
+      "model_3d_path": "/images/products/shirts/Wanita/crop_top.glb",
       "preview_image_url": "/images/products/preview/shirt-wanita-01.png",
       "flatteringFaceShapes": [
         "Oval",
@@ -899,26 +960,27 @@
         "Oblong"
       ],
       "styleTags": [
-        "offshoulder",
-        "blouse",
-        "rose",
-        "feminine",
-        "chic"
+        "off-shoulder",
+        "ruffle",
+        "crop-top",
+        "sky-blue",
+        "pastel",
+        "feminine"
       ],
-      "description": "Boho Off-The-Shoulder Blouse dengan kerut elastis halus yang menonjolkan keanggunan garis leher dan bahu.",
+      "description": "Atasan crop off-shoulder beraksen ruffle lembut dengan rajutan smocked elastis berwarna biru langit feminin.",
       "gender": "Women"
     },
     {
       "id": "shirt-wanita-02",
-      "name": "Summer Breeze Casual Tee & Skirt Twinset",
+      "name": "Retro Black Crop Tee & Pink Polka Dot Skirt Set",
       "category": "Apparel",
       "subcategory": "shirts",
-      "modelType": "casual",
-      "baseColour": "Sky Pastel Blue",
-      "hex_colour": "#38BDF8",
+      "modelType": "dress",
+      "baseColour": "Bubblegum Pink & Jet Black",
+      "hex_colour": "#F472B6",
       "usage": "Casual",
-      "priceIdr": "Rp349.000",
-      "model_3d_path": "/images/products/shirts/Wanita/skirt_and_t-shirt.glb",
+      "priceIdr": "Rp379.000",
+      "model_3d_path": "/images/products/shirts/Wanita/female_t-shirt_and_skirt.glb",
       "preview_image_url": "/images/products/preview/shirt-wanita-02.png",
       "flatteringFaceShapes": [
         "Oval",
@@ -929,26 +991,27 @@
         "Oblong"
       ],
       "styleTags": [
-        "summer",
-        "twinset",
-        "pastel",
-        "casual",
-        "cute"
+        "polka-dot",
+        "pink",
+        "skirt-set",
+        "retro",
+        "sweet",
+        "playful"
       ],
-      "description": "Summer Breeze Casual Tee bernuansa biru pastel ceria untuk jalan-jalan santai di akhir pekan.",
+      "description": "Setelan kasual manis memadukan kaus hitam crop dengan rok flare lipit motif polkadot merah muda ceria.",
       "gender": "Women"
     },
     {
       "id": "shirt-wanita-03",
-      "name": "Soft Brushed Long Sleeve Top",
+      "name": "Bohemian Flared Bell-Sleeve Crop Top",
       "category": "Apparel",
       "subcategory": "shirts",
-      "modelType": "casual",
-      "baseColour": "Muted Lilac",
-      "hex_colour": "#A855F7",
+      "modelType": "boho",
+      "baseColour": "Pure White",
+      "hex_colour": "#FFFFFF",
       "usage": "Casual",
-      "priceIdr": "Rp259.000",
-      "model_3d_path": "/images/products/shirts/Wanita/soft_brushed_long_sleeve_shirt.glb",
+      "priceIdr": "Rp279.000",
+      "model_3d_path": "/images/products/shirts/Wanita/flared_crop_top.glb",
       "preview_image_url": "/images/products/preview/shirt-wanita-03.png",
       "flatteringFaceShapes": [
         "Oval",
@@ -959,26 +1022,27 @@
         "Oblong"
       ],
       "styleTags": [
-        "longsleeve",
-        "brushed",
-        "lilac",
-        "soft",
-        "cozy"
+        "bell-sleeve",
+        "boho",
+        "crop-top",
+        "white",
+        "flared",
+        "chic"
       ],
-      "description": "Soft Brushed Long Sleeve Top dengan kain drape halus yang jatuh sempurna di siluet tubuh.",
+      "description": "Atasan crop putih bersih dengan potongan lengan lonceng (bell sleeves) dramatis bergaya bohemian chic.",
       "gender": "Women"
     },
     {
       "id": "shirt-wanita-04",
-      "name": "Nordic Cable Knit Pullover Sweater",
+      "name": "Lilac Lavender Ribbed Knit Longsleeve Sweater",
       "category": "Apparel",
       "subcategory": "shirts",
-      "modelType": "sweater",
-      "baseColour": "Cream Ivory",
-      "hex_colour": "#FEF3C7",
+      "modelType": "knit",
+      "baseColour": "Pastel Lilac Lavender",
+      "hex_colour": "#C084FC",
       "usage": "Casual",
-      "priceIdr": "Rp389.000",
-      "model_3d_path": "/images/products/shirts/Wanita/sweater_woman.glb",
+      "priceIdr": "Rp329.000",
+      "model_3d_path": "/images/products/shirts/Wanita/sweater.glb",
       "preview_image_url": "/images/products/preview/shirt-wanita-04.png",
       "flatteringFaceShapes": [
         "Oval",
@@ -989,26 +1053,27 @@
         "Oblong"
       ],
       "styleTags": [
+        "ribbed-knit",
+        "lilac",
+        "lavender",
         "sweater",
-        "knit",
-        "ivory",
-        "warm",
-        "nordic"
+        "pastel",
+        "cozy"
       ],
-      "description": "Nordic Cable Knit Pullover Sweater bernuansa ivory lembut untuk kenyamanan udara sejuk.",
+      "description": "Sweater rajut berusuk halus warna lavender pastel yang lembut, hangat, dan anggun untuk cuaca sejuk.",
       "gender": "Women"
     },
     {
       "id": "shirt-wanita-05",
-      "name": "Fitted V-Neck Soft Cotton Tee",
+      "name": "Sweetheart Neckline Form-Fitting Silver Top",
       "category": "Apparel",
       "subcategory": "shirts",
-      "modelType": "tshirt",
-      "baseColour": "Terracotta Coral",
-      "hex_colour": "#F43F5E",
+      "modelType": "casual",
+      "baseColour": "Soft Dove Grey",
+      "hex_colour": "#94A3B8",
       "usage": "Casual",
-      "priceIdr": "Rp189.000",
-      "model_3d_path": "/images/products/shirts/Wanita/vneck_t-shirt_for_female.glb",
+      "priceIdr": "Rp249.000",
+      "model_3d_path": "/images/products/shirts/Wanita/t-shirt.glb",
       "preview_image_url": "/images/products/preview/shirt-wanita-05.png",
       "flatteringFaceShapes": [
         "Oval",
@@ -1019,26 +1084,27 @@
         "Oblong"
       ],
       "styleTags": [
-        "vneck",
-        "coral",
+        "sweetheart-neck",
+        "cap-sleeve",
+        "silver-grey",
         "fitted",
-        "cotton",
+        "elegant",
         "feminine"
       ],
-      "description": "Fitted V-Neck Soft Cotton Tee dengan garis leher V anggun yang memberi ilusi leher lebih ramping.",
+      "description": "Atasan lengan pendek berpotongan pas badan dengan garis leher sweetheart feminin bernuansa abu-abu lembut.",
       "gender": "Women"
     },
     {
       "id": "shirt-wanita-06",
-      "name": "Executive Satin Button-Down Shirt",
+      "name": "Victorian High-Collar Blouse with Corset Waist",
       "category": "Apparel",
       "subcategory": "shirts",
       "modelType": "formal",
-      "baseColour": "Emerald Green",
-      "hex_colour": "#059669",
+      "baseColour": "Ivory White & Onyx Black",
+      "hex_colour": "#F8FAFC",
       "usage": "Formal",
-      "priceIdr": "Rp359.000",
-      "model_3d_path": "/images/products/shirts/Wanita/womens_shirt.glb",
+      "priceIdr": "Rp459.000",
+      "model_3d_path": "/images/products/shirts/Wanita/victorian_blouse.glb",
       "preview_image_url": "/images/products/preview/shirt-wanita-06.png",
       "flatteringFaceShapes": [
         "Oval",
@@ -1049,13 +1115,15 @@
         "Oblong"
       ],
       "styleTags": [
-        "satin",
-        "emerald",
-        "formal",
-        "executive",
-        "luxury"
+        "victorian",
+        "high-collar",
+        "corset",
+        "monochrome",
+        "puff-sleeve",
+        "regal",
+        "gothic"
       ],
-      "description": "Executive Satin Button-Down Shirt bernuansa hijau zamrud berkilau mewah untuk acara formal dan kerja.",
+      "description": "Blus lengan puff bergaya Victoria klasik berkerah tinggi dengan aksen korset pinggang dan manset hitam kontras.",
       "gender": "Women"
     }
   ]
