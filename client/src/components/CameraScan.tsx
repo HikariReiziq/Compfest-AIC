@@ -327,7 +327,12 @@ export const CameraScan: React.FC<CameraScanProps> = ({
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480, facingMode: "user" },
+        video: {
+          width: { ideal: 1920, min: 1280 },
+          height: { ideal: 1080, min: 720 },
+          frameRate: { ideal: 60, min: 30 },
+          facingMode: "user",
+        },
       });
 
       streamRef.current = stream;
@@ -396,7 +401,12 @@ export const CameraScan: React.FC<CameraScanProps> = ({
         }
 
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: 640, height: 480, facingMode: "user" },
+          video: {
+            width: { ideal: 1920, min: 1280 },
+            height: { ideal: 1080, min: 720 },
+            frameRate: { ideal: 60, min: 30 },
+            facingMode: "user",
+          },
         });
 
         if (cancelled) {

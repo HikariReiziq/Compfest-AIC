@@ -50,6 +50,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
   const [isTrackingLive, setIsTrackingLive] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [modelSource, setModelSource] = useState<string>("Memuat 3D Model...");
   const [offsetX, setOffsetX] = useState<number>(0);
@@ -58,7 +59,8 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   // Manual 360° Omnidirectional rotation (Yaw around Y, Pitch around X)
   const [rotOffsetY, setRotOffsetY] = useState<number>(0);
   const [rotOffsetX, setRotOffsetX] = useState<number>(0);
-  const [scaleMultiplier, setScaleMultiplier] = useState<number>(100);  const [dragMode, setDragMode] = useState<"pan" | "rotate">("pan");
+  const [scaleMultiplier, setScaleMultiplier] = useState<number>(100);
+  const [dragMode, setDragMode] = useState<"pan" | "rotate">("pan");
 
   const studioYawRef = useRef<number>(0);
   const studioPitchRef = useRef<number>(0);
@@ -81,7 +83,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     startOffsetY: number;
     startRotX: number;
     startRotY: number;
-  } | null>(null);;
+  } | null>(null);
 
   useEffect(() => {
     offsetXRef.current = offsetX;
@@ -141,8 +143,9 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
           stream = await navigator.mediaDevices.getUserMedia({
             video: {
-              width: { ideal: 1280 },
-              height: { ideal: 720 },
+              width: { ideal: 1920, min: 1280 },
+              height: { ideal: 1080, min: 720 },
+              frameRate: { ideal: 60, min: 30 },
               facingMode: "user",
             },
           });
@@ -161,6 +164,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           videoRef.current.onloadedmetadata = () => {
             videoRef.current?.play().catch(() => { });
             setCameraReady(true);
+            setIsVideoPlaying(true);
           };
         }
       } catch (err: any) {
@@ -979,21 +983,35 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
             >
               <video
                 ref={videoRef}
-                className="w-full h-full object-contain -scale-x-100"
+                className="w-full h-full object-contain -scale-x-100 transition-all duration-300"
+                style={{
+                  filter: "contrast(1.08) brightness(1.1) saturate(1.15)",
+                  imageRendering: "crisp-edges",
+                }}
                 autoPlay
                 playsInline
                 muted
+                onLoadedData={() => {
+                  setIsVideoPlaying(true);
+                  setCameraReady(true);
+                }}
+                onPlaying={() => {
+                  setIsVideoPlaying(true);
+                  setCameraReady(true);
+                }}
+                onPause={() => setIsVideoPlaying(false)}
+                onEnded={() => setIsVideoPlaying(false)}
               />
 
-              {!cameraReady && (
-                <div className="absolute inset-0 z-30 bg-[#071120] flex flex-col items-center justify-center space-y-2 p-2 text-center">
+              {(!cameraReady || !isVideoPlaying) && (
+                <div className="absolute inset-0 z-30 bg-[#071120] flex flex-col items-center justify-center space-y-2.5 p-3 text-center">
                   <img
                     src="/images/mascot.png"
                     alt="COBA Mascot"
-                    className="w-12 h-12 object-contain drop-shadow-md animate-bounce"
+                    className="w-14 h-14 object-contain drop-shadow-md animate-bounce"
                     style={{ animationDuration: "2s" }}
                   />
-                  <div className="flex items-center space-x-1 font-mono text-[9px] font-bold tracking-[0.2em] text-[#38BDF8] uppercase">
+                  <div className="flex items-center space-x-1 font-mono text-[10px] font-bold tracking-[0.2em] text-[#38BDF8] uppercase">
                     {["L", "O", "A", "D", "I", "N", "G", ".", ".", "."].map((char, index) => (
                       <span
                         key={index}
@@ -1004,29 +1022,32 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
                       </span>
                     ))}
                   </div>
-                  <div className="w-24 h-1 rounded-full bg-white/10 overflow-hidden">
+                  <div className="w-28 h-1 rounded-full bg-white/10 overflow-hidden">
                     <div className="animate-loading-slide h-full w-1/3 rounded-full bg-blue-500" />
                   </div>
+                  <p className="text-[9px] font-mono text-slate-400">
+                    Menghubungkan Kamera Ultra HD...
+                  </p>
                 </div>
               )}
 
               {isTrackingLive ? (
-                <div className="absolute top-2 left-2 inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[8px] font-mono z-30">
+                <div className="absolute top-2 left-2 inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[8px] font-mono z-30 shadow-md">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
                   <span>
                     {isShirt
-                      ? "AR 3D BODY (60 FPS)"
+                      ? "AR 3D BODY • 4K 60FPS"
                       : isHat
-                        ? "AR 3D HEAD (60 FPS)"
-                        : "AR 3D FACE (60 FPS)"}
+                        ? "AR 3D HEAD • 4K 60FPS"
+                        : "AR 3D FACE • 4K 60FPS"}
                   </span>
                 </div>
-              ) : (
-                <div className="absolute top-2 left-2 inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[8px] font-mono z-30">
+              ) : isVideoPlaying ? (
+                <div className="absolute top-2 left-2 inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[8px] font-mono z-30 shadow-md">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                  <span>MEMINDAI AR...</span>
+                  <span>KALIBRASI 4K AR...</span>
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
