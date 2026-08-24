@@ -336,8 +336,10 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
         if (modelGroup) {
           modelGroup.visible = true;
           modelGroup.rotation.y += 0.015;
-          modelGroup.position.lerp(new THREE.Vector3(0, isShirt ? -0.2 : 0, 0), 0.08);
-          modelGroup.scale.lerp(new THREE.Vector3(1.2, 1.2, 1.2), 0.08);
+          const studioTargetY = isShirt ? 0.38 : isHat ? -0.12 : 0;
+          const studioScale = isShirt ? 0.95 : 1.2;
+          modelGroup.position.lerp(new THREE.Vector3(0, studioTargetY, 0), 0.08);
+          modelGroup.scale.lerp(new THREE.Vector3(studioScale, studioScale, studioScale), 0.08);
         }
       }
 
@@ -677,10 +679,10 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const halfW = halfH * (cw / ch);
 
     const worldX = ndcX * halfW;
-    // Align neckline with collar base and apply manual offset
-    const worldY = ndcY * halfH - 0.08 + offsetY * 0.012;
+    // Align neckline with collar base right at base of neck
+    const worldY = ndcY * halfH + 0.04 + offsetY * 0.012;
     const midShoulderZ = ((leftShoulder.z || 0) + (rightShoulder.z || 0)) / 2;
-    const worldZ = midShoulderZ * -2.2 + offsetZ * 0.015;
+    const worldZ = midShoulderZ * -2.0 - 0.02 + offsetZ * 0.015;
 
     // 1. True 3D Roll: Shoulder slant
     const rollAngle = Math.atan2(dy, dx);
@@ -699,7 +701,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
     // World Space Scale (Shirt fits user shoulder span accurately)
     const worldShoulderSpan = (shoulderSpanPx / cw) * (2 * halfW);
-    const baseScale = worldShoulderSpan * 1.35;
+    const baseScale = worldShoulderSpan * 1.30;
     const finalScale = baseScale * (scaleMultiplier / 100);
 
     group.position.x = THREE.MathUtils.lerp(group.position.x, worldX, 0.45);
@@ -763,8 +765,8 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const dy = screenRightCheekY - screenLeftCheekY;
     const faceWidthPx = Math.sqrt(dx * dx + dy * dy);
 
-    // Collar sits at base of neck below chin
-    const neckDropPx = faceWidthPx * 0.45;
+    // Collar sits right at base of neck below chin
+    const neckDropPx = faceWidthPx * 0.30;
     const screenNeckX = screenChinX;
     const screenNeckY = screenChinY + neckDropPx;
 
@@ -775,8 +777,8 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const halfW = halfH * (cw / ch);
 
     const worldX = ndcX * halfW;
-    const worldY = ndcY * halfH - 0.05 + offsetY * 0.012;
-    const worldZ = (chin.z || 0) * -1.8 - 0.05 + offsetZ * 0.015;
+    const worldY = ndcY * halfH + 0.02 + offsetY * 0.012;
+    const worldZ = (chin.z || 0) * -1.8 - 0.02 + offsetZ * 0.015;
 
     const rollAngle = Math.atan2(dy, dx);
     const safeRoll = THREE.MathUtils.clamp(rollAngle, -0.85, 0.85);
@@ -789,10 +791,10 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
       safePitch = THREE.MathUtils.clamp(((nasion.z || 0) - (chin.z || 0)) * 1.5, -0.45, 0.45);
     }
 
-    // Shoulder span is ~2.35x face width
+    // Shoulder span is ~2.2x face width
     const worldFaceWidth = (faceWidthPx / cw) * (2 * halfW);
-    const worldShoulderSpan = worldFaceWidth * 2.35;
-    const baseScale = worldShoulderSpan * 1.35;
+    const worldShoulderSpan = worldFaceWidth * 2.2;
+    const baseScale = worldShoulderSpan * 1.30;
     const finalScale = baseScale * (scaleMultiplier / 100);
 
     group.position.x = THREE.MathUtils.lerp(group.position.x, worldX, 0.45);
