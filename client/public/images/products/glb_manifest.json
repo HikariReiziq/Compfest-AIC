@@ -18,7 +18,7 @@
   "glasses_03_facefit_geometric.glb": {
     "category": "glasses",
     "pivot_offset": [0, 0, 0],
-    "rotation_correction": [0, -1.5708, 0],
+    "rotation_correction": [1.5708, 0, 0],
     "scale_factor": 1.0,
     "anchor_type": "nasion_pupil"
   },

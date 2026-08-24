@@ -581,12 +581,10 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const rollAngle = Math.atan2(dy, dx);
     const safeRoll = THREE.MathUtils.clamp(rollAngle, -0.85, 0.85);
 
-    const eyeZDelta = (leftOuter.z || 0) - (rightOuter.z || 0);
     const screenBridgeX = offsetX + (1 - nasion.x) * renderedWidth;
-    const screenMidEyeX = (screenLeftEyeX + screenRightEyeX) / 2;
-    const noseScreenShift = (screenBridgeX - screenMidEyeX) / (pixelDist * 0.5 + 0.001);
-
-    const rawYaw = (eyeZDelta * 2.2) + (noseScreenShift * 0.8);
+    const eyeSpan = screenRightEyeX - screenLeftEyeX;
+    const noseRatio = eyeSpan !== 0 ? (screenBridgeX - screenLeftEyeX) / eyeSpan : 0.5;
+    const rawYaw = (noseRatio - 0.5) * 2.2;
     const safeYaw = THREE.MathUtils.clamp(rawYaw, -0.75, 0.75);
 
     let safePitch = 0;

@@ -11,14 +11,8 @@ import {
   Box,
   ShieldCheck,
   Lock,
-  Sparkles,
 } from "lucide-react";
 import { RecommendationItem } from "../lib/mockData";
-import {
-  createProceduralGarment,
-  animateProceduralGarment,
-  ProceduralGarment,
-} from "../lib/proceduralGarment";
 
 export interface BodyOutfitViewerProps {
   activeItem: RecommendationItem;
@@ -42,15 +36,11 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const garmentGroupRef = useRef<THREE.Group | null>(null);
   const occluderGroupRef = useRef<THREE.Group | null>(null);
-  const proceduralGarmentRef = useRef<ProceduralGarment | null>(null);
   const poseLandmarkerRef = useRef<any>(null);
   const rafRef = useRef<number>(0);
   const localStreamRef = useRef<MediaStream | null>(null);
 
   const isUploadMode = inputMode === "upload" && !mediaStream;
-
-  // Engine: 'procedural' (Pure Three.js Dynamic Mesh) vs 'glb' (3D File Model)
-  const [engineType, setEngineType] = useState<"procedural" | "glb">("procedural");
 
   // View Mode: 'ar' (Live 3D Body Fitting) vs 'studio' (3D 360° Inspection)
   const [viewMode, setViewMode] = useState<"ar" | "studio">("ar");
@@ -61,7 +51,7 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
   const [offsetZ, setOffsetZ] = useState<number>(0);
   const [scaleMultiplier, setScaleMultiplier] = useState<number>(100);
   const [garmentOpacity, setGarmentOpacity] = useState<number>(100);
-  const [modelSource, setModelSource] = useState<string>("3D Procedural Three.js");
+  const [modelSource, setModelSource] = useState<string>("Memuat 3D GLB...");
 
   const activeColorHex = activeItem.hex_colour || "#2563eb";
 
@@ -242,8 +232,8 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
 
     scene.add(occluderGroup);
 
-    // Load Categorized Garment (Procedural Three.js or GLB)
-    loadCategorizedGarment(garmentGroup);
+    // Load Categorized Shirt / Baju Model (GLB preferred, OBJ fallback)
+    loadCategorizedGarmentGLB(garmentGroup);
 
     let lastVideoTime = -1;
 
@@ -252,10 +242,6 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
 
       const video = videoRef.current;
       const landmarker = poseLandmarkerRef.current;
-      const cw = containerRef.current?.clientWidth || 800;
-      const ch = containerRef.current?.clientHeight || 600;
-      const vw = video?.videoWidth || 1280;
-      const vh = video?.videoHeight || 720;
 
       if (viewMode === "ar" && video && video.readyState >= 2 && landmarker) {
         if (occluderGroup) {
@@ -267,21 +253,7 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
             const result = landmarker.detectForVideo(video, performance.now());
             if (result && result.landmarks && result.landmarks.length > 0) {
               setIsTrackingLive(true);
-              if (engineType === "procedural" && proceduralGarmentRef.current) {
-                animateProceduralGarment(
-                  proceduralGarmentRef.current,
-                  result.landmarks[0],
-                  cw,
-                  ch,
-                  vw,
-                  vh,
-                  offsetY,
-                  offsetZ,
-                  scaleMultiplier
-                );
-              } else {
-                applyPoseLandmarksTo3D(result.landmarks[0], garmentGroup, occluderGroup);
-              }
+              applyPoseLandmarksTo3D(result.landmarks[0], garmentGroup, occluderGroup);
             } else {
               setIsTrackingLive(false);
               garmentGroup.position.lerp(new THREE.Vector3(0, -0.2, 0), 0.05);
@@ -298,8 +270,8 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
         }
         if (isRotating && garmentGroup) {
           garmentGroup.rotation.y += 0.015;
-          garmentGroup.position.lerp(new THREE.Vector3(0, 0.15, 0), 0.08);
-          garmentGroup.scale.lerp(new THREE.Vector3(1.35, 1.35, 1.35), 0.08);
+          garmentGroup.position.lerp(new THREE.Vector3(0, 0, 0), 0.08);
+          garmentGroup.scale.lerp(new THREE.Vector3(1.3, 1.3, 1.3), 0.08);
         }
       }
 
@@ -322,12 +294,9 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
     return () => {
       window.removeEventListener("resize", handleResize);
       cancelAnimationFrame(rafRef.current);
-      if (proceduralGarmentRef.current) {
-        proceduralGarmentRef.current.dispose();
-      }
       renderer.dispose();
     };
-  }, [viewMode, isRotating, offsetY, offsetZ, scaleMultiplier, activeItem, subcategory, garmentOpacity, fitStyle, engineType]);
+  }, [viewMode, isRotating, offsetY, offsetZ, scaleMultiplier, activeItem, subcategory, garmentOpacity, fitStyle]);
 
   // Skeletal Armature Rigging References
   const skeletalRigRef = useRef<{
@@ -341,41 +310,11 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
   const [skeletalRiggingActive, setSkeletalRiggingActive] = useState(true);
 
   /* ------------------------------------------------------------------ */
-  /*  4. Load Categorized Garment (Procedural Dynamic vs Rigged GLB)    */
+  /*  4. Load Categorized Shirt / Baju Model with Skeletal Rigging      */
   /* ------------------------------------------------------------------ */
-  const loadCategorizedGarment = async (group: THREE.Group) => {
+  const loadCategorizedGarmentGLB = async (group: THREE.Group) => {
     while (group.children.length > 0) {
       group.remove(group.children[0]);
-    }
-
-    if (proceduralGarmentRef.current) {
-      proceduralGarmentRef.current.dispose();
-      proceduralGarmentRef.current = null;
-    }
-
-    if (engineType === "procedural") {
-      const nameLower = (activeItem.name || "").toLowerCase();
-      const garmentType =
-        nameLower.includes("hoodie") || nameLower.includes("sweater")
-          ? "hoodie"
-          : nameLower.includes("polo")
-          ? "polo"
-          : nameLower.includes("vneck") || nameLower.includes("v-neck")
-          ? "vneck"
-          : nameLower.includes("long sleeve") || nameLower.includes("long-sleeve")
-          ? "longsleeve"
-          : "tshirt";
-
-      const procedural = createProceduralGarment({
-        type: garmentType,
-        colorHex: activeColorHex,
-        fitStyle: fitStyle,
-      });
-
-      proceduralGarmentRef.current = procedural;
-      group.add(procedural.group);
-      setModelSource(`3D Procedural Three.js (${garmentType.toUpperCase()})`);
-      return;
     }
 
     const widthScale = fitStyle === "oversized" ? 1.18 : fitStyle === "slim" ? 0.9 : 1.0;
@@ -787,48 +726,18 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
             </div>
           </div>
 
-          {/* Procedural Three.js vs GLB Engine Switch */}
-          <div className="inline-flex rounded-full bg-[#071120] p-1 border border-blue-500/20">
-            <button
-              onClick={() => setEngineType("procedural")}
-              className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer ${
-                engineType === "procedural"
-                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md"
-                  : "text-[#94A3B8] hover:text-white"
-              }`}
-              title="Gunakan Baju 3D Procedural Three.js (Lentur Bergerak Mengikuti Tubuh)"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
-              <span>Procedural 3D</span>
-            </button>
-            <button
-              onClick={() => setEngineType("glb")}
-              className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer ${
-                engineType === "glb"
-                  ? "bg-blue-600 text-white shadow-md"
-                  : "text-[#94A3B8] hover:text-white"
-              }`}
-              title="Gunakan Model 3D GLB Statis"
-            >
-              <Box className="w-3.5 h-3.5" />
-              <span>Model GLB</span>
-            </button>
-          </div>
-
-          {engineType === "glb" && (
-            <button
-              onClick={() => setSkeletalRiggingActive((prev) => !prev)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer border ${
-                skeletalRiggingActive
-                  ? "bg-emerald-600/30 text-emerald-300 border-emerald-500/40 shadow-sm"
-                  : "bg-[#071120] text-[#64748B] border-blue-500/20 hover:text-white"
-              }`}
-              title="Aktifkan/Nonaktifkan Pelacakan Lengan & Tulang Gerak"
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Skeletal Rig: {skeletalRiggingActive ? "ON" : "OFF"}</span>
-            </button>
-          )}
+          <button
+            onClick={() => setSkeletalRiggingActive((prev) => !prev)}
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer border ${
+              skeletalRiggingActive
+                ? "bg-emerald-600/30 text-emerald-300 border-emerald-500/40 shadow-sm"
+                : "bg-[#071120] text-[#64748B] border-blue-500/20 hover:text-white"
+            }`}
+            title="Aktifkan/Nonaktifkan Pelacakan Lengan & Tulang Gerak"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Skeletal Rig: {skeletalRiggingActive ? "ON" : "OFF"}</span>
+          </button>
         </div>
 
         {/* Vertical Position & Depth Controls */}
