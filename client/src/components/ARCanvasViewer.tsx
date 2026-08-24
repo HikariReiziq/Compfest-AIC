@@ -54,6 +54,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [modelSource, setModelSource] = useState<string>("Memuat 3D Model...");
   const [offsetY, setOffsetY] = useState<number>(0);
+  const [offsetZ, setOffsetZ] = useState<number>(0);
   const [scaleMultiplier, setScaleMultiplier] = useState<number>(100);
 
   const isUploadMode = inputMode === "upload";
@@ -513,7 +514,9 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const worldX = ndcX * halfW;
     // Lower hat anchor so head & hair fully enter the hat cavity and brim rests around upper brow level
     const worldY = isHat ? (ndcY * halfH - 0.12 + offsetY * 0.012) : (ndcY * halfH - 0.01 + offsetY * 0.012);
-    const worldZ = isHat ? ((foreheadTop?.z || nasion.z || 0) * -1.8 - 0.08) : ((nasion.z || 0) * -1.8);
+    const worldZ = isHat
+      ? ((foreheadTop?.z || nasion.z || 0) * -1.8 - 0.08 + offsetZ * 0.015)
+      : ((nasion.z || 0) * -1.8 + offsetZ * 0.015);
 
     const screenLeftEyeX = offsetX + (1 - eyeLX) * renderedWidth;
     const screenLeftEyeY = offsetYPixel + eyeLY * renderedHeight;
@@ -628,7 +631,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     // Align neckline with collar base and apply manual offset
     const worldY = ndcY * halfH - 0.08 + offsetY * 0.012;
     const midShoulderZ = ((leftShoulder.z || 0) + (rightShoulder.z || 0)) / 2;
-    const worldZ = midShoulderZ * -2.2;
+    const worldZ = midShoulderZ * -2.2 + offsetZ * 0.015;
 
     // 1. True 3D Roll: Shoulder slant
     const rollAngle = Math.atan2(dy, dx);
@@ -774,49 +777,84 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
       {/* AR Fine-Tuning Micro-Controls */}
       <div className="glass-panel p-4 rounded-3xl border border-white/10 bg-surface-100/60 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center space-x-3 text-xs">
-          <Sliders className="w-4 h-4 text-indigo-400" />
-          <span className="font-semibold text-slate-300">
-            {isShirt
-              ? "Penyesuaian Posisi Baju:"
-              : isHat
-              ? "Penyesuaian Posisi Topi:"
-              : "Penyesuaian Posisi Kacamata:"}
-          </span>
-          <div className="flex items-center space-x-1.5">
+        {/* Position Controls: Atas/Bawah & Maju/Mundur */}
+        <div className="flex flex-wrap items-center gap-3 text-xs">
+          <div className="flex items-center space-x-2">
+            <Sliders className="w-4 h-4 text-indigo-400" />
+            <span className="font-semibold text-slate-300">
+              {isShirt
+                ? "Posisi Baju:"
+                : isHat
+                ? "Posisi Topi:"
+                : "Posisi Kacamata:"}
+            </span>
+          </div>
+
+          {/* Atas / Bawah */}
+          <div className="flex items-center space-x-1.5 bg-slate-900/60 p-1 rounded-2xl border border-white/5">
+            <span className="text-[11px] text-slate-400 px-1.5 font-medium">Tinggi:</span>
             <button
               onClick={() => setOffsetY((prev) => prev + 1)}
-              className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 font-bold text-xs"
-              title="Geser Naik"
+              className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-white/10 font-bold text-xs transition-all cursor-pointer"
+              title="Geser Naik (Atas)"
             >
               ▲ Naik
             </button>
             <button
               onClick={() => setOffsetY((prev) => prev - 1)}
-              className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 font-bold text-xs"
-              title="Geser Turun"
+              className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-white/10 font-bold text-xs transition-all cursor-pointer"
+              title="Geser Turun (Bawah)"
             >
               ▼ Turun
             </button>
+          </div>
+
+          {/* Maju / Mundur */}
+          <div className="flex items-center space-x-1.5 bg-slate-900/60 p-1 rounded-2xl border border-white/5">
+            <span className="text-[11px] text-slate-400 px-1.5 font-medium">Maju/Mundur:</span>
             <button
-              onClick={() => setOffsetY(0)}
-              className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-white/10"
-              title="Reset Posisi"
+              onClick={() => setOffsetZ((prev) => prev + 1)}
+              className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-white/10 font-bold text-xs transition-all cursor-pointer"
+              title="Geser Maju (Keluar ke Depan)"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
+              ▲ Maju
+            </button>
+            <button
+              onClick={() => setOffsetZ((prev) => prev - 1)}
+              className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-white/10 font-bold text-xs transition-all cursor-pointer"
+              title="Geser Mundur (Masuk ke Dalam)"
+            >
+              ▼ Mundur
             </button>
           </div>
+
+          {/* Reset */}
+          <button
+            onClick={() => {
+              setOffsetY(0);
+              setOffsetZ(0);
+              setScaleMultiplier(100);
+            }}
+            className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-400 hover:text-white border border-white/10 transition-all flex items-center space-x-1.5 cursor-pointer"
+            title="Reset Posisi & Skala ke Default"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span className="text-[11px] font-medium">Reset</span>
+          </button>
         </div>
 
-        <div className="flex items-center space-x-3 text-xs">
-          <span className="text-slate-400 font-mono">Skala Ukuran: <strong className="text-blue-400">{scaleMultiplier}%</strong></span>
+        {/* Scale Slider */}
+        <div className="flex items-center space-x-3 text-xs bg-slate-900/60 px-3 py-1.5 rounded-2xl border border-white/5">
+          <span className="text-slate-400 font-mono">
+            Ukuran: <strong className="text-blue-400">{scaleMultiplier}%</strong>
+          </span>
           <input
             type="range"
             min={70}
             max={130}
             value={scaleMultiplier}
             onChange={(e) => setScaleMultiplier(Number(e.target.value))}
-            className="w-28 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
+            className="w-24 sm:w-28 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
           />
         </div>
       </div>
