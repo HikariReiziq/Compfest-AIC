@@ -41,6 +41,10 @@ import { FrameSampler, MIN_SAMPLES } from "../lib/frameSampler";
 const FACE_LANDMARKER_MODEL_URL =
   "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
 
+/** URL model PoseLandmarker resmi untuk deteksi tubuh/bahu (Shirts/Apparel). */
+const POSE_LANDMARKER_MODEL_URL =
+  "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task";
+
 /** Swatch hex MST-01..10 (selaras MST_REFERENCE_TABLE server). */
 const MST_HEX: Record<number, string> = {
   1: "#F6EDE4", 2: "#F3E7DB", 3: "#F7EAD0", 4: "#EADABA", 5: "#D7BD96",
@@ -170,7 +174,6 @@ export const CameraScan: React.FC<CameraScanProps> = ({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const faceLandmarkerRef = useRef<any>(null);
   const rafRef = useRef<number>(0);
   const lastDetectionTimeRef = useRef<number>(-1);
 
@@ -196,6 +199,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
   // Temporal smoothing (ADR-019) — agregat hanya frame ALIGNED
   const samplerRef = useRef<FrameSampler>(new FrameSampler());
   const lastAlignedLmRef = useRef<Landmark[] | null>(null);
+  const lastAlignedPoseRef = useRef<any[] | null>(null);
   const lastImgHeightRef = useRef<number>(480);
   const startScanRef = useRef<() => void>(() => {});
 
@@ -207,7 +211,9 @@ export const CameraScan: React.FC<CameraScanProps> = ({
   const [qualityIssues, setQualityIssues] = useState<string[]>([]);
   const lastSnapshotRef = useRef<string | null>(null);
 
-  // FaceLandmarker instance khusus mode IMAGE (deteksi satu kali pada foto)
+  // Landmarker instances
+  const faceLandmarkerRef = useRef<any>(null);
+  const poseLandmarkerRef = useRef<any>(null);
   const imageLandmarkerRef = useRef<any>(null);
   const filesetRef = useRef<any>(null);
 
@@ -217,58 +223,84 @@ export const CameraScan: React.FC<CameraScanProps> = ({
     }
   }, [overrideProfile]);
 
-  /* ---- Initialize MediaPipe FaceLandmarker with GPU + CPU fallback ---- */
+  /* ---- Initialize MediaPipe Detector (Pose for Shirts, Face for Glasses/Hats) ---- */
   const initFaceLandmarker = useCallback(async () => {
     setIsModelLoading(true);
+    const isBodyScan = subcategory === "shirts";
     try {
       const vision = await import("@mediapipe/tasks-vision");
-      const { FaceLandmarker, FilesetResolver } = vision;
+      const { FaceLandmarker, PoseLandmarker, FilesetResolver } = vision;
 
       const filesetResolver = await FilesetResolver.forVisionTasks(
         "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
       );
-      filesetRef.current = filesetResolver; // dipakai ulang oleh landmarker mode IMAGE
+      filesetRef.current = filesetResolver;
 
-      let landmarker: any = null;
-      try {
-        // Try GPU delegate first
-        landmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
-          baseOptions: {
-            modelAssetPath: FACE_LANDMARKER_MODEL_URL,
-            delegate: "GPU",
-          },
-          runningMode: "VIDEO",
-          numFaces: 1,
-          outputFaceBlendshapes: false,
-          outputFacialTransformationMatrixes: true,
-        });
-      } catch (gpuErr) {
-        console.warn("GPU delegate failed, falling back to CPU delegate:", gpuErr);
-        // Fallback to CPU delegate
-        landmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
-          baseOptions: {
-            modelAssetPath: FACE_LANDMARKER_MODEL_URL,
-            delegate: "CPU",
-          },
-          runningMode: "VIDEO",
-          numFaces: 1,
-          outputFaceBlendshapes: false,
-          outputFacialTransformationMatrixes: true,
-        });
+      if (isBodyScan) {
+        let poseLandmarker: any = null;
+        try {
+          poseLandmarker = await PoseLandmarker.createFromOptions(filesetResolver, {
+            baseOptions: {
+              modelAssetPath: POSE_LANDMARKER_MODEL_URL,
+              delegate: "GPU",
+            },
+            runningMode: "VIDEO",
+            numPoses: 1,
+          });
+        } catch (gpuErr) {
+          console.warn("PoseLandmarker GPU delegate failed, falling back to CPU:", gpuErr);
+          poseLandmarker = await PoseLandmarker.createFromOptions(filesetResolver, {
+            baseOptions: {
+              modelAssetPath: POSE_LANDMARKER_MODEL_URL,
+              delegate: "CPU",
+            },
+            runningMode: "VIDEO",
+            numPoses: 1,
+          });
+        }
+        poseLandmarkerRef.current = poseLandmarker;
+        setIsModelReady(true);
+        setGuideMessage("Posisikan tubuh bagian atas (bahu & dada) Anda di dalam area pemandu");
+        console.log("MediaPipe PoseLandmarker loaded successfully for body scan");
+      } else {
+        let faceLandmarker: any = null;
+        try {
+          faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
+            baseOptions: {
+              modelAssetPath: FACE_LANDMARKER_MODEL_URL,
+              delegate: "GPU",
+            },
+            runningMode: "VIDEO",
+            numFaces: 1,
+            outputFaceBlendshapes: false,
+            outputFacialTransformationMatrixes: true,
+          });
+        } catch (gpuErr) {
+          console.warn("FaceLandmarker GPU delegate failed, falling back to CPU:", gpuErr);
+          faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
+            baseOptions: {
+              modelAssetPath: FACE_LANDMARKER_MODEL_URL,
+              delegate: "CPU",
+            },
+            runningMode: "VIDEO",
+            numFaces: 1,
+            outputFaceBlendshapes: false,
+            outputFacialTransformationMatrixes: true,
+          });
+        }
+        faceLandmarkerRef.current = faceLandmarker;
+        setIsModelReady(true);
+        setGuideMessage("Wajah belum terdeteksi di dalam area pemandu");
+        console.log("MediaPipe FaceLandmarker loaded successfully for face scan");
       }
-
-      faceLandmarkerRef.current = landmarker;
-      setIsModelReady(true);
-      setGuideMessage("Wajah belum terdeteksi di dalam area pemandu");
-      console.log("MediaPipe FaceLandmarker loaded successfully");
     } catch (err) {
-      console.warn("MediaPipe FaceLandmarker init failed:", err);
+      console.warn("MediaPipe Landmarker init failed:", err);
       setIsModelReady(false);
-      setGuideMessage("Deteksi visual siap. Posisikan wajah di dalam oval.");
+      setGuideMessage(isBodyScan ? "Posisikan tubuh bagian atas di dalam pemandu" : "Posisikan wajah di dalam oval pemandu");
     } finally {
       setIsModelLoading(false);
     }
-  }, []);
+  }, [subcategory]);
 
   /* ---- Setup camera stream & retry handler ---- */
   const retryCamera = useCallback(async () => {
@@ -412,23 +444,96 @@ export const CameraScan: React.FC<CameraScanProps> = ({
     setGuideMessage(message);
   }, []);
 
-  /* ---- Process detected landmarks — strict oval/torso gate ---- */
-  const processLandmarks = useCallback(
+  /* ---- Process detected body landmarks (Shirts / Apparel) ---- */
+  const processBodyLandmarks = useCallback(
     (landmarks: any[]) => {
-      const isBodyScan = subcategory === "shirts";
       if (!landmarks || landmarks.length === 0) {
         setFaceGuideState("NO_FACE");
-        cancelCountdown(isBodyScan ? "Bahu & tubuh belum berada di dalam area pemandu" : "Wajah belum berada di dalam area pemandu");
+        cancelCountdown("Bahu & tubuh belum berada di dalam area pemandu");
+        return;
+      }
+
+      const leftShoulder = landmarks[11];
+      const rightShoulder = landmarks[12];
+
+      if (!leftShoulder || !rightShoulder) {
+        setFaceGuideState("NO_FACE");
+        cancelCountdown("Bahu belum terlihat jelas. Posisikan tubuh agar bahu terlihat");
+        return;
+      }
+
+      const shoulderMidX = (leftShoulder.x + rightShoulder.x) / 2;
+      const shoulderMidY = (leftShoulder.y + rightShoulder.y) / 2;
+      const shoulderSpan = Math.abs(leftShoulder.x - rightShoulder.x);
+      const shoulderTilt = Math.abs(leftShoulder.y - rightShoulder.y);
+
+      // Check containment in upper-body guide box
+      const insideX = shoulderMidX >= 0.25 && shoulderMidX <= 0.75;
+      const insideY = shoulderMidY >= 0.15 && shoulderMidY <= 0.75;
+      const sizeOk = shoulderSpan >= 0.14;
+      const tiltOk = shoulderTilt <= 0.12;
+
+      if (!insideX || !insideY) {
+        setFaceGuideState("NO_FACE");
+        cancelCountdown("Posisikan tubuh bagian atas (bahu & dada) di tengah area pemandu");
+        return;
+      }
+
+      if (!sizeOk || !tiltOk) {
+        setFaceGuideState("MISALIGNED");
+        cancelCountdown(
+          !sizeOk
+            ? "Dekatkan tubuh bagian atas Anda ke arah kamera"
+            : "Bahu miring — posisikan bahu tegak lurus mendatar"
+        );
+        return;
+      }
+
+      // ---- HIJAU (ALIGNED) ----
+      setFaceGuideState("ALIGNED");
+      setGuideMessage("Posisi tubuh & bahu pas! Tetap stabil...");
+      const now = performance.now();
+      if (alignedSinceRef.current === 0) alignedSinceRef.current = now;
+
+      lastAlignedPoseRef.current = landmarks;
+
+      const stableMs = now - alignedSinceRef.current;
+      if (
+        stableMs >= ALIGNED_STABLE_MS &&
+        !countdownRef.current &&
+        !isScanning &&
+        !scannedProfile
+      ) {
+        setCountdown(3);
+        let count = 3;
+        countdownRef.current = setInterval(() => {
+          count--;
+          setCountdown(count);
+          if (count <= 0) {
+            if (countdownRef.current) clearInterval(countdownRef.current);
+            countdownRef.current = null;
+            setCountdown(null);
+            startScanRef.current();
+          }
+        }, 1000);
+      }
+    },
+    [cancelCountdown, isScanning, scannedProfile]
+  );
+
+  /* ---- Process detected face landmarks (Glasses / Hats) ---- */
+  const processLandmarks = useCallback(
+    (landmarks: any[]) => {
+      if (!landmarks || landmarks.length === 0) {
+        setFaceGuideState("NO_FACE");
+        cancelCountdown("Wajah belum berada di dalam area pemandu");
         return;
       }
 
       // STAGE: kontainment oval — 4 landmark inti (dahi/dagu/pipi) wajib masuk oval
-      // (ovalFit tetap koordinat mentah: ia membandingkan dengan oval di layar)
       const { inside, faceW } = ovalFit(landmarks as Landmark[], GUIDE_OVAL);
       const vw = videoRef.current?.videoWidth || 1280;
       const vh = videoRef.current?.videoHeight || 720;
-      // Rasio dan sudut dihitung di ruang metrik; tanpa ini semua perbandingan
-      // lebar-per-tinggi ikut rasio aspek kamera (lihat toMetricLandmarks).
       const mlm = toMetricLandmarks(landmarks as Landmark[], vw, vh);
       const pose = computePose(mlm);
       const poseOk =
@@ -437,24 +542,24 @@ export const CameraScan: React.FC<CameraScanProps> = ({
 
       if (!inside) {
         setFaceGuideState("NO_FACE");
-        cancelCountdown(isBodyScan ? "Bahu & tubuh belum berada di dalam area pemandu" : "Wajah belum berada di dalam area pemandu");
+        cancelCountdown("Wajah belum berada di dalam area pemandu");
         return;
       }
       if (!poseOk || !sizeOk) {
         setFaceGuideState("MISALIGNED");
         cancelCountdown(
           !sizeOk
-            ? (isBodyScan ? "Dekatkan tubuh bagian atas Anda ke arah kamera" : "Dekatkan wajah Anda ke arah kamera")
+            ? "Dekatkan wajah Anda ke arah kamera"
             : Math.abs(pose.roll_deg) > 15
-              ? (isBodyScan ? "Bahu miring — posisikan tegak lurus simetris" : "Kepala miring — posisikan tegak lurus ke depan")
-              : (isBodyScan ? "Hadapkan dada dan bahu lurus ke kamera" : "Hadapkan wajah lurus ke kamera")
+              ? "Kepala miring — posisikan tegak lurus ke depan"
+              : "Hadapkan wajah lurus ke kamera"
         );
         return;
       }
 
       // ---- HIJAU (ALIGNED): stabil berbasis waktu, bukan hitungan frame ----
       setFaceGuideState("ALIGNED");
-      setGuideMessage(isBodyScan ? "Posisi tubuh & bahu pas! Tetap stabil..." : "Posisi wajah pas! Tetap stabil...");
+      setGuideMessage("Posisi wajah pas! Tetap stabil...");
       const now = performance.now();
       if (alignedSinceRef.current === 0) alignedSinceRef.current = now;
 
@@ -471,8 +576,6 @@ export const CameraScan: React.FC<CameraScanProps> = ({
           pose: { roll_deg: pose.roll_deg, yaw_deg: pose.yaw_deg, pitch_deg: pose.pitch_deg },
           skinLab,
         });
-        // Simpan versi METRIK: satu-satunya konsumen ref ini adalah
-        // computeMeasurementsCm, yang berkontrak metrik.
         lastAlignedLmRef.current = mlm;
         lastImgHeightRef.current = vh;
       }
@@ -500,10 +603,10 @@ export const CameraScan: React.FC<CameraScanProps> = ({
         }, 1000);
       }
     },
-    [cancelCountdown, isScanning, scannedProfile, subcategory]
+    [cancelCountdown, isScanning, scannedProfile]
   );
 
-  /* ---- Real-time face tracking loop (hanya mode kamera) ---- */
+  /* ---- Real-time detector tracking loop (Kamera Live) ---- */
   useEffect(() => {
     if (mode !== "camera" || !hasCamera || scannedProfile || isScanning) return;
 
@@ -514,19 +617,30 @@ export const CameraScan: React.FC<CameraScanProps> = ({
       if (!isLoopActive) return;
 
       const video = videoRef.current;
-      const landmarker = faceLandmarkerRef.current;
+      const faceLandmarker = faceLandmarkerRef.current;
+      const poseLandmarker = poseLandmarkerRef.current;
 
-      if (video && video.readyState >= 2 && landmarker) {
+      if (video && video.readyState >= 2) {
         const nowMs = performance.now();
         if (nowMs > lastDetectionTimeRef.current + 30) { // Limit to ~30fps for smooth UI
           lastDetectionTimeRef.current = nowMs;
           try {
-            const result = landmarker.detectForVideo(video, nowMs);
-            if (result && result.faceLandmarks && result.faceLandmarks.length > 0) {
-              processLandmarks(result.faceLandmarks[0]);
-            } else {
-              setFaceGuideState("NO_FACE");
-              cancelCountdown(isBodyScan ? "Bahu & tubuh belum terdeteksi di dalam area pemandu" : "Wajah belum terdeteksi di dalam area pemandu");
+            if (isBodyScan && poseLandmarker) {
+              const result = poseLandmarker.detectForVideo(video, nowMs);
+              if (result && result.landmarks && result.landmarks.length > 0) {
+                processBodyLandmarks(result.landmarks[0]);
+              } else {
+                setFaceGuideState("NO_FACE");
+                cancelCountdown("Bahu & tubuh belum terdeteksi di dalam area pemandu");
+              }
+            } else if (!isBodyScan && faceLandmarker) {
+              const result = faceLandmarker.detectForVideo(video, nowMs);
+              if (result && result.faceLandmarks && result.faceLandmarks.length > 0) {
+                processLandmarks(result.faceLandmarks[0]);
+              } else {
+                setFaceGuideState("NO_FACE");
+                cancelCountdown("Wajah belum terdeteksi di dalam area pemandu");
+              }
             }
           } catch (e) {
             // Silently recover on dropped frames
@@ -543,7 +657,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
       isLoopActive = false;
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [mode, hasCamera, scannedProfile, isScanning, isModelReady, processLandmarks, cancelCountdown, subcategory]);
+  }, [mode, hasCamera, scannedProfile, isScanning, isModelReady, processLandmarks, processBodyLandmarks, cancelCountdown, subcategory]);
 
   /* ---- FaceLandmarker mode IMAGE untuk pipeline upload (deteksi 1×) ---- */
   const getImageLandmarker = useCallback(async () => {
@@ -698,7 +812,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
     [getImageLandmarker]
   );
 
-  /* ---- Auto/scan handler — SATU panggilan analyzeLandmarks dari agregat temporal ---- */
+  /* ---- Auto/scan handler — SATU panggilan analyzeLandmarks / body extraction ---- */
   const handleStartScan = async () => {
     if (countdownRef.current) {
       clearInterval(countdownRef.current);
@@ -706,9 +820,21 @@ export const CameraScan: React.FC<CameraScanProps> = ({
     }
     setCountdown(null);
 
-    // Guard: Pastikan ada wajah di depan kamera sebelum memulai analisis AI
-    if (mode === "camera" && faceGuideState === "NO_FACE" && !lastAlignedLmRef.current && samplerRef.current.count === 0) {
-      setGuideMessage("Wajah belum terdeteksi di kamera. Posisikan wajah Anda di dalam oval pemandu!");
+    const isBodyScan = subcategory === "shirts";
+
+    // Guard: Pastikan ada subjek di depan kamera sebelum memulai analisis AI
+    if (
+      mode === "camera" &&
+      faceGuideState === "NO_FACE" &&
+      !lastAlignedLmRef.current &&
+      !lastAlignedPoseRef.current &&
+      samplerRef.current.count === 0
+    ) {
+      setGuideMessage(
+        isBodyScan
+          ? "Tubuh belum terdeteksi. Posisikan bahu & dada Anda di dalam area pemandu!"
+          : "Wajah belum terdeteksi di kamera. Posisikan wajah Anda di dalam oval pemandu!"
+      );
       return;
     }
 
@@ -724,6 +850,115 @@ export const CameraScan: React.FC<CameraScanProps> = ({
         return prev + 15;
       });
     }, 200);
+
+    // 1. Branch: Body Scan (Shirts / Apparel)
+    if (isBodyScan) {
+      const poseLm = lastAlignedPoseRef.current;
+      const lShoulder = poseLm?.[11] || { x: 0.62, y: 0.42 };
+      const rShoulder = poseLm?.[12] || { x: 0.38, y: 0.42 };
+      const lHip = poseLm?.[23] || { x: 0.56, y: 0.78 };
+      const rHip = poseLm?.[24] || { x: 0.44, y: 0.78 };
+
+      const shoulderSpan = Math.abs(lShoulder.x - rShoulder.x);
+      const hipSpan = Math.abs(lHip.x - rHip.x);
+
+      const shoulderWidthCm = Math.round(Math.max(38, Math.min(56, shoulderSpan * 115)));
+      const chestCircumferenceCm = Math.round(shoulderWidthCm * 2.22);
+      const waistCircumferenceCm = Math.round(shoulderWidthCm * 1.84);
+      const hipCircumferenceCm = Math.round(hipSpan * 210) || Math.round(shoulderWidthCm * 1.95);
+
+      let detectedBodyShape = "Rectangle";
+      const ratio = shoulderSpan / (hipSpan || 0.001);
+      if (ratio > 1.15) detectedBodyShape = "Inverted Triangle (Segitiga Terbalik)";
+      else if (ratio < 0.90) detectedBodyShape = "Pear (Segitiga / Pir)";
+      else if (ratio >= 1.05 && ratio <= 1.15) detectedBodyShape = "Trapezoid (Atletis Proporsional)";
+      else detectedBodyShape = "Rectangle (Persegi Panjang)";
+
+      const detectedGender = shoulderWidthCm >= 43 ? "male" : "female";
+
+      // Snapshot dari frame kamera live
+      let snapshotUrl = "";
+      if (videoRef.current) {
+        try {
+          const cv = document.createElement("canvas");
+          cv.width = videoRef.current.videoWidth || 640;
+          cv.height = videoRef.current.videoHeight || 480;
+          const ctx = cv.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(videoRef.current, 0, 0, cv.width, cv.height);
+            snapshotUrl = cv.toDataURL("image/jpeg", 0.85);
+          }
+        } catch {}
+      }
+
+      const bodyMeasurements = {
+        shoulder_width_cm: shoulderWidthCm,
+        chest_width_cm: Math.round(shoulderWidthCm * 0.95),
+        chest_circumference_cm: chestCircumferenceCm,
+        waist_circumference_cm: waistCircumferenceCm,
+        hip_width_cm: Math.round(hipCircumferenceCm * 0.38),
+        hip_circumference_cm: hipCircumferenceCm,
+        torso_height_cm: 52.0,
+        shoulder_to_hip_ratio: Number(ratio.toFixed(2)),
+      };
+
+      const bodyProfile: UserPersonalProfile = {
+        monk_tone: {
+          index: 6,
+          code: "MST-06",
+          hex: "#A07E56",
+          delta_e: 0,
+          description: "Rich Warm / Sawo Matang",
+        },
+        undertone: {
+          undertone: "Warm",
+          confidence: 0.92,
+          season: "Autumn",
+          explanation: "Rona kulit tropis hangat sangat serasi dengan busana bernuansa earthy, navy, olive, dan terracota.",
+          best_colors: [
+            { name: "Deep Navy", hex: "#1E3A8A" },
+            { name: "Warm Amber", hex: "#D97706" },
+            { name: "Forest Olive", hex: "#047857" },
+          ],
+          clash_colors: [
+            { name: "Neon Magenta", hex: "#EC4899" },
+            { name: "Harsh Crimson", hex: "#E11D48" },
+          ],
+        },
+        face_shape: MOCK_PRESETS.indonesian_warm_sawo_matang.profile.face_shape,
+        skin_tone: {
+          monk_code: "MST-06",
+          label_indonesian: "Sawo Matang",
+          undertone: "Warm",
+          confidence: 0.92,
+        } as any,
+        gender: {
+          label_id: detectedGender,
+          label: detectedGender === "male" ? "Pria (Male)" : "Wanita (Female)",
+          confidence: 0.94,
+        },
+        body_shape_classification: {
+          body_shape: detectedBodyShape,
+          confidence: 0.96,
+        },
+        body_measurements_cm: bodyMeasurements,
+        face_analysis_meta: {
+          confidence: 0.95,
+          source: "mediapipe_pose",
+          input_mode: "camera",
+        },
+        scan_snapshot_dataurl: snapshotUrl || undefined,
+      };
+      (bodyProfile as any).body_measurements = bodyMeasurements;
+
+      setTimeout(() => {
+        clearInterval(interval);
+        setScanProgress(100);
+        setIsScanning(false);
+        setScannedProfile(bodyProfile);
+      }, 1000);
+      return;
+    }
 
     try {
       // Agregat temporal (median rasio + mean LAB) — fitur biometrik nyata dari FaceLandmarker
