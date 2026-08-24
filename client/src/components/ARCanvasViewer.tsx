@@ -510,8 +510,9 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const halfW = halfH * (cw / ch);
 
     const worldX = ndcX * halfW;
-    const worldY = ndcY * halfH + (isHat ? 0.22 : -0.01) + offsetY * 0.012;
-    const worldZ = (nasion.z || 0) * -1.8;
+    // Lower hat slightly so head enters the crown and brim sits naturally at the hairline
+    const worldY = isHat ? (ndcY * halfH - 0.05 + offsetY * 0.012) : (ndcY * halfH - 0.01 + offsetY * 0.012);
+    const worldZ = isHat ? ((foreheadTop?.z || nasion.z || 0) * -1.8 - 0.06) : ((nasion.z || 0) * -1.8);
 
     const screenLeftEyeX = offsetX + (1 - eyeLX) * renderedWidth;
     const screenLeftEyeY = offsetYPixel + eyeLY * renderedHeight;
@@ -536,7 +537,14 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     let safePitch = 0;
     if (chin && foreheadTop) {
       const vertDepth = ((foreheadTop.z || 0) - (chin.z || 0)) * 1.6;
-      safePitch = THREE.MathUtils.clamp(vertDepth, -0.45, 0.45);
+      if (isHat) {
+        // Natural forward pitch (+0.12 rad ~ 7 deg) so the hat faces the camera straight on and crown is visible, NOT pitched backwards showing the underside!
+        safePitch = 0.12 + THREE.MathUtils.clamp(-vertDepth * 0.6, -0.3, 0.3);
+      } else {
+        safePitch = THREE.MathUtils.clamp(vertDepth, -0.45, 0.45);
+      }
+    } else if (isHat) {
+      safePitch = 0.12;
     }
 
     const worldInterPupil = (pixelDist / cw) * (2 * halfW);
