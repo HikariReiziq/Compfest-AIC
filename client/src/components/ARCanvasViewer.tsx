@@ -867,7 +867,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               onClick={() => setViewMode("ar")}
               className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer select-none ${
                 viewMode === "ar"
-                  ? "bg-gradient-to-r from-blue-600 to-sky-500 text-white font-bold shadow-md shadow-blue-500/25 border border-blue-400/40"
+                  ? "bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-md shadow-blue-500/25 border border-blue-400/40"
                   : "text-slate-400 hover:text-white"
               }`}
             >
@@ -879,11 +879,11 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
             onClick={() => setViewMode("studio")}
             className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer select-none ${
               viewMode === "studio"
-                ? "bg-gradient-to-r from-blue-600 to-sky-500 text-white font-bold shadow-md shadow-blue-500/25 border border-blue-400/40"
+                ? "bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-md shadow-blue-500/25 border border-blue-400/40"
                 : "text-slate-400 hover:text-white"
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5" />
+            <Box className="w-3.5 h-3.5" />
             <span>360° Studio</span>
           </button>
         </div>
@@ -1038,7 +1038,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
           {/* 360 Studio Badge */}
           <div className="absolute top-4 left-4 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-blue-500/20 text-sky-300 border border-blue-500/30 text-xs font-mono z-30 shadow-lg backdrop-blur-md">
-            <Sparkles className="w-3.5 h-3.5 text-sky-400 animate-pulse" />
+            <Box className="w-3.5 h-3.5 text-sky-400" />
             <span>STUDIO 360° INSPECTION</span>
           </div>
 
@@ -1060,7 +1060,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               onClick={() => setDragMode("rotate")}
               className={`px-2 py-1 rounded-lg text-xs font-mono font-bold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
                 dragMode === "rotate"
-                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 border border-blue-400 text-white shadow-sm"
+                  ? "bg-blue-600 border border-blue-400 text-white shadow-sm"
                   : "text-slate-400 hover:text-white"
               }`}
               title="Opsi 1: Geser di layar ke segala arah untuk memutar model 3D (360° Horizontal, Vertikal & Diagonal)"
@@ -1072,7 +1072,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               onClick={() => setDragMode("pan")}
               className={`px-2 py-1 rounded-lg text-xs font-mono font-bold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
                 dragMode === "pan"
-                  ? "bg-gradient-to-r from-sky-600 to-blue-600 border border-sky-400 text-white shadow-sm"
+                  ? "bg-sky-600 border border-sky-400 text-white shadow-sm"
                   : "text-slate-400 hover:text-white"
               }`}
               title="Opsi 2: Geser di layar ke segala arah untuk memindahkan posisi (Atas, Bawah, Kiri, Kanan)"

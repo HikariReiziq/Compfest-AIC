@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { X, ArrowLeft, Sparkles, CheckCircle2 } from 'lucide-react';
+import { X, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { RecommendationItem, UserPersonalProfile } from '../lib/mockData';
 
 interface ProductDetailModalProps {
@@ -50,7 +50,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         {/* 2D Preview (Bright Studio Lighting) and Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
           {/* Bright Studio Photo Frame (Tidak Gelap) */}
-          <div className="sm:col-span-5 aspect-square rounded-2xl overflow-hidden border border-slate-600/40 bg-gradient-to-br from-slate-700/60 via-slate-800/80 to-slate-900/90 flex items-center justify-center p-4 shadow-inner relative group">
+          <div className="sm:col-span-5 aspect-square rounded-2xl overflow-hidden border border-slate-600/40 bg-slate-800 flex items-center justify-center p-4 shadow-inner relative group">
             {/* Soft Studio Radial Spotlight */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.12)_0%,_transparent_70%)] pointer-events-none" />
             <img
@@ -77,7 +77,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               </div>
               <div className="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden border border-white/5">
                 <div
-                  className="h-full bg-gradient-to-r from-blue-500 to-[#FACC15] rounded-full"
+                  className="h-full bg-blue-500 rounded-full"
                   style={{ width: `${item.compatibility_score}%` }}
                 />
               </div>
@@ -108,7 +108,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         {/* Detailed AI Stylist Analysis (Clean & Tidy 3-Point Layout) */}
         <div className="space-y-2.5 pt-1">
           <div className="flex items-center gap-1.5 text-xs font-bold text-sky-300 uppercase tracking-wider">
-            <Sparkles className="w-3.5 h-3.5 text-sky-400" />
+            <CheckCircle2 className="w-3.5 h-3.5 text-sky-400" />
             <span>Mengapa AI Merekomendasikan Item Ini?</span>
           </div>
 

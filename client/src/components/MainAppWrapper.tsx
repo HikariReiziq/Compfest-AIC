@@ -307,7 +307,7 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
               <button
                 type="button"
                 onClick={() => setCurrentStep('QUIZ')}
-                className="px-6 py-3 rounded-full bg-gradient-to-r from-blue-600 to-sky-500 text-white font-semibold text-sm shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                className="px-6 py-3 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer border border-blue-400/30"
               >
                 Ulangi Kuesioner
               </button>
@@ -363,7 +363,7 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
                     }
                     setCurrentStep('SCAN');
                   }}
-                  className="px-5 py-2.5 rounded-full text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 border border-blue-400/30 flex items-center gap-2 transition-all cursor-pointer hover:scale-105 active:scale-95"
+                  className="px-5 py-2.5 rounded-full text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 border border-blue-400/30 flex items-center gap-2 transition-all cursor-pointer hover:scale-105 active:scale-95"
                 >
                   <Camera className="w-4 h-4" />
                   <span>Scan Ulang</span>

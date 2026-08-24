@@ -9,7 +9,7 @@ import {
   Plus,
   Loader2,
   AlertCircle,
-  Sparkles,
+  RefreshCw,
 } from 'lucide-react';
 import { fetchDynamicQuestions } from '../lib/api';
 import UniversalLoading3D from './UniversalLoading3D';
@@ -427,7 +427,7 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
                   className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-semibold text-[#38BDF8] bg-[#071120] border border-blue-400/40 hover:border-blue-400 hover:bg-blue-600/25 hover:text-white transition-all shadow-lg hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-50"
                   title="Tidak ada pilihan yang cocok? Acak opsi alternatif lain"
                 >
-                  <Sparkles className={`w-3 h-3 text-[#FACC15] ${rerollingId === q.id ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-3 h-3 text-[#38BDF8] ${rerollingId === q.id ? 'animate-spin' : ''}`} />
                   <span>Opsi Lain</span>
                 </button>
               </div>
@@ -535,7 +535,7 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
           disabled={isLoading}
           className={`w-full py-4 min-h-[54px] rounded-full font-extrabold text-base sm:text-lg text-white transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-50 cursor-pointer shadow-2xl tracking-wide ${
             isAllAnswered
-              ? 'bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 hover:scale-[1.01] active:scale-[0.99] border border-blue-400/30'
+              ? 'bg-blue-600 hover:bg-blue-500 hover:scale-[1.01] active:scale-[0.99] border border-blue-400/30'
               : 'bg-[#08101E] border border-white/15 text-[#64748B]'
           }`}
         >

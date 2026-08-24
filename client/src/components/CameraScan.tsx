@@ -1138,7 +1138,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
             onClick={() => switchMode("camera")}
             className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-semibold font-mono transition-all cursor-pointer ${
               mode === "camera"
-                ? "bg-gradient-to-r from-blue-600 to-sky-500 text-white border border-blue-400/30"
+                ? "bg-blue-600 text-white border border-blue-400/30 font-bold"
                 : "text-[#93C5FD] hover:text-white"
             }`}
           >
@@ -1150,7 +1150,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
             onClick={() => switchMode("upload")}
             className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-semibold font-mono transition-all cursor-pointer ${
               mode === "upload"
-                ? "bg-gradient-to-r from-blue-600 to-sky-500 text-white border border-blue-400/30"
+                ? "bg-blue-600 text-white border border-blue-400/30 font-bold"
                 : "text-[#93C5FD] hover:text-white"
             }`}
           >
@@ -1344,7 +1344,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                       <button
                         onClick={retryCamera}
                         type="button"
-                        className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-lg"
+                        className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-lg"
                       >
                         <RefreshCw className="w-3.5 h-3.5" />
                         <span>Coba Lagi</span>
@@ -1380,7 +1380,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                         setScannedProfile(defaultProfile);
                       }}
                       type="button"
-                      className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-lg"
+                      className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-lg"
                     >
                       <UserCheck className="w-3.5 h-3.5" />
                       <span>Lanjutkan Profil Simulasi</span>
@@ -1536,9 +1536,9 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                   disabled={isScanning || (mode === "camera" && faceGuideState === "NO_FACE" && !lastAlignedLmRef.current && !lastAlignedPoseRef.current)}
                   className={`w-full py-4 rounded-full font-bold text-sm text-white transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
                     faceGuideState === "ALIGNED"
-                      ? "bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 border border-blue-400/30 shadow-lg shadow-blue-500/20"
+                      ? "bg-blue-600 hover:bg-blue-500 border border-blue-400/30 shadow-lg shadow-blue-500/20"
                       : faceGuideState === "MISALIGNED" || lastAlignedLmRef.current || lastAlignedPoseRef.current
-                      ? "bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 border border-blue-400/30 text-white cursor-pointer shadow-md"
+                      ? "bg-blue-600 hover:bg-blue-500 border border-blue-400/30 text-white cursor-pointer shadow-md"
                       : "bg-[#071120] text-[#64748B] border border-blue-500/20"
                   }`}
                 >
@@ -1553,16 +1553,12 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                       <span>
                         {subcategory === "shirts" ? (
                           faceGuideState === "ALIGNED"
-                            ? "Pindai Sekarang (Siluet Tubuh Pas)"
-                            : faceGuideState === "MISALIGNED" || lastAlignedPoseRef.current
-                            ? "Pindai Sekarang (Tubuh Terdeteksi)"
-                            : "Arahkan Bahu & Torso ke Kamera"
+                            ? "Pindai Tubuh Sekarang"
+                            : "Pindai Tubuh (Manual)"
                         ) : (
                           faceGuideState === "ALIGNED"
-                            ? "Pindai Sekarang (Wajah Pas)"
-                            : faceGuideState === "MISALIGNED" || lastAlignedLmRef.current
-                            ? "Pindai Sekarang (Wajah Terdeteksi)"
-                            : "Arahkan Wajah ke Kamera"
+                            ? "Pindai Sekarang"
+                            : "Pindai Sekarang (Manual)"
                         )}
                       </span>
                     </>
@@ -1572,7 +1568,6 @@ export const CameraScan: React.FC<CameraScanProps> = ({
             </div>
           ) : (
             <div className="bg-[#0B1528]/90 rounded-3xl p-6 sm:p-7 border border-blue-500/20 backdrop-blur-xl space-y-4">
-              {/* Header without AI star icons */}
               <div className="flex items-center justify-between pb-3 border-b border-white/10">
                 <div>
                   <h3 className="font-bold text-white text-base leading-tight">Profil Karakter Terdeteksi</h3>
