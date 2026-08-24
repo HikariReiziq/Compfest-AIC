@@ -1148,16 +1148,16 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                 ? "relative bg-black rounded-3xl overflow-hidden border-2 border-slate-400/60 shadow-[0_0_0_1px_rgba(255,255,255,0.15),0_20px_60px_rgba(0,0,0,0.6)] flex items-center justify-center aspect-auto min-h-[480px] p-6"
                 : "relative w-full max-w-[800px] mx-auto drop-shadow-2xl"
             }
-            style={mode === "upload" ? undefined : { aspectRatio: "548 / 455" }}
+            style={mode === "upload" ? undefined : { aspectRatio: "553 / 404" }}
           >
             {mode === "upload" ? null : (
-              /* Bingkai kamera DSLR Canon EOS — hanya untuk langkah 2 mode kamera live */
+              /* Bingkai kamera ilustrasi — hanya untuk langkah 2 mode kamera live */
               <img
                 src="/images/camera-frame.png"
-                alt="Canon Camera Frame"
+                alt="Camera Frame"
                 aria-hidden
                 draggable={false}
-                className="absolute inset-0 w-full h-full object-contain pointer-events-none z-20 select-none drop-shadow-[0_25px_45px_rgba(0,0,0,0.65)]"
+                className="absolute inset-0 w-full h-full object-contain pointer-events-none z-20 select-none drop-shadow-[0_25px_45px_rgba(0,0,0,0.55)]"
               />
             )}
             {mode === "upload" ? (
@@ -1248,10 +1248,10 @@ export const CameraScan: React.FC<CameraScanProps> = ({
               </div>
             ) : (
               <>
-              {/* Layar LCD kamera DSLR Canon — proporsi pas di dalam bezel layar */}
+              {/* Layar LCD kamera — video diposisikan pas di tengah layar bingkai */}
               <div
-                className="absolute z-10 overflow-hidden rounded-[3px] bg-black shadow-[inset_0_0_20px_rgba(0,0,0,0.95)]"
-                style={{ left: "16.42%", top: "42.20%", width: "45.07%", height: "36.26%" }}
+                className="absolute z-10 overflow-hidden rounded-[8px] bg-black shadow-[inset_0_0_25px_rgba(0,0,0,0.9)]"
+                style={{ left: "26.04%", top: "41.09%", width: "40.33%", height: "39.85%" }}
               >
               <div className="relative w-full h-full bg-black flex items-center justify-center">
             {hasCamera ? (

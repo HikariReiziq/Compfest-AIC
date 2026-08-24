@@ -59,7 +59,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   const offsetYRef = useRef<number>(0);
   const offsetZRef = useRef<number>(0);
   const scaleMultiplierRef = useRef<number>(100);
-  const dragStateRef = useRef<{ startX: number; startRot: number } | null>(null);
+  const dragStateRef = useRef<{ startX: number; startY: number; startRot: number; startOffsetY: number } | null>(null);
 
   useEffect(() => {
     rotOffsetRef.current = rotOffset;
@@ -836,15 +836,26 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           <div
             className="relative w-full h-full flex items-center justify-center bg-black overflow-hidden select-none cursor-grab active:cursor-grabbing touch-none"
             onPointerDown={(e) => {
-              dragStateRef.current = { startX: e.clientX, startRot: rotOffsetRef.current };
+              dragStateRef.current = {
+                startX: e.clientX,
+                startY: e.clientY,
+                startRot: rotOffsetRef.current,
+                startOffsetY: offsetYRef.current,
+              };
               (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
             }}
             onPointerMove={(e) => {
               const ds = dragStateRef.current;
               if (!ds) return;
+              // Geser horizontal untuk putar 3D
               const newRot = ds.startRot + (e.clientX - ds.startX) * 0.012;
               rotOffsetRef.current = newRot;
               setRotOffset(newRot);
+
+              // Geser vertikal untuk naik / turun posisi model secara langsung di layar
+              const newOffsetY = ds.startOffsetY + (ds.startY - e.clientY) * 0.08;
+              offsetYRef.current = newOffsetY;
+              setOffsetY(newOffsetY);
             }}
             onPointerUp={() => { dragStateRef.current = null; }}
             onPointerLeave={() => { dragStateRef.current = null; }}
@@ -948,55 +959,24 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
       {/* AR Fine-Tuning Micro-Controls */}
       <div className="glass-panel p-4 rounded-3xl border border-white/10 bg-surface-100/60 flex flex-wrap items-center justify-between gap-4">
-        {/* Position Controls: Atas/Bawah & Maju/Mundur */}
+        {/* Position Controls: Geser Langsung di Layar & Reset */}
         <div className="flex flex-wrap items-center gap-3 text-xs">
           <div className="flex items-center space-x-2">
             <Sliders className="w-4 h-4 text-indigo-400" />
             <span className="font-semibold text-slate-300">
               {isShirt
-                ? "Posisi Baju:"
+                ? "Kontrol Baju:"
                 : isHat
-                  ? "Posisi Topi:"
-                  : "Posisi Kacamata:"}
+                  ? "Kontrol Topi:"
+                  : "Kontrol Kacamata:"}
             </span>
           </div>
 
-          {/* Atas / Bawah */}
-          <div className="flex items-center space-x-1.5 bg-slate-900/60 p-1 rounded-2xl border border-white/5">
-            <span className="text-[11px] text-slate-400 px-1.5 font-medium">Tinggi:</span>
-            <button
-              onClick={() => {
-                setOffsetY((prev) => {
-                  const next = prev + 1;
-                  offsetYRef.current = next;
-                  return next;
-                });
-              }}
-              className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-white/10 font-bold text-xs transition-all cursor-pointer"
-              title="Geser Naik (Atas)"
-            >
-              ▲ Naik
-            </button>
-            <button
-              onClick={() => {
-                setOffsetY((prev) => {
-                  const next = prev - 1;
-                  offsetYRef.current = next;
-                  return next;
-                });
-              }}
-              className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-white/10 font-bold text-xs transition-all cursor-pointer"
-              title="Geser Turun (Bawah)"
-            >
-              ▼ Turun
-            </button>
-          </div>
-
-          {/* Rotasi Manual — geser langsung di layar AR */}
-          <div className="flex items-center space-x-1.5 bg-slate-900/60 p-1 rounded-2xl border border-white/5">
-            <span className="text-[11px] text-slate-400 px-1.5 font-medium">Putar:</span>
-            <span className="text-[10px] text-slate-400 font-mono px-1">
-              Geser di layar ◀▶ {Math.round((rotOffset * 180) / Math.PI)}°
+          {/* Panduan Interaksi Layar Langsung */}
+          <div className="flex items-center space-x-1.5 bg-slate-900/60 px-3 py-1.5 rounded-2xl border border-white/5">
+            <span className="text-[11px] text-slate-400 font-medium">Interaksi Layar:</span>
+            <span className="text-[10px] text-slate-300 font-mono">
+              Geser di layar ◀▶ Putar ({Math.round((rotOffset * 180) / Math.PI)}°) | ▲▼ Naik-Turun ({Math.round(offsetY * 10) / 10})
             </span>
           </div>
 
