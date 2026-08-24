@@ -301,6 +301,7 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
   const totalQuestions = questionsList.length;
   const answeredCount = Object.keys(answers).length;
   const isAllAnswered = totalQuestions > 0 && answeredCount === totalQuestions;
+  const isFemale = userProfile?.gender?.label_id === 'female';
 
   if (isLoadingInitial) {
     return (
@@ -329,7 +330,11 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
           <button
             type="button"
             onClick={() => setRetryTick((t) => t + 1)}
-            className="px-6 py-3 rounded-full bg-gradient-to-r from-blue-600 to-sky-500 text-white font-semibold text-sm shadow-lg hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
+            className={`px-6 py-3 rounded-full text-white font-semibold text-sm shadow-lg hover:scale-[1.02] active:scale-95 transition-all cursor-pointer ${
+              isFemale
+                ? 'bg-gradient-to-r from-pink-600 to-rose-500'
+                : 'bg-gradient-to-r from-blue-600 to-sky-500'
+            }`}
           >
             Coba Lagi
           </button>
@@ -352,9 +357,11 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex items-center gap-1.5 text-xs font-mono text-[#93C5FD] hover:text-white transition-colors mb-1 cursor-pointer"
+          className={`inline-flex items-center gap-1.5 text-xs font-mono transition-colors mb-1 cursor-pointer ${
+            isFemale ? 'text-pink-300 hover:text-white' : 'text-[#93C5FD] hover:text-white'
+          }`}
         >
-          <ChevronLeft className="w-4 h-4 text-[#38BDF8]" />
+          <ChevronLeft className={`w-4 h-4 ${isFemale ? 'text-pink-400' : 'text-[#38BDF8]'}`} />
           <span>
             {subcategory === 'shirts'
               ? 'Kembali ke Laporan Analisis Tubuh'
@@ -363,7 +370,13 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
         </button>
 
         <div className="flex items-center justify-center">
-          <div className="inline-flex items-center gap-3 px-6 py-2.5 rounded-full bg-[#0B1528] border border-blue-500/30 text-[#93C5FD] text-sm sm:text-base font-mono font-bold shadow-xl tracking-wider">
+          <div
+            className={`inline-flex items-center gap-3 px-6 py-2.5 rounded-full border text-sm sm:text-base font-mono font-bold shadow-xl tracking-wider ${
+              isFemale
+                ? 'bg-[#1c0b1a] border-pink-500/30 text-pink-300'
+                : 'bg-[#0B1528] border-blue-500/30 text-[#93C5FD]'
+            }`}
+          >
             <span>TAHAP 3: KUESIONER BERTARGET ({subcategory.toUpperCase()})</span>
           </div>
         </div>
@@ -378,8 +391,14 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
 
         {/* Status Indicator & Counter */}
         <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0B1528] border border-blue-500/20 text-xs font-mono text-[#93C5FD]">
-            <HelpCircle className="w-3.5 h-3.5 text-[#38BDF8]" />
+          <div
+            className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border text-xs font-mono ${
+              isFemale
+                ? 'bg-[#180918] border-pink-500/20 text-pink-300'
+                : 'bg-[#0B1528] border-blue-500/20 text-[#93C5FD]'
+            }`}
+          >
+            <HelpCircle className={`w-3.5 h-3.5 ${isFemale ? 'text-pink-400' : 'text-[#38BDF8]'}`} />
             <span>
               {questionSource === 'gemini_api'
                 ? 'Dihasilkan oleh Gemini AI Engine'
@@ -390,7 +409,9 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
           <div
             className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border text-xs font-mono font-semibold transition-all ${
               isAllAnswered
-                ? 'bg-blue-500/20 border-blue-500/40 text-[#93C5FD]'
+                ? isFemale
+                  ? 'bg-pink-500/20 border-pink-500/40 text-pink-300'
+                  : 'bg-blue-500/20 border-blue-500/40 text-[#93C5FD]'
                 : 'bg-[#08101E] border-white/15 text-[#64748B]'
             }`}
           >
@@ -410,12 +431,14 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
           return (
             <div
               key={q.id}
-              className={`relative bg-[#0B1528]/90 rounded-3xl p-7 sm:p-8 space-y-5 transition-all duration-300 border backdrop-blur-xl shadow-xl ${
+              className={`relative rounded-3xl p-7 sm:p-8 space-y-5 transition-all duration-300 border backdrop-blur-xl shadow-xl ${
                 questionsList.length % 2 === 1 && index === questionsList.length - 1 ? 'xl:col-span-2' : ''
               } ${
                 !isAnswered && validationError
-                  ? 'border-rose-500/60'
-                  : 'border-blue-500/20'
+                  ? 'border-rose-500/60 bg-[#14060b]/90'
+                  : isFemale
+                  ? 'bg-[#180918]/90 border-pink-500/20 hover:border-pink-500/40'
+                  : 'bg-[#0B1528]/90 border-blue-500/20 hover:border-blue-500/40'
               }`}
             >
               {/* Floating Compact Re-Roll Button Attached to Container */}
@@ -424,10 +447,18 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
                   type="button"
                   onClick={() => handleRerollQuestion(q.id)}
                   disabled={rerollingId === q.id}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-semibold text-[#38BDF8] bg-[#071120] border border-blue-400/40 hover:border-blue-400 hover:bg-blue-600/25 hover:text-white transition-all shadow-lg hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-50"
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-semibold bg-[#071120] border transition-all shadow-lg hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-50 ${
+                    isFemale
+                      ? 'text-pink-300 border-pink-400/40 hover:border-pink-400 hover:bg-pink-600/25 hover:text-white'
+                      : 'text-[#38BDF8] border-blue-400/40 hover:border-blue-400 hover:bg-blue-600/25 hover:text-white'
+                  }`}
                   title="Tidak ada pilihan yang cocok? Acak opsi alternatif lain"
                 >
-                  <RefreshCw className={`w-3 h-3 text-[#38BDF8] ${rerollingId === q.id ? 'animate-spin' : ''}`} />
+                  <RefreshCw
+                    className={`w-3 h-3 ${isFemale ? 'text-pink-400' : 'text-[#38BDF8]'} ${
+                      rerollingId === q.id ? 'animate-spin' : ''
+                    }`}
+                  />
                   <span>Opsi Lain</span>
                 </button>
               </div>
@@ -435,7 +466,9 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
               {/* Question Header */}
               <div className="flex items-start gap-4">
                 <span
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold font-mono shrink-0 bg-blue-600 text-white"
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold font-mono shrink-0 text-white ${
+                    isFemale ? 'bg-pink-600 shadow-[0_0_12px_rgba(236,72,153,0.4)]' : 'bg-blue-600 shadow-md'
+                  }`}
                 >
                   {index + 1}
                 </span>
@@ -444,15 +477,27 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
                   <div className="flex items-center justify-between gap-3 flex-wrap">
                     <h3 className="font-bold text-white text-lg sm:text-xl leading-snug">{q.question}</h3>
                     {isAnswered && (
-                      <span className="text-xs font-mono text-[#93C5FD] bg-blue-500/20 border border-blue-500/30 px-3 py-1 rounded-full shrink-0 flex items-center gap-1">
-                        <Check className="w-3 h-3 text-[#38BDF8]" />
+                      <span
+                        className={`text-xs font-mono px-3 py-1 rounded-full shrink-0 flex items-center gap-1 border ${
+                          isFemale
+                            ? 'text-pink-300 bg-pink-500/20 border-pink-500/30'
+                            : 'text-[#93C5FD] bg-blue-500/20 border-blue-500/30'
+                        }`}
+                      >
+                        <Check className={`w-3 h-3 ${isFemale ? 'text-pink-400' : 'text-[#38BDF8]'}`} />
                         <span>Terjawab</span>
                       </span>
                     )}
                   </div>
 
                   {q.reason && (
-                    <div className="flex items-start gap-2 px-3.5 py-2.5 rounded-2xl bg-[#071120] border border-blue-500/20 text-xs text-[#93C5FD]/80">
+                    <div
+                      className={`flex items-start gap-2 px-3.5 py-2.5 rounded-2xl border text-xs ${
+                        isFemale
+                          ? 'bg-[#120712] border-pink-500/20 text-pink-300/80'
+                          : 'bg-[#071120] border-blue-500/20 text-[#93C5FD]/80'
+                      }`}
+                    >
                       <span>{q.reason}</span>
                     </div>
                   )}
@@ -470,14 +515,22 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
                       onClick={() => handleSelectOption(q.id, opt.id)}
                       className={`text-left p-5 rounded-2xl border cursor-pointer transition-all duration-200 ${
                         isSelected
-                          ? 'bg-blue-600/20 border-blue-500 text-white'
+                          ? isFemale
+                            ? 'bg-pink-600/20 border-pink-500 text-white shadow-[0_0_20px_rgba(236,72,153,0.15)]'
+                            : 'bg-blue-600/20 border-blue-500 text-white shadow-[0_0_20px_rgba(59,130,246,0.15)]'
+                          : isFemale
+                          ? 'bg-[#120712]/70 border-white/10 text-[#94A3B8] hover:border-pink-500/30 hover:bg-[#1a0c1a]'
                           : 'bg-[#071120]/60 border-white/10 text-[#94A3B8] hover:border-blue-500/30 hover:bg-[#071120]'
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-semibold text-sm sm:text-base">{opt.label}</span>
                         {isSelected ? (
-                          <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white">
+                          <div
+                            className={`w-6 h-6 rounded-full flex items-center justify-center text-white ${
+                              isFemale ? 'bg-pink-600' : 'bg-blue-600'
+                            }`}
+                          >
                             <Check className="w-4 h-4" />
                           </div>
                         ) : (
@@ -500,11 +553,15 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
             type="button"
             onClick={handleLoadMoreQuestions}
             disabled={isLoadingMore}
-            className="px-8 py-3.5 rounded-full text-sm font-semibold text-[#93C5FD] bg-[#0B1528] border border-blue-500/30 hover:bg-blue-600 hover:text-white transition-all flex items-center gap-2.5 disabled:opacity-50 cursor-pointer shadow-lg"
+            className={`px-8 py-3.5 rounded-full text-sm font-semibold border transition-all flex items-center gap-2.5 disabled:opacity-50 cursor-pointer shadow-lg ${
+              isFemale
+                ? 'text-pink-300 bg-[#1a0c1a] border-pink-500/30 hover:bg-pink-600 hover:text-white'
+                : 'text-[#93C5FD] bg-[#0B1528] border-blue-500/30 hover:bg-blue-600 hover:text-white'
+            }`}
           >
             {isLoadingMore ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin text-[#38BDF8]" />
+                <Loader2 className={`w-4 h-4 animate-spin ${isFemale ? 'text-pink-400' : 'text-[#38BDF8]'}`} />
                 <span>Menyusun Pertanyaan Batch #{currentBatch + 1}...</span>
               </>
             ) : (
@@ -535,7 +592,9 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
           disabled={isLoading}
           className={`w-full py-4 min-h-[54px] rounded-full font-extrabold text-base sm:text-lg text-white transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-50 cursor-pointer shadow-2xl tracking-wide ${
             isAllAnswered
-              ? 'bg-blue-600 hover:bg-blue-500 hover:scale-[1.01] active:scale-[0.99] border border-blue-400/30'
+              ? isFemale
+                ? 'bg-gradient-to-r from-pink-600 via-rose-500 to-pink-500 hover:from-pink-500 hover:to-rose-400 hover:scale-[1.01] active:scale-[0.99] border border-pink-400/30 shadow-[0_4px_25px_rgba(236,72,153,0.35)]'
+                : 'bg-gradient-to-r from-blue-600 via-sky-500 to-blue-500 hover:from-blue-500 hover:to-sky-400 hover:scale-[1.01] active:scale-[0.99] border border-blue-400/30 shadow-[0_4px_25px_rgba(59,130,246,0.35)]'
               : 'bg-[#08101E] border border-white/15 text-[#64748B]'
           }`}
         >

@@ -233,6 +233,7 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
       {currentStep !== 'PROCESSING' && !(currentStep === 'QUIZ' && isQuizLoading) && (
         <HeaderNavbar
           currentStep={currentStep}
+          gender={userProfile?.gender?.label_id as ('male' | 'female')}
           onReset={handleResetFlow}
           onBackToLanding={() => {
             if (mediaStream) {

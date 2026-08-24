@@ -1641,31 +1641,44 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                       isFemale ? "bg-pink-950/20 border-pink-500/20" : "bg-[#071120] border-blue-500/20"
                     }`}
                   >
-                    {/* 1. Warna Kulit (Solid Rich Color matching actual skin tone) */}
+                    {/* 1. Warna Kulit (Translucent Subtle Tint matching actual skin tone) */}
                     <div
-                      className="p-4 rounded-2xl flex items-center justify-between shadow-lg transition-all border border-white/20"
+                      className="p-4 rounded-2xl flex items-center justify-between shadow-lg transition-all border backdrop-blur-md"
                       style={{
-                        background: `linear-gradient(135deg, ${skinHex} 0%, ${skinHex}E6 100%)`,
-                        borderColor: `${skinHex}`,
+                        background: `linear-gradient(135deg, ${skinHex}40 0%, ${skinHex}20 100%)`,
+                        borderColor: `${skinHex}55`,
                       }}
                     >
                       <div className="flex items-center gap-3.5">
-                        <div className="w-10 h-10 rounded-2xl bg-black/25 backdrop-blur-md border border-white/40 flex items-center justify-center shadow-md">
+                        <div
+                          className="w-10 h-10 rounded-2xl border flex items-center justify-center shadow-md backdrop-blur-md"
+                          style={{
+                            backgroundColor: `${skinHex}30`,
+                            borderColor: `${skinHex}70`,
+                          }}
+                        >
                           <span
                             className="w-5 h-5 rounded-full border-2 border-white shadow-sm"
                             style={{ backgroundColor: skinHex }}
                           />
                         </div>
                         <div>
-                          <span className="text-white/85 font-mono text-[10px] uppercase tracking-wider block font-semibold drop-shadow-sm">
+                          <span className="text-slate-300 font-mono text-[10px] uppercase tracking-wider block font-semibold">
                             WARNA KULIT
                           </span>
-                          <span className="font-extrabold text-white text-base drop-shadow-sm">
+                          <span className="font-extrabold text-white text-base">
                             {scannedProfile.skin_tone?.tone || "Tan"}
                           </span>
                         </div>
                       </div>
-                      <div className="px-3.5 py-1.5 rounded-full bg-black/35 backdrop-blur-md border border-white/30 text-white font-mono font-bold text-xs shadow-inner">
+                      <div
+                        className="px-3.5 py-1.5 rounded-full border font-mono font-bold text-xs shadow-inner"
+                        style={{
+                          backgroundColor: `${skinHex}35`,
+                          borderColor: `${skinHex}70`,
+                          color: '#FFFFFF',
+                        }}
+                      >
                         {scannedProfile.monk_tone?.code || "MST-06"}
                       </div>
                     </div>
@@ -1695,21 +1708,47 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                       </span>
                     </div>
 
-                    {/* 3. Gender / Jenis Kelamin */}
+                    {/* 3. Gender / Jenis Kelamin dengan Simbol Resmi (Mars ♂ & Venus ♀) */}
                     <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
                       <div>
                         <span className="text-slate-400 font-mono text-[10px] uppercase tracking-wider block font-semibold">
                           JENIS KELAMIN
                         </span>
-                        <span className="font-bold text-white text-base flex items-center gap-1.5">
+                        <span className="font-bold text-white text-base flex items-center gap-2">
                           {isFemale ? (
                             <>
-                              <Sparkles className="w-4 h-4 text-pink-400" />
+                              {/* Simbol Venus (Wanita ♀) */}
+                              <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="w-4 h-4 text-pink-400 shrink-0"
+                              >
+                                <circle cx="12" cy="9" r="5" />
+                                <line x1="12" y1="14" x2="12" y2="21" />
+                                <line x1="9" y1="18" x2="15" y2="18" />
+                              </svg>
                               <span>Wanita</span>
                             </>
                           ) : (
                             <>
-                              <User className="w-4 h-4 text-sky-400" />
+                              {/* Simbol Mars (Pria ♂) */}
+                              <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="w-4 h-4 text-sky-400 shrink-0"
+                              >
+                                <circle cx="10" cy="14" r="5" />
+                                <line x1="19" y1="5" x2="13.6" y2="10.4" />
+                                <polyline points="15 5 19 5 19 9" />
+                              </svg>
                               <span>Pria</span>
                             </>
                           )}
@@ -1740,7 +1779,20 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                               : "text-slate-400 hover:text-white"
                           }`}
                         >
-                          <User className="w-3.5 h-3.5" />
+                          {/* Simbol Mars ♂ */}
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="w-3.5 h-3.5 shrink-0"
+                          >
+                            <circle cx="10" cy="14" r="5" />
+                            <line x1="19" y1="5" x2="13.6" y2="10.4" />
+                            <polyline points="15 5 19 5 19 9" />
+                          </svg>
                           <span>Pria</span>
                         </button>
                         <button
@@ -1767,7 +1819,20 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                               : "text-slate-400 hover:text-white"
                           }`}
                         >
-                          <Sparkles className="w-3.5 h-3.5" />
+                          {/* Simbol Venus ♀ */}
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="w-3.5 h-3.5 shrink-0"
+                          >
+                            <circle cx="12" cy="9" r="5" />
+                            <line x1="12" y1="14" x2="12" y2="21" />
+                            <line x1="9" y1="18" x2="15" y2="18" />
+                          </svg>
                           <span>Wanita</span>
                         </button>
                       </div>
@@ -1792,23 +1857,23 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                     </div>
 
                     {subcategory === "shirts" ? (
-                      <div className="grid grid-cols-3 gap-2.5">
-                        <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-center space-y-1">
-                          <span className="text-[10px] font-mono text-slate-400 block uppercase">Lebar Bahu</span>
-                          <span className="text-sm font-bold font-mono text-white block">
+                      <div className="space-y-2">
+                        <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
+                          <span className="text-xs font-mono text-slate-300 uppercase font-semibold">Lebar Bahu</span>
+                          <span className="text-sm font-bold font-mono text-white">
                             {scannedProfile.body_measurements_cm?.shoulder_width_cm || 44.5} cm
                           </span>
                         </div>
-                        <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-center space-y-1">
-                          <span className="text-[10px] font-mono text-slate-400 block uppercase">Lebar Dada</span>
-                          <span className="text-sm font-bold font-mono text-white block">
+                        <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
+                          <span className="text-xs font-mono text-slate-300 uppercase font-semibold">Lebar Dada</span>
+                          <span className="text-sm font-bold font-mono text-white">
                             {scannedProfile.body_measurements_cm?.chest_width_cm || 42.0} cm
                           </span>
                         </div>
-                        <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-center space-y-1">
-                          <span className="text-[10px] font-mono text-slate-400 block uppercase">Rasio V-Shape</span>
+                        <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
+                          <span className="text-xs font-mono text-slate-300 uppercase font-semibold">Rasio V-Shape</span>
                           <span
-                            className={`text-sm font-bold font-mono block ${
+                            className={`text-sm font-bold font-mono ${
                               isFemale ? "text-pink-300" : "text-sky-300"
                             }`}
                           >
@@ -1819,28 +1884,25 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                         </div>
                       </div>
                     ) : (
-                      <>
-                        <div className="grid grid-cols-3 gap-2.5">
-                          <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-center space-y-1">
-                            <span className="text-[10px] font-mono text-slate-400 block uppercase">Dahi</span>
-                            <span className="text-sm font-bold font-mono text-white block">
-                              {scannedProfile.face_measurements?.forehead_width_cm ?? 12.84} cm
-                            </span>
-                          </div>
-                          <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-center space-y-1">
-                            <span className="text-[10px] font-mono text-slate-400 block uppercase">Pipi</span>
-                            <span className="text-sm font-bold font-mono text-white block">
-                              {scannedProfile.face_measurements?.cheekbone_width_cm ?? 12.73} cm
-                            </span>
-                          </div>
-                          <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-center space-y-1">
-                            <span className="text-[10px] font-mono text-slate-400 block uppercase">Rahang</span>
-                            <span className="text-sm font-bold font-mono text-white block">
-                              {scannedProfile.face_measurements?.jaw_width_cm ?? 9.75} cm
-                            </span>
-                          </div>
+                      <div className="space-y-2">
+                        <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
+                          <span className="text-xs font-mono text-slate-300 uppercase font-semibold">Lebar Dahi</span>
+                          <span className="text-sm font-bold font-mono text-white">
+                            {scannedProfile.face_measurements?.forehead_width_cm ?? 12.56} cm
+                          </span>
                         </div>
-
+                        <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
+                          <span className="text-xs font-mono text-slate-300 uppercase font-semibold">Lebar Pipi (Cheekbone)</span>
+                          <span className="text-sm font-bold font-mono text-white">
+                            {scannedProfile.face_measurements?.cheekbone_width_cm ?? 12.46} cm
+                          </span>
+                        </div>
+                        <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
+                          <span className="text-xs font-mono text-slate-300 uppercase font-semibold">Lebar Rahang (Jawline)</span>
+                          <span className="text-sm font-bold font-mono text-white">
+                            {scannedProfile.face_measurements?.jaw_width_cm ?? 9.6} cm
+                          </span>
+                        </div>
                         <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between text-xs">
                           <span className="text-slate-400 font-mono text-[11px]">Karakteristik Sensorik:</span>
                           <span
@@ -1851,7 +1913,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                             Hidung {scannedProfile.nose_type || "Bulbous"} • Mata {scannedProfile.eye_shape || "Cat-eye"}
                           </span>
                         </div>
-                      </>
+                      </div>
                     )}
                   </div>
 
