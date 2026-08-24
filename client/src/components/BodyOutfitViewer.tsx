@@ -353,12 +353,12 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
           model.rotation.z += rz;
         }
 
-        // 2. Scale model vertices to comfortable framing scale (max dimension ~1.35 units) BEFORE centering
+        // 2. Standardize shirt model width to 1.0 unit across all 19 shirts for consistent anatomy fitting
         const orientedBox = new THREE.Box3().setFromObject(model);
         const orientedSize = orientedBox.getSize(new THREE.Vector3());
-        const maxDimension = Math.max(orientedSize.x, orientedSize.y, orientedSize.z);
+        const targetShoulderWidth = orientedSize.x > 0 ? orientedSize.x : 1.0;
         const customScaleFactor = modelConfig?.scale_factor || 1.0;
-        const normScale = (1.35 / (maxDimension || 1.0)) * customScaleFactor;
+        const normScale = (1.0 / targetShoulderWidth) * customScaleFactor;
         model.scale.set(normScale * widthScale, normScale, normScale * widthScale);
 
         // Force world matrix update so bounding box reflects scaled vertices
@@ -511,24 +511,26 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
       const worldY = ndcY * halfH + offsetY * 0.012 - 0.28;
       const worldZ = (((leftShoulder.z || 0) + (rightShoulder.z || 0)) / 2) * -3.2 + offsetZ * 0.015;
 
-      // Screen Positions of Both Shoulders for True Pixel Distance
+      // Screen Positions of Both Shoulders:
+      // Left shoulder (frame x ~0.60) appears on SCREEN-LEFT (1 - 0.60 = 0.40)
+      // Right shoulder (frame x ~0.40) appears on SCREEN-RIGHT (1 - 0.40 = 0.60)
       const screenLeftShoulderX = offsetX + (1 - leftShoulder.x) * renderedWidth;
       const screenLeftShoulderY = offsetYPixel + leftShoulder.y * renderedHeight;
       const screenRightShoulderX = offsetX + (1 - rightShoulder.x) * renderedWidth;
       const screenRightShoulderY = offsetYPixel + rightShoulder.y * renderedHeight;
 
-      // Mirrored delta: Right shoulder appears on left on mirrored screen
-      const deltaX = screenLeftShoulderX - screenRightShoulderX;
-      const deltaY = screenLeftShoulderY - screenRightShoulderY;
-      const pixelDist = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      // Vector pointing from Screen-Left to Screen-Right across the shoulders
+      const dx = screenRightShoulderX - screenLeftShoulderX; // Always positive
+      const dy = screenRightShoulderY - screenLeftShoulderY;
+      const pixelDist = Math.sqrt(dx * dx + dy * dy);
 
-      // 1. Roll: Shoulder slope
-      const rollAngle = Math.atan2(deltaY, deltaX);
+      // 1. Roll: Shoulder slope (0 = perfectly straight/level)
+      const rollAngle = Math.atan2(dy, dx);
       const safeRoll = THREE.MathUtils.clamp(rollAngle, -0.65, 0.65);
 
       // 2. Yaw: Torso rotation around Y
       const depthDiff = (leftShoulder.z || 0) - (rightShoulder.z || 0);
-      const yawAngle = Math.atan2(depthDiff * 2.8, Math.abs(deltaX) / (renderedWidth || 1) + 0.001);
+      const yawAngle = Math.atan2(depthDiff * 2.2, Math.abs(dx) / (renderedWidth || 1) + 0.001);
       const safeYaw = THREE.MathUtils.clamp(yawAngle, -0.75, 0.75);
 
       // 3. Pitch: Torso leaning forward / backward

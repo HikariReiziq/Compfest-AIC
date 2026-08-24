@@ -466,7 +466,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           // galatnya sanggup melempar model puluhan unit keluar layar.
           // Dipasang di wrapper, model.position ikut terskalakan bersama geometri.
           const targetWidth = sizeAfter.x > 0 ? sizeAfter.x : 1.0;
-          const baseNormScale = (isHat ? HAT_TARGET_WIDTH : 1.45) / targetWidth;
+          const baseNormScale = (isHat ? HAT_TARGET_WIDTH : 1.0) / targetWidth;
           const customScaleFactor = modelConfig?.scale_factor || 1.0;
           const normalizeScale = baseNormScale * customScaleFactor;
           wrapper.scale.setScalar(normalizeScale);
@@ -499,57 +499,24 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
           wrapper.position.set(pivot[0], pivot[1] - hatSink, pivot[2]);
 
-          // 3. Apply Ultra-Realistic PBR Materials
-          const hexColor = activeItem.hex_colour || "#1e293b";
-
-          const luxuryFrameMat = new THREE.MeshPhysicalMaterial({
-            color: new THREE.Color(hexColor),
-            roughness: isHat ? 0.75 : 0.22,
-            metalness: isHat ? 0.05 : 0.78,
-            clearcoat: isHat ? 0.1 : 0.6,
-            clearcoatRoughness: 0.1,
-          });
-
-          const opticalLensMat = new THREE.MeshPhysicalMaterial({
-            color: new THREE.Color(0x0f172a),
-            transparent: true,
-            opacity: 0.22,
-            roughness: 0.05,
-            metalness: 0.08,
-            transmission: 0.92,
-            ior: 1.52,
-            reflectivity: 0.85,
-            clearcoat: 1.0,
-            clearcoatRoughness: 0.05,
-            depthWrite: false,
-            side: THREE.DoubleSide,
-          });
-
+          // 3. Preserve Authentic Original GLB PBR Textures & Materials
           model.traverse((child) => {
             if ((child as THREE.Mesh).isMesh) {
               const mesh = child as THREE.Mesh;
               mesh.castShadow = true;
               mesh.receiveShadow = true;
+              mesh.frustumCulled = false;
 
-              const matName = ((mesh.material as THREE.Material)?.name || "").toLowerCase();
-              const meshName = (mesh.name || "").toLowerCase();
-
-              // Identify lens geometry vs frame geometry
-              const isLens =
-                !isHat &&
-                (matName.includes("glass") ||
-                  matName.includes("lens") ||
-                  matName.includes("001_g") ||
-                  matName.includes("000_glass") ||
-                  matName.includes("002_glass") ||
-                  meshName.includes("glass") ||
-                  meshName.includes("lens"));
-
-              if (isLens) {
-                mesh.material = opticalLensMat;
-              } else {
-                mesh.material = luxuryFrameMat;
-              }
+              const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+              mats.forEach((mat: any) => {
+                if (!mat) return;
+                mat.side = THREE.DoubleSide;
+                if (mat.map) {
+                  mat.map.colorSpace = THREE.SRGBColorSpace;
+                  mat.map.needsUpdate = true;
+                }
+                mat.needsUpdate = true;
+              });
             }
           });
 
@@ -571,16 +538,18 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     if (!videoRef.current || !containerRef.current) return;
 
     // Anatomical Face Landmarks (MediaPipe 468 Mesh)
-    // Left eye outer: 33, inner: 133 -> Center of Left Eye
-    // Right eye outer: 263, inner: 362 -> Center of Right Eye
+    // Landmark 33: Right eye outer corner (subject's right)
+    // Landmark 133: Right eye inner corner
+    // Landmark 263: Left eye outer corner (subject's left)
+    // Landmark 362: Left eye inner corner
     // Nasion / Nose Bridge: 168 (top) & 6 (mid bridge)
     // Forehead: 10
     // Nose tip: 4
     // Chin: 152
-    const leftOuter = landmarks[33];
-    const leftInner = landmarks[133];
-    const rightOuter = landmarks[263];
-    const rightInner = landmarks[362];
+    const rightOuter = landmarks[33];
+    const rightInner = landmarks[133];
+    const leftOuter = landmarks[263];
+    const leftInner = landmarks[362];
     const nasion = landmarks[168] || landmarks[6];
     const foreheadTop = landmarks[10];
     const noseTip = landmarks[4] || landmarks[1];
@@ -614,10 +583,10 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     }
 
     // Accurate Eye Pupil Centers (Normal Video Frame Coordinates, 0 to 1)
-    const eyeLX = leftInner ? (leftOuter.x + leftInner.x) / 2 : leftOuter.x;
-    const eyeLY = leftInner ? (leftOuter.y + leftInner.y) / 2 : leftOuter.y;
     const eyeRX = rightInner ? (rightOuter.x + rightInner.x) / 2 : rightOuter.x;
     const eyeRY = rightInner ? (rightOuter.y + rightInner.y) / 2 : rightOuter.y;
+    const eyeLX = leftInner ? (leftOuter.x + leftInner.x) / 2 : leftOuter.x;
+    const eyeLY = leftInner ? (leftOuter.y + leftInner.y) / 2 : leftOuter.y;
 
     // Midpoint between eye centers
     const midEyeX = (eyeLX + eyeRX) / 2;
@@ -640,51 +609,46 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const halfW = halfH * (cw / ch);
 
     const worldX = ndcX * halfW;
-    // Dulu baris ini menambahkan +0.32 khusus topi. Itu keliru secara struktural:
-    // nilainya dalam satuan dunia dan TETAP, sementara ukuran topi mengikuti
-    // jarak wajah ke kamera. Akibatnya angkat vertikal hanya pas pada satu
-    // jarak tertentu, lalu makin melenceng saat pengguna maju atau mundur.
-    // Penempatan vertikal topi kini seluruhnya ditangani di ruang ternormalisasi
-    // (lihat hatSink), yang ikut terskalakan bersama kepala.
     const worldY = ndcY * halfH + (isHat ? 0 : -0.01) + offsetY * 0.012;
     const worldZ = (nasion.z || 0) * -1.8;
 
-    // Screen Positions of Both Eyes for Angle & Scale
-    const screenLX = offsetX + (1 - eyeLX) * renderedWidth;
-    const screenLY = offsetYPixel + eyeLY * renderedHeight;
-    const screenRX = offsetX + (1 - eyeRX) * renderedWidth;
-    const screenRY = offsetYPixel + eyeRY * renderedHeight;
+    // Screen Positions on Mirrored Viewport:
+    // Left eye (in frame x ~0.65) appears on SCREEN-LEFT (1 - 0.65 = 0.35)
+    // Right eye (in frame x ~0.35) appears on SCREEN-RIGHT (1 - 0.35 = 0.65)
+    const screenLeftEyeX = offsetX + (1 - eyeLX) * renderedWidth;
+    const screenLeftEyeY = offsetYPixel + eyeLY * renderedHeight;
+    const screenRightEyeX = offsetX + (1 - eyeRX) * renderedWidth;
+    const screenRightEyeY = offsetYPixel + eyeRY * renderedHeight;
 
-    // Mirrored delta: On mirrored screen, subject's right eye is on the Left (screenRX < screenLX)
-    const deltaX = screenLX - screenRX;
-    const deltaY = screenLY - screenRY;
-    const pixelDist = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    // Vector pointing from Screen-Left to Screen-Right across the face
+    const dx = screenRightEyeX - screenLeftEyeX; // Always positive across face
+    const dy = screenRightEyeY - screenLeftEyeY;
+    const pixelDist = Math.sqrt(dx * dx + dy * dy);
 
-    // 1. True 3D Roll (Tilt angle around Z)
-    const rollAngle = Math.atan2(deltaY, deltaX);
-    const safeRoll = THREE.MathUtils.clamp(rollAngle, -0.95, 0.95);
+    // 1. True 3D Roll: Horizontal alignment across eyes (0 = perfectly straight/level)
+    const rollAngle = Math.atan2(dy, dx);
+    const safeRoll = THREE.MathUtils.clamp(rollAngle, -0.85, 0.85);
 
     // 2. True 3D Yaw (Head turning Left / Right in 3D Space)
-    // MediaPipe z-depth delta between right and left eye + horizontal nasion shift
-    const eyeZDelta = (rightOuter.z || 0) - (leftOuter.z || 0);
+    const eyeZDelta = (leftOuter.z || 0) - (rightOuter.z || 0);
     const screenBridgeX = offsetX + (1 - nasion.x) * renderedWidth;
-    const eyeMidScreenX = (screenLX + screenRX) / 2;
-    const noseScreenShift = (screenBridgeX - eyeMidScreenX) / (pixelDist * 0.5 + 0.001);
+    const screenMidEyeX = (screenLeftEyeX + screenRightEyeX) / 2;
+    const noseScreenShift = (screenBridgeX - screenMidEyeX) / (pixelDist * 0.5 + 0.001);
     
     // Combining 3D depth and facial feature perspective foreshortening
-    const rawYaw = (eyeZDelta * 3.2) + (noseScreenShift * 1.1);
-    const safeYaw = THREE.MathUtils.clamp(rawYaw, -0.95, 0.95);
+    const rawYaw = (eyeZDelta * 2.2) + (noseScreenShift * 0.8);
+    const safeYaw = THREE.MathUtils.clamp(rawYaw, -0.75, 0.75);
 
     // 3. True 3D Pitch (Head tilting Up / Down)
     let safePitch = 0;
     if (chin && foreheadTop) {
-      const vertDepth = ((foreheadTop.z || 0) - (chin.z || 0)) * 2.0;
+      const vertDepth = ((foreheadTop.z || 0) - (chin.z || 0)) * 1.6;
       safePitch = THREE.MathUtils.clamp(vertDepth, -0.45, 0.45);
     }
 
     // World Space Scale (Glasses width matches real Inter-Pupillary Distance)
     const worldInterPupil = (pixelDist / cw) * (2 * halfW);
-    const baseScale = isHat ? worldInterPupil * 1.95 : worldInterPupil * 1.62;
+    const baseScale = isHat ? worldInterPupil * 1.95 : worldInterPupil * 2.35;
     const finalScale = baseScale * (scaleMultiplier / 100);
 
     // 60 FPS Smooth Interpolation
