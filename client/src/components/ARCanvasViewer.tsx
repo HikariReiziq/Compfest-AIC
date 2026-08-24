@@ -475,7 +475,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
           group.add(wrapper);
 
-          // Create Invisible AR Depth Occluder for hats
+          // Create Invisible AR Depth Occluders for authentic 3D penetration
           if (isHat) {
             // Head Occluder: Writes to Z-depth buffer so the back brim & interior of the hat
             // is culled behind the user's real head and hair, creating true 3D head immersion!
@@ -487,6 +487,18 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               depthWrite: true,
             });
             const occluderMesh = new THREE.Mesh(headGeom, occluderMat);
+            occluderMesh.renderOrder = -1;
+            group.add(occluderMesh);
+          } else if (isShirt) {
+            // Neck & Spine Occluder: Allows real human neck/chin to emerge through the collar hole
+            // while culling the back collar behind the neck
+            const neckGeom = new THREE.CylinderGeometry(0.18, 0.22, 0.40, 24);
+            neckGeom.translate(0, 0.12, -0.08);
+            const occluderMat = new THREE.MeshBasicMaterial({
+              colorWrite: false,
+              depthWrite: true,
+            });
+            const occluderMesh = new THREE.Mesh(neckGeom, occluderMat);
             occluderMesh.renderOrder = -1;
             group.add(occluderMesh);
           }
