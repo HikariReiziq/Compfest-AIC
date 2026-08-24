@@ -129,7 +129,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   }, [mediaStream]);
 
   /* ------------------------------------------------------------------ */
-  /*  2. Initialize MediaPipe Landmarker (Face for Glasses/Hats, Pose for Shirts) */
+  /*  2. Initialize MediaPipe Landmarker (Face for All, Pose for Shirts) */
   /* ------------------------------------------------------------------ */
   useEffect(() => {
     let cancelled = false;
@@ -145,38 +145,9 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
         if (cancelled) return;
 
-        if (isShirt) {
-          // Initialize PoseLandmarker for Upper-Body Clothes Tracking
-          let landmarker: any;
-          try {
-            landmarker = await PoseLandmarker.createFromOptions(fileset, {
-              baseOptions: {
-                modelAssetPath:
-                  "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
-                delegate: "GPU",
-              },
-              runningMode: "VIDEO",
-              numPoses: 1,
-            });
-          } catch (gpuErr) {
-            console.warn("PoseLandmarker GPU failed, falling back to CPU:", gpuErr);
-            landmarker = await PoseLandmarker.createFromOptions(fileset, {
-              baseOptions: {
-                modelAssetPath:
-                  "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
-                delegate: "CPU",
-              },
-              runningMode: "VIDEO",
-              numPoses: 1,
-            });
-          }
-
-          if (!cancelled) {
-            poseLandmarkerRef.current = landmarker;
-          }
-        } else {
-          // Initialize FaceLandmarker for Glasses / Hats
-          const landmarker = await FaceLandmarker.createFromOptions(fileset, {
+        // Initialize FaceLandmarker (for glasses, hats, and robust shirt fallback)
+        try {
+          const face = await FaceLandmarker.createFromOptions(fileset, {
             baseOptions: {
               modelAssetPath:
                 "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
@@ -187,9 +158,39 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
             outputFaceBlendshapes: false,
             outputFacialTransformationMatrixes: true,
           });
+          if (!cancelled) faceLandmarkerRef.current = face;
+        } catch (e) {
+          console.warn("FaceLandmarker init fallback:", e);
+        }
 
-          if (!cancelled) {
-            faceLandmarkerRef.current = landmarker;
+        // Initialize PoseLandmarker for Upper-Body Clothes Tracking
+        if (isShirt) {
+          try {
+            const pose = await PoseLandmarker.createFromOptions(fileset, {
+              baseOptions: {
+                modelAssetPath:
+                  "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+                delegate: "GPU",
+              },
+              runningMode: "VIDEO",
+              numPoses: 1,
+            });
+            if (!cancelled) poseLandmarkerRef.current = pose;
+          } catch {
+            try {
+              const pose = await PoseLandmarker.createFromOptions(fileset, {
+                baseOptions: {
+                  modelAssetPath:
+                    "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+                  delegate: "CPU",
+                },
+                runningMode: "VIDEO",
+                numPoses: 1,
+              });
+              if (!cancelled) poseLandmarkerRef.current = pose;
+            } catch (err) {
+              console.warn("PoseLandmarker init failed:", err);
+            }
           }
         }
       } catch (err) {
@@ -277,25 +278,53 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
         if (video.currentTime !== lastVideoTime) {
           lastVideoTime = video.currentTime;
           try {
-            if (isShirt && poseLandmarker) {
-              const result = poseLandmarker.detectForVideo(video, performance.now());
-              if (result && result.landmarks && result.landmarks.length > 0) {
-                setIsTrackingLive(true);
-                modelGroup.visible = true;
-                applyPoseLandmarksTo3DShirt(result.landmarks[0], modelGroup);
-              } else {
-                setIsTrackingLive(false);
-                modelGroup.visible = false;
+            let tracked = false;
+
+            if (isShirt) {
+              // 1. Try Upper-Body Pose Tracking
+              if (poseLandmarker) {
+                const poseRes = poseLandmarker.detectForVideo(video, performance.now());
+                if (poseRes && poseRes.landmarks && poseRes.landmarks.length > 0) {
+                  const lm = poseRes.landmarks[0];
+                  if (lm[11] && lm[12]) {
+                    setIsTrackingLive(true);
+                    modelGroup.visible = true;
+                    applyPoseLandmarksTo3DShirt(lm, modelGroup);
+                    tracked = true;
+                  }
+                }
               }
-            } else if (!isShirt && faceLandmarker) {
-              const result = faceLandmarker.detectForVideo(video, performance.now());
-              if (result && result.faceLandmarks && result.faceLandmarks.length > 0) {
-                setIsTrackingLive(true);
-                modelGroup.visible = true;
-                applyLandmarksTo3DModel(result.faceLandmarks[0], modelGroup);
-              } else {
+
+              // 2. Fallback to Face Landmark Chin-Anchored Neck Tracking
+              if (!tracked && faceLandmarker) {
+                const faceRes = faceLandmarker.detectForVideo(video, performance.now());
+                if (faceRes && faceRes.faceLandmarks && faceRes.faceLandmarks.length > 0) {
+                  setIsTrackingLive(true);
+                  modelGroup.visible = true;
+                  applyFaceFallbackTo3DShirt(faceRes.faceLandmarks[0], modelGroup);
+                  tracked = true;
+                }
+              }
+
+              if (!tracked) {
                 setIsTrackingLive(false);
-                modelGroup.visible = false;
+                modelGroup.visible = true;
+              }
+            } else {
+              // Glasses & Hats Tracking
+              if (faceLandmarker) {
+                const result = faceLandmarker.detectForVideo(video, performance.now());
+                if (result && result.faceLandmarks && result.faceLandmarks.length > 0) {
+                  setIsTrackingLive(true);
+                  modelGroup.visible = true;
+                  applyLandmarksTo3DModel(result.faceLandmarks[0], modelGroup);
+                  tracked = true;
+                }
+              }
+
+              if (!tracked) {
+                setIsTrackingLive(false);
+                modelGroup.visible = true;
               }
             }
           } catch {
@@ -444,7 +473,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
           group.add(wrapper);
 
-          // Create Invisible AR Depth Occluder for authentic 3D penetration
+          // Create Invisible AR Depth Occluder for hats
           if (isHat) {
             // Head Occluder: Writes to Z-depth buffer so the back brim & interior of the hat
             // is culled behind the user's real head and hair, creating true 3D head immersion!
@@ -456,17 +485,6 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               depthWrite: true,
             });
             const occluderMesh = new THREE.Mesh(headGeom, occluderMat);
-            occluderMesh.renderOrder = -1;
-            group.add(occluderMesh);
-          } else if (isShirt) {
-            // Torso/Neck Occluder: Prevents back of collar from rendering over the neck
-            const torsoGeom = new THREE.CylinderGeometry(0.38, 0.35, 1.1, 32);
-            torsoGeom.translate(0, -0.55, -0.06);
-            const occluderMat = new THREE.MeshBasicMaterial({
-              colorWrite: false,
-              depthWrite: true,
-            });
-            const occluderMesh = new THREE.Mesh(torsoGeom, occluderMat);
             occluderMesh.renderOrder = -1;
             group.add(occluderMesh);
           }
@@ -681,6 +699,99 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
     // World Space Scale (Shirt fits user shoulder span accurately)
     const worldShoulderSpan = (shoulderSpanPx / cw) * (2 * halfW);
+    const baseScale = worldShoulderSpan * 1.35;
+    const finalScale = baseScale * (scaleMultiplier / 100);
+
+    group.position.x = THREE.MathUtils.lerp(group.position.x, worldX, 0.45);
+    group.position.y = THREE.MathUtils.lerp(group.position.y, worldY, 0.45);
+    group.position.z = THREE.MathUtils.lerp(group.position.z, worldZ, 0.45);
+
+    group.rotation.z = THREE.MathUtils.lerp(group.rotation.z, safeRoll, 0.45);
+    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw, 0.45);
+    group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, safePitch, 0.45);
+
+    group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.45);
+  };
+
+  /* ------------------------------------------------------------------ */
+  /*  7. Face Landmark Chin-Anchored Fallback for Shirts               */
+  /* ------------------------------------------------------------------ */
+  const applyFaceFallbackTo3DShirt = (landmarks: any[], group: THREE.Group) => {
+    if (!videoRef.current || !containerRef.current) return;
+
+    const chin = landmarks[152];
+    const leftCheek = landmarks[454] || landmarks[263];
+    const rightCheek = landmarks[234] || landmarks[33];
+    const nasion = landmarks[168] || landmarks[6];
+
+    if (!chin || !leftCheek || !rightCheek) return;
+
+    const video = videoRef.current;
+    const container = containerRef.current;
+    const cw = container.clientWidth;
+    const ch = container.clientHeight;
+
+    const vw = video.videoWidth || 1280;
+    const vh = video.videoHeight || 720;
+    const videoAspect = vw / vh;
+    const containerAspect = cw / ch;
+
+    let renderedWidth = cw;
+    let renderedHeight = ch;
+    let offsetX = 0;
+    let offsetYPixel = 0;
+
+    if (containerAspect > videoAspect) {
+      renderedHeight = ch;
+      renderedWidth = ch * videoAspect;
+      offsetX = (cw - renderedWidth) / 2;
+    } else {
+      renderedWidth = cw;
+      renderedHeight = cw / videoAspect;
+      offsetYPixel = (ch - renderedHeight) / 2;
+    }
+
+    const screenChinX = offsetX + (1 - chin.x) * renderedWidth;
+    const screenChinY = offsetYPixel + chin.y * renderedHeight;
+
+    const screenLeftCheekX = offsetX + (1 - leftCheek.x) * renderedWidth;
+    const screenLeftCheekY = offsetYPixel + leftCheek.y * renderedHeight;
+    const screenRightCheekX = offsetX + (1 - rightCheek.x) * renderedWidth;
+    const screenRightCheekY = offsetYPixel + rightCheek.y * renderedHeight;
+
+    const dx = screenRightCheekX - screenLeftCheekX;
+    const dy = screenRightCheekY - screenLeftCheekY;
+    const faceWidthPx = Math.sqrt(dx * dx + dy * dy);
+
+    // Collar sits at base of neck below chin
+    const neckDropPx = faceWidthPx * 0.45;
+    const screenNeckX = screenChinX;
+    const screenNeckY = screenChinY + neckDropPx;
+
+    const ndcX = (screenNeckX / cw) * 2 - 1;
+    const ndcY = 1 - (screenNeckY / ch) * 2;
+
+    const halfH = Math.tan((45 * Math.PI) / 360) * 4.2;
+    const halfW = halfH * (cw / ch);
+
+    const worldX = ndcX * halfW;
+    const worldY = ndcY * halfH - 0.05 + offsetY * 0.012;
+    const worldZ = (chin.z || 0) * -1.8 - 0.05 + offsetZ * 0.015;
+
+    const rollAngle = Math.atan2(dy, dx);
+    const safeRoll = THREE.MathUtils.clamp(rollAngle, -0.85, 0.85);
+
+    const eyeZDelta = (leftCheek.z || 0) - (rightCheek.z || 0);
+    const safeYaw = THREE.MathUtils.clamp(eyeZDelta * 2.2, -0.75, 0.75);
+
+    let safePitch = 0;
+    if (nasion && chin) {
+      safePitch = THREE.MathUtils.clamp(((nasion.z || 0) - (chin.z || 0)) * 1.5, -0.45, 0.45);
+    }
+
+    // Shoulder span is ~2.35x face width
+    const worldFaceWidth = (faceWidthPx / cw) * (2 * halfW);
+    const worldShoulderSpan = worldFaceWidth * 2.35;
     const baseScale = worldShoulderSpan * 1.35;
     const finalScale = baseScale * (scaleMultiplier / 100);
 
