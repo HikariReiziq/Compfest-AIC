@@ -66,8 +66,12 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   const studioPitchRef = useRef<number>(0);
   const studioZoomRef = useRef<number>(1);
   const isDraggingStudioRef = useRef<boolean>(false);
-  const autoRotateStudioRef = useRef<boolean>(true);
   const [isAutoRotateStudio, setIsAutoRotateStudio] = useState<boolean>(true);
+  const isAutoRotateStudioRef = useRef<boolean>(true);
+
+  useEffect(() => {
+    isAutoRotateStudioRef.current = isAutoRotateStudio;
+  }, [isAutoRotateStudio]);
 
   const offsetXRef = useRef<number>(0);
   const offsetYRef = useRef<number>(0);
@@ -401,8 +405,8 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
         if (modelGroup) {
           modelGroup.visible = true;
 
-          // Auto-rotate turntable gently when user is NOT dragging
-          if (!isDraggingStudioRef.current && autoRotateStudioRef.current) {
+          // Auto-rotate turntable gently when user is NOT dragging AND auto-rotate is ON
+          if (!isDraggingStudioRef.current && isAutoRotateStudioRef.current) {
             studioYawRef.current += 0.008;
           }
 
@@ -1058,8 +1062,6 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           style={{ aspectRatio: "548 / 455" }}
           onPointerDown={(e) => {
             isDraggingStudioRef.current = true;
-            autoRotateStudioRef.current = false;
-            setIsAutoRotateStudio(false);
             dragStateRef.current = {
               startX: e.clientX,
               startY: e.clientY,
@@ -1085,7 +1087,13 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           onPointerUp={(e) => {
             isDraggingStudioRef.current = false;
             dragStateRef.current = null;
-            (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
+            try {
+              (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
+            } catch {}
+          }}
+          onPointerLeave={() => {
+            isDraggingStudioRef.current = false;
+            dragStateRef.current = null;
           }}
           onPointerCancel={() => {
             isDraggingStudioRef.current = false;
@@ -1105,13 +1113,17 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           <div ref={containerRef} className="absolute inset-0 w-full h-full z-10 pointer-events-none" />
 
           {/* Top-Left: 360 Studio Badge */}
-          <div className="absolute top-4 left-4 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-blue-500/20 text-sky-300 border border-blue-500/30 text-xs font-mono z-30 shadow-lg backdrop-blur-md">
+          <div className="absolute top-4 left-4 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-blue-500/20 text-sky-300 border border-blue-500/30 text-xs font-mono z-30 shadow-lg backdrop-blur-md pointer-events-none">
             <Box className="w-3.5 h-3.5 text-sky-400" />
             <span>STUDIO 360° INSPECTION</span>
           </div>
 
           {/* Top-Right: Quick Interactive 360 Controls */}
-          <div className="absolute top-4 right-4 z-30 flex items-center gap-1.5 bg-[#071120]/85 backdrop-blur-md p-1 rounded-full border border-white/10">
+          <div
+            className="absolute top-4 right-4 z-30 flex items-center gap-1.5 bg-[#071120]/85 backdrop-blur-md p-1 rounded-full border border-white/10"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               type="button"
               onClick={() => {
@@ -1146,15 +1158,18 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => {
-                const nextState = !autoRotateStudioRef.current;
-                autoRotateStudioRef.current = nextState;
-                setIsAutoRotateStudio(nextState);
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsAutoRotateStudio((prev) => {
+                  const next = !prev;
+                  isAutoRotateStudioRef.current = next;
+                  return next;
+                });
               }}
-              className={`px-2.5 py-1 rounded-full text-[10px] font-mono transition-colors cursor-pointer ${
+              className={`px-3 py-1 rounded-full text-[10px] font-mono transition-all cursor-pointer font-bold ${
                 isAutoRotateStudio
-                  ? "bg-blue-600 text-white font-bold shadow-sm"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-blue-600 border border-blue-400 text-white shadow-md"
+                  : "bg-black/40 text-slate-400 hover:text-white"
               }`}
               title="Toggle Auto-Spin 360°"
             >
@@ -1163,7 +1178,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           </div>
 
           {/* Bottom Floating Instructions */}
-          <div className="absolute bottom-4 right-4 z-20 hidden sm:flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#071120]/80 backdrop-blur-md border border-white/10 text-[10px] font-mono text-slate-400">
+          <div className="absolute bottom-4 right-4 z-20 hidden sm:flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#071120]/80 backdrop-blur-md border border-white/10 text-[10px] font-mono text-slate-400 pointer-events-none">
             <RotateCw className="w-3 h-3 text-sky-400" />
             <span>Geser layar untuk memutar 360° • Scroll untuk zoom</span>
           </div>
