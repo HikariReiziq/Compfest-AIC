@@ -1113,20 +1113,27 @@ export const CameraScan: React.FC<CameraScanProps> = ({
   /* ---- Derived styling ---- */
   const guideStyle = GUIDE_COLORS[faceGuideState];
   const subcatLabel = subcategory === "hats" ? "Topi (Hats)" : subcategory === "shirts" ? "Pakaian (Shirts)" : "Kacamata (Glasses)";
+  const isFemaleTheme = scannedProfile?.gender?.label_id === "female" || overrideProfile?.gender?.label_id === "female";
 
   return (
     <div className="w-full space-y-8 animate-fadeIn text-white">
       <div className="text-center space-y-3">
         <div className="flex items-center justify-center">
-          <div className="inline-flex items-center gap-3 px-6 py-2.5 rounded-full bg-[#0B1528] border border-blue-500/30 text-[#93C5FD] text-sm sm:text-base font-mono font-bold shadow-xl tracking-wider">
-            <Scan className="w-4 h-4 text-[#38BDF8]" />
+          <div
+            className={`inline-flex items-center gap-3 px-6 py-2.5 rounded-full border text-sm sm:text-base font-mono font-bold shadow-xl tracking-wider ${
+              isFemaleTheme
+                ? "bg-[#1c0b1a] border-pink-500/30 text-pink-300"
+                : "bg-[#0B1528] border-blue-500/30 text-[#93C5FD]"
+            }`}
+          >
+            <Scan className={`w-4 h-4 ${isFemaleTheme ? "text-pink-400" : "text-[#38BDF8]"}`} />
             <span>TAHAP 2: PEMINDAIAN AI ({subcatLabel.toUpperCase()})</span>
           </div>
         </div>
-        <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white">
+        <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white" style={{ fontFamily: "var(--font-display)" }}>
           {subcategory === "shirts" ? "Pindai Siluet & Proporsi Tubuh Anda" : "Pindai Karakter Wajah & Rona Kulit Anda"}
         </h1>
-        <p className="text-[#94A3B8] text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
+        <p className="text-slate-300 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed font-light">
           {subcategory === "shirts"
             ? "AI menganalisis lebar bahu, rasio torso, dan keserasian rona kulit Monk Scale secara instan untuk rekomendasi pakaian presisi."
             : `AI menganalisis warna kulit (Monk Scale), undertone, dan geometri bentuk wajah Anda secara instan di peramban untuk rekomendasi ${subcatLabel}.`}
@@ -1135,13 +1142,23 @@ export const CameraScan: React.FC<CameraScanProps> = ({
 
       {/* Dual-mode tabs: Kamera Live vs Upload Foto */}
       <div className="flex justify-center">
-        <div className="inline-flex rounded-full border border-blue-500/30 bg-[#0B1528]/90 p-1.5 gap-1.5 backdrop-blur-xl">
+        <div
+          className={`inline-flex rounded-full border p-1.5 gap-1.5 backdrop-blur-xl transition-all shadow-lg ${
+            isFemaleTheme
+              ? "border-pink-500/30 bg-[#1c0b1a]/90"
+              : "border-blue-500/30 bg-[#0B1528]/90"
+          }`}
+        >
           <button
             type="button"
             onClick={() => switchMode("camera")}
             className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-semibold font-mono transition-all cursor-pointer ${
               mode === "camera"
-                ? "bg-blue-600 text-white border border-blue-400/30 font-bold"
+                ? isFemaleTheme
+                  ? "bg-gradient-to-r from-pink-600 via-rose-500 to-pink-500 text-white border border-pink-400/40 font-bold shadow-md shadow-pink-600/30"
+                  : "bg-blue-600 text-white border border-blue-400/30 font-bold shadow-md"
+                : isFemaleTheme
+                ? "text-pink-300 hover:text-white"
                 : "text-[#93C5FD] hover:text-white"
             }`}
           >
@@ -1153,7 +1170,11 @@ export const CameraScan: React.FC<CameraScanProps> = ({
             onClick={() => switchMode("upload")}
             className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-semibold font-mono transition-all cursor-pointer ${
               mode === "upload"
-                ? "bg-blue-600 text-white border border-blue-400/30 font-bold"
+                ? isFemaleTheme
+                  ? "bg-gradient-to-r from-pink-600 via-rose-500 to-pink-500 text-white border border-pink-400/40 font-bold shadow-md shadow-pink-600/30"
+                  : "bg-blue-600 text-white border border-blue-400/30 font-bold shadow-md"
+                : isFemaleTheme
+                ? "text-pink-300 hover:text-white"
                 : "text-[#93C5FD] hover:text-white"
             }`}
           >
@@ -1458,20 +1479,42 @@ export const CameraScan: React.FC<CameraScanProps> = ({
 
               {/* Scanning Laser Line */}
               {isScanning && (
-                <div className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-[#38BDF8] to-transparent shadow-[0_0_15px_#38BDF8] animate-scan-laser" />
+                <div
+                  className={`absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent ${
+                    isFemaleTheme
+                      ? "via-pink-400 to-transparent shadow-[0_0_15px_#F472B6]"
+                      : "via-[#38BDF8] to-transparent shadow-[0_0_15px_#38BDF8]"
+                  } animate-scan-laser`}
+                />
               )}
             </div>
 
             {/* Scan Progress Bar */}
             {isScanning && (
-              <div className="absolute bottom-1.5 left-2 right-2 bg-[#0B1528]/95 backdrop-blur-md rounded-lg p-1.5 border border-blue-500/20 z-20">
-                <div className="flex justify-between text-[8px] font-mono text-[#93C5FD] mb-1">
-                  <span>{subcategory === "shirts" ? "Mengekstraksi Siluet Tubuh..." : "Mengekstraksi Ciri Visual..."}</span>
+              <div
+                className={`absolute bottom-1.5 left-2 right-2 backdrop-blur-md rounded-lg p-1.5 border z-20 ${
+                  isFemaleTheme
+                    ? "bg-[#1c0b1a]/95 border-pink-500/30"
+                    : "bg-[#0B1528]/95 border-blue-500/20"
+                }`}
+              >
+                <div className="flex justify-between text-[8px] font-mono mb-1">
+                  <span className={isFemaleTheme ? "text-pink-300" : "text-[#93C5FD]"}>
+                    {subcategory === "shirts" ? "Mengekstraksi Siluet Tubuh..." : "Mengekstraksi Ciri Visual..."}
+                  </span>
                   <span className="text-[#FACC15] font-bold">{scanProgress}%</span>
                 </div>
-                <div className="w-full bg-black/60 h-1.5 rounded-full overflow-hidden border border-blue-500/20 p-0.5">
+                <div
+                  className={`w-full bg-black/60 h-1.5 rounded-full overflow-hidden border p-0.5 ${
+                    isFemaleTheme ? "border-pink-500/30" : "border-blue-500/20"
+                  }`}
+                >
                   <div
-                    className="h-full bg-gradient-to-r from-blue-600 via-sky-400 to-[#FACC15] rounded-full transition-all duration-300"
+                    className={`h-full rounded-full transition-all duration-300 ${
+                      isFemaleTheme
+                        ? "bg-gradient-to-r from-pink-600 via-rose-400 to-[#FACC15]"
+                        : "bg-gradient-to-r from-blue-600 via-sky-400 to-[#FACC15]"
+                    }`}
                     style={{ width: `${scanProgress}%` }}
                   />
                 </div>
@@ -1500,7 +1543,11 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                 onClick={() => {
                   if (lastSnapshotRef.current) void analyzePhoto(lastSnapshotRef.current, true);
                 }}
-                className="w-full py-2.5 rounded-full text-xs font-semibold font-mono text-[#93C5FD] bg-[#071120] hover:bg-blue-600/30 border border-blue-500/40 transition-colors cursor-pointer"
+                className={`w-full py-2.5 rounded-full text-xs font-semibold font-mono border transition-colors cursor-pointer ${
+                  isFemaleTheme
+                    ? "text-pink-300 bg-[#140613] hover:bg-pink-600/30 border-pink-500/40"
+                    : "text-[#93C5FD] bg-[#071120] hover:bg-blue-600/30 border-blue-500/40"
+                }`}
               >
                 Lanjutkan Analisis (abaikan peringatan)
               </button>
@@ -1511,106 +1558,159 @@ export const CameraScan: React.FC<CameraScanProps> = ({
         {/* Profile Output or Action Card */}
         <div className="lg:col-span-5 space-y-4">
           {!scannedProfile ? (
-            <div className="bg-[#0B1528]/90 rounded-3xl p-7 space-y-6 border border-blue-500/20 backdrop-blur-xl shadow-xl">
-              <div className="space-y-4">
-                <h3 className="text-xl font-bold text-white flex items-center gap-2.5">
-                  <span>{subcategory === "shirts" ? "Petunjuk Pemindaian Tubuh" : "Petunjuk Pemindaian Wajah"}</span>
-                </h3>
-
-                <ul className="space-y-3.5 text-xs sm:text-sm text-[#94A3B8] leading-relaxed">
-                  <li className="flex items-start gap-3">
-                    <span className="w-6 h-6 rounded-full bg-blue-600/20 text-[#93C5FD] flex items-center justify-center shrink-0 font-mono text-xs font-bold border border-blue-500/30">
-                      1
-                    </span>
-                    <span>
-                      {subcategory === "shirts"
-                        ? "Posisikan tubuh bagian atas (bahu dan dada) lurus menghadap kamera."
-                        : (mode === "upload"
-                          ? "Unggah foto frontal lalu sejajarkan wajah ke dalam panduan."
-                          : "Posisikan wajah Anda tepat di dalam lingkaran pemandu virtual.")}
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="w-6 h-6 rounded-full bg-blue-600/20 text-[#93C5FD] flex items-center justify-center shrink-0 font-mono text-xs font-bold border border-blue-500/30">
-                      2
-                    </span>
-                    <span>{subcategory === "shirts" ? "Pastikan kedua bahu terlihat simetris pada kamera." : "Pastikan pencahayaan ruangan cukup merata pada area wajah."}</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="w-6 h-6 rounded-full bg-blue-600/20 text-[#93C5FD] flex items-center justify-center shrink-0 font-mono text-xs font-bold border border-blue-500/30">
-                      3
-                    </span>
-                    <span>
-                      {subcategory === "shirts" ? "AI akan mengukur siluet torso, rasio bahu, dan keserasian rona kulit." : "Lepaskan kacamata atau masker sesaat untuk akurasi optimal."}
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 font-mono text-xs font-bold">
-                      <Check className="w-3.5 h-3.5" />
-                    </span>
-                    <span>
-                      Pemindaian otomatis dimulai dengan{" "}
-                      <strong className="text-[#FACC15]">countdown 3 detik</strong> saat posisi
-                      terkunci.
-                    </span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="space-y-3 pt-2">
-                {/* Face detection status indicator */}
-                {hasCamera && (
-                  <div
-                    className="flex items-center gap-2.5 px-4 py-3 rounded-2xl border text-xs font-medium transition-all duration-300"
-                    style={{
-                      borderColor: guideStyle.border + "40",
-                      backgroundColor: "#071120",
-                      color: guideStyle.text,
-                    }}
+            /* Double-Bezel Luxury Outer Shell */
+            <div
+              className={`p-1.5 sm:p-2 rounded-[2rem] border backdrop-blur-2xl transition-all duration-500 shadow-2xl ${
+                isFemaleTheme
+                  ? "bg-gradient-to-b from-pink-500/10 via-pink-500/[0.02] to-transparent border-pink-500/30 shadow-pink-950/30"
+                  : "bg-gradient-to-b from-blue-500/10 via-blue-500/[0.02] to-transparent border-blue-500/30 shadow-blue-950/30"
+              }`}
+            >
+              {/* Inner Core */}
+              <div
+                className={`p-6 sm:p-7 rounded-[calc(2rem-0.375rem)] space-y-6 transition-all duration-500 ${
+                  isFemaleTheme
+                    ? "bg-[#140613]/90 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]"
+                    : "bg-[#071120]/90 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]"
+                }`}
+              >
+                <div className="space-y-4">
+                  <h3
+                    className="text-xl font-bold text-white flex items-center gap-2.5 tracking-tight"
+                    style={{ fontFamily: "var(--font-display)" }}
                   >
-                    <span
-                      className="w-2.5 h-2.5 rounded-full shrink-0 animate-pulse"
-                      style={{ backgroundColor: guideStyle.border }}
-                    />
-                    <span className="leading-tight">{guideMessage}</span>
-                  </div>
-                )}
+                    <span>{subcategory === "shirts" ? "Petunjuk Pemindaian Tubuh" : "Petunjuk Pemindaian Wajah"}</span>
+                  </h3>
 
-                {/* Manual Scan Button */}
-                <button
-                  type="button"
-                  onClick={handleStartScan}
-                  disabled={isScanning || (mode === "camera" && faceGuideState === "NO_FACE" && !lastAlignedLmRef.current && !lastAlignedPoseRef.current)}
-                  className={`w-full py-4 rounded-full font-bold text-sm text-white transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
-                    faceGuideState === "ALIGNED"
-                      ? "bg-blue-600 hover:bg-blue-500 border border-blue-400/30 shadow-lg shadow-blue-500/20"
-                      : faceGuideState === "MISALIGNED" || lastAlignedLmRef.current || lastAlignedPoseRef.current
-                      ? "bg-blue-600 hover:bg-blue-500 border border-blue-400/30 text-white cursor-pointer shadow-md"
-                      : "bg-[#071120] text-[#64748B] border border-blue-500/20"
-                  }`}
-                >
-                  {isScanning ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      <span>Sedang Menganalisis AI...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Scan className="w-4 h-4" />
-                      <span>
-                        {subcategory === "shirts" ? (
-                          faceGuideState === "ALIGNED"
-                            ? "Pindai Tubuh Sekarang"
-                            : "Pindai Tubuh (Manual)"
-                        ) : (
-                          faceGuideState === "ALIGNED"
-                            ? "Pindai Sekarang"
-                            : "Pindai Sekarang (Manual)"
-                        )}
+                  <ul className="space-y-3.5 text-xs sm:text-sm text-slate-300 leading-relaxed font-light">
+                    <li className="flex items-start gap-3">
+                      <span
+                        className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 font-mono text-xs font-bold border ${
+                          isFemaleTheme
+                            ? "bg-pink-600/20 text-pink-300 border-pink-500/40"
+                            : "bg-blue-600/20 text-[#93C5FD] border-blue-500/30"
+                        }`}
+                      >
+                        1
                       </span>
-                    </>
+                      <span>
+                        {subcategory === "shirts"
+                          ? "Posisikan tubuh bagian atas (bahu dan dada) lurus menghadap kamera."
+                          : mode === "upload"
+                          ? "Unggah foto frontal lalu sejajarkan wajah ke dalam panduan."
+                          : "Posisikan wajah Anda tepat di dalam lingkaran pemandu virtual."}
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span
+                        className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 font-mono text-xs font-bold border ${
+                          isFemaleTheme
+                            ? "bg-pink-600/20 text-pink-300 border-pink-500/40"
+                            : "bg-blue-600/20 text-[#93C5FD] border-blue-500/30"
+                        }`}
+                      >
+                        2
+                      </span>
+                      <span>
+                        {subcategory === "shirts"
+                          ? "Pastikan kedua bahu terlihat simetris pada kamera."
+                          : "Pastikan pencahayaan ruangan cukup merata pada area wajah."}
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span
+                        className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 font-mono text-xs font-bold border ${
+                          isFemaleTheme
+                            ? "bg-pink-600/20 text-pink-300 border-pink-500/40"
+                            : "bg-blue-600/20 text-[#93C5FD] border-blue-500/30"
+                        }`}
+                      >
+                        3
+                      </span>
+                      <span>
+                        {subcategory === "shirts"
+                          ? "AI akan mengukur siluet torso, rasio bahu, dan keserasian rona kulit."
+                          : "Lepaskan kacamata atau masker sesaat untuk akurasi optimal."}
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span
+                        className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 font-mono text-xs font-bold ${
+                          isFemaleTheme ? "bg-pink-600 text-white" : "bg-blue-600 text-white"
+                        }`}
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                      </span>
+                      <span>
+                        Pemindaian otomatis dimulai dengan{" "}
+                        <strong className="text-[#FACC15] font-semibold">countdown 3 detik</strong> saat posisi
+                        terkunci.
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="space-y-3 pt-2">
+                  {/* Face detection status indicator */}
+                  {hasCamera && (
+                    <div
+                      className="flex items-center gap-2.5 px-4 py-3 rounded-2xl border text-xs font-medium transition-all duration-300"
+                      style={{
+                        borderColor: guideStyle.border + "40",
+                        backgroundColor: isFemaleTheme ? "#180816" : "#071120",
+                        color: guideStyle.text,
+                      }}
+                    >
+                      <span
+                        className="w-2.5 h-2.5 rounded-full shrink-0 animate-pulse"
+                        style={{ backgroundColor: guideStyle.border }}
+                      />
+                      <span className="leading-tight">{guideMessage}</span>
+                    </div>
                   )}
-                </button>
+
+                  {/* Manual Scan Button */}
+                  <button
+                    type="button"
+                    onClick={handleStartScan}
+                    disabled={
+                      isScanning ||
+                      (mode === "camera" &&
+                        faceGuideState === "NO_FACE" &&
+                        !lastAlignedLmRef.current &&
+                        !lastAlignedPoseRef.current)
+                    }
+                    className={`w-full py-4 rounded-full font-bold text-sm text-white transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
+                      faceGuideState === "ALIGNED" || faceGuideState === "MISALIGNED" || lastAlignedLmRef.current || lastAlignedPoseRef.current
+                        ? isFemaleTheme
+                          ? "bg-gradient-to-r from-pink-600 via-rose-500 to-pink-500 hover:from-pink-500 hover:to-rose-400 border border-pink-400/40 shadow-lg shadow-pink-600/30"
+                          : "bg-gradient-to-r from-blue-600 via-sky-500 to-blue-600 hover:from-blue-500 hover:to-sky-400 border border-blue-400/30 shadow-lg shadow-blue-500/20"
+                        : isFemaleTheme
+                        ? "bg-[#180816] text-slate-500 border border-pink-500/20"
+                        : "bg-[#071120] text-[#64748B] border border-blue-500/20"
+                    }`}
+                  >
+                    {isScanning ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Sedang Menganalisis AI...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Scan className="w-4 h-4" />
+                        <span>
+                          {subcategory === "shirts"
+                            ? faceGuideState === "ALIGNED"
+                              ? "Pindai Tubuh Sekarang"
+                              : "Pindai Tubuh (Manual)"
+                            : faceGuideState === "ALIGNED"
+                            ? "Pindai Sekarang"
+                            : "Pindai Sekarang (Manual)"}
+                        </span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           ) : (
@@ -1619,352 +1719,401 @@ export const CameraScan: React.FC<CameraScanProps> = ({
               const skinHex = scannedProfile.monk_tone?.hex || scannedProfile.skin_tone?.hex || "#C58C66";
 
               return (
+                /* Double-Bezel Luxury Outer Shell */
                 <div
-                  className={`rounded-3xl p-6 sm:p-7 border backdrop-blur-2xl space-y-4 transition-all duration-500 ${
+                  className={`p-1.5 sm:p-2 rounded-[2.25rem] border backdrop-blur-2xl transition-all duration-500 shadow-2xl ${
                     isFemale
-                      ? "border-pink-500/30 bg-gradient-to-b from-[#1d0a1b]/95 via-[#130713]/95 to-[#080208]/95 shadow-[0_0_60px_rgba(236,72,153,0.18)]"
-                      : "border-blue-500/30 bg-gradient-to-b from-[#0b1528]/95 via-[#080f1d]/95 to-[#040810]/95 shadow-[0_0_60px_rgba(59,130,246,0.18)]"
+                      ? "bg-gradient-to-b from-pink-500/15 via-pink-500/[0.03] to-transparent border-pink-500/40 shadow-[0_16px_50px_rgba(244,114,182,0.25)]"
+                      : "bg-gradient-to-b from-blue-500/15 via-blue-500/[0.03] to-transparent border-blue-500/40 shadow-[0_16px_50px_rgba(56,189,248,0.25)]"
                   }`}
                 >
-                  {/* Top Header */}
-                  <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                    <div>
-                      <h3 className="font-extrabold text-white text-lg leading-tight">
-                        Profil Karakter Terdeteksi
-                      </h3>
-                      <p
-                        className={`text-xs font-mono font-medium ${
-                          isFemale ? "text-pink-300" : "text-sky-300"
+                  {/* Inner Core */}
+                  <div
+                    className={`p-6 sm:p-7 rounded-[calc(2.25rem-0.375rem)] space-y-5 transition-all duration-500 ${
+                      isFemale
+                        ? "bg-[#150714]/95 shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)]"
+                        : "bg-[#071120]/95 shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)]"
+                    }`}
+                  >
+                    {/* Top Header */}
+                    <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                      <div>
+                        <h3
+                          className="font-extrabold text-white text-lg sm:text-xl leading-tight tracking-tight"
+                          style={{ fontFamily: "var(--font-display)" }}
+                        >
+                          Profil Karakter Terdeteksi
+                        </h3>
+                        <p
+                          className={`text-xs font-mono font-medium ${
+                            isFemale ? "text-pink-300" : "text-sky-300"
+                          }`}
+                        >
+                          Biometrik Terverifikasi • Standar ISO/IEC &amp; Monk Scale
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setScannedProfile(null);
+                          setFaceGuideState("NO_FACE");
+                          alignedSinceRef.current = 0;
+                          samplerRef.current.reset();
+                          setCountdown(null);
+                          setGuideMessage("Posisikan wajah di dalam oval pemandu");
+                          if (mode === "upload") {
+                            setUploadStage("select");
+                            setPhotoDataUrl(null);
+                            setUploadError(null);
+                            setQualityIssues([]);
+                            lastSnapshotRef.current = null;
+                          }
+                        }}
+                        className={`px-3.5 py-1.5 rounded-full bg-black/40 border text-xs flex items-center gap-1.5 cursor-pointer font-mono transition-colors ${
+                          isFemale
+                            ? "border-pink-500/30 text-pink-300 hover:text-white hover:bg-pink-600/30"
+                            : "border-blue-500/30 text-sky-300 hover:text-white hover:bg-blue-600/30"
                         }`}
                       >
-                        Biometrik Terverifikasi • Standar ISO/IEC &amp; Monk Scale
-                      </p>
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>Ulangi</span>
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setScannedProfile(null);
-                        setFaceGuideState("NO_FACE");
-                        alignedSinceRef.current = 0;
-                        samplerRef.current.reset();
-                        setCountdown(null);
-                        setGuideMessage("Posisikan wajah di dalam oval pemandu");
-                        if (mode === "upload") {
-                          setUploadStage("select");
-                          setPhotoDataUrl(null);
-                          setUploadError(null);
-                          setQualityIssues([]);
-                          lastSnapshotRef.current = null;
-                        }
-                      }}
-                      className={`px-3.5 py-1.5 rounded-full bg-black/40 border text-xs flex items-center gap-1.5 cursor-pointer font-mono transition-colors ${
+
+                    {/* Sub-Card 1: Karakteristik & Siluet */}
+                    <div
+                      className={`rounded-2xl p-4 border space-y-3 ${
                         isFemale
-                          ? "border-pink-500/30 text-pink-300 hover:text-white hover:bg-pink-600/30"
-                          : "border-blue-500/30 text-sky-300 hover:text-white hover:bg-blue-600/30"
+                          ? "bg-gradient-to-br from-pink-500/[0.08] to-pink-950/20 border-pink-500/25"
+                          : "bg-gradient-to-br from-blue-500/[0.08] to-blue-950/20 border-blue-500/25"
                       }`}
                     >
-                      <RefreshCw className="w-3.5 h-3.5" />
-                      <span>Ulangi</span>
-                    </button>
-                  </div>
-
-                  {/* Sub-Card 1: Karakteristik & Siluet (Rounded 2xl Cards) */}
-                  <div
-                    className={`rounded-2xl p-4 border space-y-3 ${
-                      isFemale ? "bg-pink-950/20 border-pink-500/20" : "bg-[#071120] border-blue-500/20"
-                    }`}
-                  >
-                    {/* 1. Warna Kulit (Translucent Subtle Tint matching actual skin tone) */}
-                    <div
-                      className="p-4 rounded-2xl flex items-center justify-between shadow-lg transition-all border backdrop-blur-md"
-                      style={{
-                        background: `linear-gradient(135deg, ${skinHex}40 0%, ${skinHex}20 100%)`,
-                        borderColor: `${skinHex}55`,
-                      }}
-                    >
-                      <div className="flex items-center gap-3.5">
-                        <div
-                          className="w-10 h-10 rounded-2xl border flex items-center justify-center shadow-md backdrop-blur-md"
-                          style={{
-                            backgroundColor: `${skinHex}30`,
-                            borderColor: `${skinHex}70`,
-                          }}
-                        >
-                          <span
-                            className="w-5 h-5 rounded-full border-2 border-white shadow-sm"
-                            style={{ backgroundColor: skinHex }}
-                          />
-                        </div>
-                        <div>
-                          <span className="text-slate-300 font-mono text-[10px] uppercase tracking-wider block font-semibold">
-                            WARNA KULIT
-                          </span>
-                          <span className="font-extrabold text-white text-base">
-                            {scannedProfile.skin_tone?.tone || "Tan"}
-                          </span>
-                        </div>
-                      </div>
+                      {/* 1. Warna Kulit */}
                       <div
-                        className="px-3.5 py-1.5 rounded-full border font-mono font-bold text-xs shadow-inner"
+                        className="p-4 rounded-2xl flex items-center justify-between shadow-lg transition-all border backdrop-blur-md"
                         style={{
-                          backgroundColor: `${skinHex}35`,
-                          borderColor: `${skinHex}70`,
-                          color: '#FFFFFF',
+                          background: `linear-gradient(135deg, ${skinHex}40 0%, ${skinHex}20 100%)`,
+                          borderColor: `${skinHex}55`,
                         }}
                       >
-                        {scannedProfile.monk_tone?.code || "MST-06"}
+                        <div className="flex items-center gap-3.5">
+                          <div
+                            className="w-10 h-10 rounded-2xl border flex items-center justify-center shadow-md backdrop-blur-md"
+                            style={{
+                              backgroundColor: `${skinHex}30`,
+                              borderColor: `${skinHex}70`,
+                            }}
+                          >
+                            <span
+                              className="w-5 h-5 rounded-full border-2 border-white shadow-sm"
+                              style={{ backgroundColor: skinHex }}
+                            />
+                          </div>
+                          <div>
+                            <span className="text-slate-300 font-mono text-[10px] uppercase tracking-wider block font-semibold">
+                              WARNA KULIT
+                            </span>
+                            <span className="font-extrabold text-white text-base">
+                              {scannedProfile.skin_tone?.tone || "Tan"}
+                            </span>
+                          </div>
+                        </div>
+                        <div
+                          className="px-3.5 py-1.5 rounded-full border font-mono font-bold text-xs shadow-inner"
+                          style={{
+                            backgroundColor: `${skinHex}35`,
+                            borderColor: `${skinHex}70`,
+                            color: '#FFFFFF',
+                          }}
+                        >
+                          {scannedProfile.monk_tone?.code || "MST-06"}
+                        </div>
                       </div>
-                    </div>
 
-                    {/* 2. Siluet Tubuh / Bentuk Wajah */}
-                    <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
-                      <div>
-                        <span className="text-slate-400 font-mono text-[10px] uppercase tracking-wider block font-semibold">
-                          {subcategory === "shirts" ? "SILUET TUBUH" : "BENTUK WAJAH"}
-                        </span>
-                        <span className="font-bold text-white text-base">
-                          {subcategory === "shirts"
-                            ? (scannedProfile.body_shape_classification?.body_shape || "Trapezoid (Atletis)")
-                            : (scannedProfile.face_shape?.shape || "Oblong")}
-                        </span>
-                      </div>
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-mono font-semibold border ${
-                          isFemale
-                            ? "bg-pink-500/15 border-pink-500/30 text-pink-300"
-                            : "bg-emerald-500/15 border-emerald-500/30 text-emerald-300"
+                      {/* 2. Siluet Tubuh / Bentuk Wajah */}
+                      <div
+                        className={`p-3.5 rounded-2xl border flex items-center justify-between ${
+                          isFemale ? "bg-[#1f091d]/60 border-pink-500/20" : "bg-white/5 border-white/10"
                         }`}
                       >
-                        {subcategory === "shirts"
-                          ? `${Math.round((scannedProfile.body_shape_classification?.confidence || 0.97) * 100)}% Match`
-                          : `${Math.round((scannedProfile.face_shape?.confidence || 0.98) * 100)}% Match`}
-                      </span>
-                    </div>
-
-                    {/* 3. Gender / Jenis Kelamin dengan Simbol Resmi (Mars ♂ & Venus ♀) */}
-                    <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
-                      <div>
-                        <span className="text-slate-400 font-mono text-[10px] uppercase tracking-wider block font-semibold">
-                          JENIS KELAMIN
-                        </span>
-                        <span className="font-bold text-white text-base flex items-center gap-2">
-                          {isFemale ? (
-                            <>
-                              {/* Simbol Venus (Wanita ♀) */}
-                              <svg
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2.5"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                className="w-4 h-4 text-pink-400 shrink-0"
-                              >
-                                <circle cx="12" cy="9" r="5" />
-                                <line x1="12" y1="14" x2="12" y2="21" />
-                                <line x1="9" y1="18" x2="15" y2="18" />
-                              </svg>
-                              <span>Wanita</span>
-                            </>
-                          ) : (
-                            <>
-                              {/* Simbol Mars (Pria ♂) */}
-                              <svg
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2.5"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                className="w-4 h-4 text-sky-400 shrink-0"
-                              >
-                                <circle cx="10" cy="14" r="5" />
-                                <line x1="19" y1="5" x2="13.6" y2="10.4" />
-                                <polyline points="15 5 19 5 19 9" />
-                              </svg>
-                              <span>Pria</span>
-                            </>
-                          )}
-                        </span>
-                      </div>
-                      <div className="inline-flex rounded-2xl bg-black/40 p-1 border border-white/15 gap-1 shadow-inner">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setScannedProfile((prev) =>
-                              prev
-                                ? {
-                                    ...prev,
-                                    gender: {
-                                      label: "Pria (Male)",
-                                      label_id: "male",
-                                      confidence: 1.0,
-                                      method: "manual_selection",
-                                      rule: "dipilih pengguna",
-                                    },
-                                  }
-                                : prev
-                            )
-                          }
-                          className={`px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                            !isFemale
-                              ? "bg-blue-600 border border-blue-400 text-white shadow-md"
-                              : "text-slate-400 hover:text-white"
-                          }`}
-                        >
-                          {/* Simbol Mars ♂ */}
-                          <svg
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="w-3.5 h-3.5 shrink-0"
-                          >
-                            <circle cx="10" cy="14" r="5" />
-                            <line x1="19" y1="5" x2="13.6" y2="10.4" />
-                            <polyline points="15 5 19 5 19 9" />
-                          </svg>
-                          <span>Pria</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setScannedProfile((prev) =>
-                              prev
-                                ? {
-                                    ...prev,
-                                    gender: {
-                                      label: "Wanita (Female)",
-                                      label_id: "female",
-                                      confidence: 1.0,
-                                      method: "manual_selection",
-                                      rule: "dipilih pengguna",
-                                    },
-                                  }
-                                : prev
-                            )
-                          }
-                          className={`px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                        <div>
+                          <span className="text-slate-400 font-mono text-[10px] uppercase tracking-wider block font-semibold">
+                            {subcategory === "shirts" ? "SILUET TUBUH" : "BENTUK WAJAH"}
+                          </span>
+                          <span className="font-bold text-white text-base">
+                            {subcategory === "shirts"
+                              ? (scannedProfile.body_shape_classification?.body_shape || "Trapezoid (Atletis)")
+                              : (scannedProfile.face_shape?.shape || "Oblong")}
+                          </span>
+                        </div>
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-mono font-semibold border ${
                             isFemale
-                              ? "bg-pink-600 border border-pink-400 text-white shadow-md"
-                              : "text-slate-400 hover:text-white"
+                              ? "bg-pink-500/20 border-pink-500/40 text-pink-300"
+                              : "bg-emerald-500/15 border-emerald-500/30 text-emerald-300"
                           }`}
                         >
-                          {/* Simbol Venus ♀ */}
-                          <svg
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="w-3.5 h-3.5 shrink-0"
-                          >
-                            <circle cx="12" cy="9" r="5" />
-                            <line x1="12" y1="14" x2="12" y2="21" />
-                            <line x1="9" y1="18" x2="15" y2="18" />
-                          </svg>
-                          <span>Wanita</span>
-                        </button>
+                          {subcategory === "shirts"
+                            ? `${Math.round((scannedProfile.body_shape_classification?.confidence || 0.97) * 100)}% Match`
+                            : `${Math.round((scannedProfile.face_shape?.confidence || 0.98) * 100)}% Match`}
+                        </span>
                       </div>
-                    </div>
-                  </div>
 
-                  {/* Sub-Card 2: Proporsi & Antropometri (Curved Grid Format) */}
-                  <div
-                    className={`rounded-2xl p-4 border space-y-3 ${
-                      isFemale ? "bg-pink-950/20 border-pink-500/20" : "bg-[#071120] border-blue-500/20"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between pb-1 border-b border-white/5">
-                      <span
-                        className={`text-[10px] font-mono uppercase tracking-wider font-semibold ${
-                          isFemale ? "text-pink-300" : "text-sky-300"
+                      {/* 3. Gender / Jenis Kelamin */}
+                      <div
+                        className={`p-3.5 rounded-2xl border flex items-center justify-between ${
+                          isFemale ? "bg-[#1f091d]/60 border-pink-500/20" : "bg-white/5 border-white/10"
                         }`}
                       >
-                        {subcategory === "shirts" ? "PROPORSI & SILUET TUBUH" : "PROPORSI GEOMETRI WAJAH"}
-                      </span>
-                      <span className="text-[9px] font-mono text-slate-400">Pinhole Metric Calibrated</span>
+                        <div>
+                          <span className="text-slate-400 font-mono text-[10px] uppercase tracking-wider block font-semibold">
+                            JENIS KELAMIN
+                          </span>
+                          <span className="font-bold text-white text-base flex items-center gap-2">
+                            {isFemale ? (
+                              <>
+                                <svg
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2.5"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className="w-4 h-4 text-pink-400 shrink-0"
+                                >
+                                  <circle cx="12" cy="9" r="5" />
+                                  <line x1="12" y1="14" x2="12" y2="21" />
+                                  <line x1="9" y1="18" x2="15" y2="18" />
+                                </svg>
+                                <span>Wanita</span>
+                              </>
+                            ) : (
+                              <>
+                                <svg
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2.5"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className="w-4 h-4 text-sky-400 shrink-0"
+                                >
+                                  <circle cx="10" cy="14" r="5" />
+                                  <line x1="19" y1="5" x2="13.6" y2="10.4" />
+                                  <polyline points="15 5 19 5 19 9" />
+                                </svg>
+                                <span>Pria</span>
+                              </>
+                            )}
+                          </span>
+                        </div>
+                        <div className="inline-flex rounded-2xl bg-black/40 p-1 border border-white/15 gap-1 shadow-inner">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setScannedProfile((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      gender: {
+                                        label: "Pria (Male)",
+                                        label_id: "male",
+                                        confidence: 1.0,
+                                        method: "manual_selection",
+                                        rule: "dipilih pengguna",
+                                      },
+                                    }
+                                  : prev
+                              )
+                            }
+                            className={`px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                              !isFemale
+                                ? "bg-blue-600 border border-blue-400 text-white shadow-md"
+                                : "text-slate-400 hover:text-white"
+                            }`}
+                          >
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="w-3.5 h-3.5 shrink-0"
+                            >
+                              <circle cx="10" cy="14" r="5" />
+                              <line x1="19" y1="5" x2="13.6" y2="10.4" />
+                              <polyline points="15 5 19 5 19 9" />
+                            </svg>
+                            <span>Pria</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setScannedProfile((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      gender: {
+                                        label: "Wanita (Female)",
+                                        label_id: "female",
+                                        confidence: 1.0,
+                                        method: "manual_selection",
+                                        rule: "dipilih pengguna",
+                                      },
+                                    }
+                                  : prev
+                              )
+                            }
+                            className={`px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                              isFemale
+                                ? "bg-pink-600 border border-pink-400 text-white shadow-md shadow-pink-600/30"
+                                : "text-slate-400 hover:text-white"
+                            }`}
+                          >
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="w-3.5 h-3.5 shrink-0"
+                            >
+                              <circle cx="12" cy="9" r="5" />
+                              <line x1="12" y1="14" x2="12" y2="21" />
+                              <line x1="9" y1="18" x2="15" y2="18" />
+                            </svg>
+                            <span>Wanita</span>
+                          </button>
+                        </div>
+                      </div>
                     </div>
 
-                    {subcategory === "shirts" ? (
-                      <div className="space-y-2">
-                        <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
-                          <span className="text-xs font-mono text-slate-300 uppercase font-semibold">Lebar Bahu</span>
-                          <span className="text-sm font-bold font-mono text-white">
-                            {scannedProfile.body_measurements_cm?.shoulder_width_cm || 44.5} cm
-                          </span>
-                        </div>
-                        <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
-                          <span className="text-xs font-mono text-slate-300 uppercase font-semibold">Lebar Dada</span>
-                          <span className="text-sm font-bold font-mono text-white">
-                            {scannedProfile.body_measurements_cm?.chest_width_cm || 42.0} cm
-                          </span>
-                        </div>
-                        <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
-                          <span className="text-xs font-mono text-slate-300 uppercase font-semibold">Rasio V-Shape</span>
-                          <span
-                            className={`text-sm font-bold font-mono ${
-                              isFemale ? "text-pink-300" : "text-sky-300"
-                            }`}
-                          >
-                            {(scannedProfile as any).body_measurements?.shoulder_to_hip_ratio
-                              ? `${(scannedProfile as any).body_measurements.shoulder_to_hip_ratio}x`
-                              : "1.18x"}
-                          </span>
-                        </div>
+                    {/* Sub-Card 2: Proporsi & Antropometri */}
+                    <div
+                      className={`rounded-2xl p-4 border space-y-3 ${
+                        isFemale
+                          ? "bg-gradient-to-br from-pink-500/[0.08] to-pink-950/20 border-pink-500/25"
+                          : "bg-gradient-to-br from-blue-500/[0.08] to-blue-950/20 border-blue-500/25"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between pb-1 border-b border-white/5">
+                        <span
+                          className={`text-[10px] font-mono uppercase tracking-wider font-semibold ${
+                            isFemale ? "text-pink-300" : "text-sky-300"
+                          }`}
+                        >
+                          {subcategory === "shirts" ? "PROPORSI & SILUET TUBUH" : "PROPORSI GEOMETRI WAJAH"}
+                        </span>
+                        <span className="text-[9px] font-mono text-slate-400">Pinhole Metric Calibrated</span>
                       </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
-                          <span className="text-xs font-mono text-slate-300 uppercase font-semibold">Lebar Dahi</span>
-                          <span className="text-sm font-bold font-mono text-white">
-                            {scannedProfile.face_measurements?.forehead_width_cm ?? 12.56} cm
-                          </span>
-                        </div>
-                        <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
-                          <span className="text-xs font-mono text-slate-300 uppercase font-semibold">Lebar Pipi (Cheekbone)</span>
-                          <span className="text-sm font-bold font-mono text-white">
-                            {scannedProfile.face_measurements?.cheekbone_width_cm ?? 12.46} cm
-                          </span>
-                        </div>
-                        <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
-                          <span className="text-xs font-mono text-slate-300 uppercase font-semibold">Lebar Rahang (Jawline)</span>
-                          <span className="text-sm font-bold font-mono text-white">
-                            {scannedProfile.face_measurements?.jaw_width_cm ?? 9.6} cm
-                          </span>
-                        </div>
-                        <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between text-xs">
-                          <span className="text-slate-400 font-mono text-[11px]">Karakteristik Sensorik:</span>
-                          <span
-                            className={`font-semibold ${
-                              isFemale ? "text-pink-300" : "text-sky-300"
-                            }`}
-                          >
-                            Hidung {scannedProfile.nose_type || "Bulbous"} • Mata {scannedProfile.eye_shape || "Cat-eye"}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
 
-                  {/* Action Button */}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      onScanComplete(scannedProfile, streamRef.current || undefined, { inputMode: mode })
-                    }
-                    className={`w-full py-4 rounded-full font-bold text-sm text-white flex items-center justify-center gap-2 cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99] ${
-                      isFemale
-                        ? "bg-gradient-to-r from-pink-600 via-rose-500 to-pink-500 hover:from-pink-500 hover:to-rose-400 border border-pink-400/30 shadow-[0_4px_25px_rgba(236,72,153,0.35)]"
-                        : "bg-gradient-to-r from-blue-600 via-sky-500 to-blue-500 hover:from-blue-500 hover:to-sky-400 border border-blue-400/30 shadow-[0_4px_25px_rgba(59,130,246,0.35)]"
-                    }`}
-                  >
-                    <span>Lanjut ke Kuesioner Gaya {subcatLabel}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
+                      {subcategory === "shirts" ? (
+                        <div className="space-y-2">
+                          <div
+                            className={`p-3 rounded-2xl border flex items-center justify-between ${
+                              isFemale ? "bg-[#1f091d]/60 border-pink-500/20" : "bg-white/5 border-white/10"
+                            }`}
+                          >
+                            <span className="text-xs font-mono text-slate-300 uppercase font-semibold">Lebar Bahu</span>
+                            <span className="text-sm font-bold font-mono text-white">
+                              {scannedProfile.body_measurements_cm?.shoulder_width_cm || 44.5} cm
+                            </span>
+                          </div>
+                          <div
+                            className={`p-3 rounded-2xl border flex items-center justify-between ${
+                              isFemale ? "bg-[#1f091d]/60 border-pink-500/20" : "bg-white/5 border-white/10"
+                            }`}
+                          >
+                            <span className="text-xs font-mono text-slate-300 uppercase font-semibold">Lebar Dada</span>
+                            <span className="text-sm font-bold font-mono text-white">
+                              {scannedProfile.body_measurements_cm?.chest_width_cm || 42.0} cm
+                            </span>
+                          </div>
+                          <div
+                            className={`p-3 rounded-2xl border flex items-center justify-between ${
+                              isFemale ? "bg-[#1f091d]/60 border-pink-500/20" : "bg-white/5 border-white/10"
+                            }`}
+                          >
+                            <span className="text-xs font-mono text-slate-300 uppercase font-semibold">Rasio V-Shape</span>
+                            <span
+                              className={`text-sm font-bold font-mono ${
+                                isFemale ? "text-pink-300" : "text-sky-300"
+                              }`}
+                            >
+                              {(scannedProfile as any).body_measurements?.shoulder_to_hip_ratio
+                                ? `${(scannedProfile as any).body_measurements.shoulder_to_hip_ratio}x`
+                                : "1.18x"}
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <div
+                            className={`p-3 rounded-2xl border flex items-center justify-between ${
+                              isFemale ? "bg-[#1f091d]/60 border-pink-500/20" : "bg-white/5 border-white/10"
+                            }`}
+                          >
+                            <span className="text-xs font-mono text-slate-300 uppercase font-semibold">Lebar Dahi</span>
+                            <span className="text-sm font-bold font-mono text-white">
+                              {scannedProfile.face_measurements?.forehead_width_cm ?? 12.56} cm
+                            </span>
+                          </div>
+                          <div
+                            className={`p-3 rounded-2xl border flex items-center justify-between ${
+                              isFemale ? "bg-[#1f091d]/60 border-pink-500/20" : "bg-white/5 border-white/10"
+                            }`}
+                          >
+                            <span className="text-xs font-mono text-slate-300 uppercase font-semibold">Lebar Pipi (Cheekbone)</span>
+                            <span className="text-sm font-bold font-mono text-white">
+                              {scannedProfile.face_measurements?.cheekbone_width_cm ?? 12.46} cm
+                            </span>
+                          </div>
+                          <div
+                            className={`p-3 rounded-2xl border flex items-center justify-between ${
+                              isFemale ? "bg-[#1f091d]/60 border-pink-500/20" : "bg-white/5 border-white/10"
+                            }`}
+                          >
+                            <span className="text-xs font-mono text-slate-300 uppercase font-semibold">Lebar Rahang (Jawline)</span>
+                            <span className="text-sm font-bold font-mono text-white">
+                              {scannedProfile.face_measurements?.jaw_width_cm ?? 9.6} cm
+                            </span>
+                          </div>
+                          <div
+                            className={`p-3 rounded-2xl border flex items-center justify-between text-xs ${
+                              isFemale ? "bg-[#1f091d]/60 border-pink-500/20" : "bg-white/5 border-white/10"
+                            }`}
+                          >
+                            <span className="text-slate-400 font-mono text-[11px]">Karakteristik Sensorik:</span>
+                            <span
+                              className={`font-semibold ${
+                                isFemale ? "text-pink-300" : "text-sky-300"
+                              }`}
+                            >
+                              Hidung {scannedProfile.nose_type || "Bulbous"} • Mata {scannedProfile.eye_shape || "Cat-eye"}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Action Button */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onScanComplete(scannedProfile, streamRef.current || undefined, { inputMode: mode })
+                      }
+                      className={`w-full py-4 rounded-full font-bold text-sm text-white flex items-center justify-center gap-2 cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99] ${
+                        isFemale
+                          ? "bg-gradient-to-r from-pink-600 via-rose-500 to-pink-500 hover:from-pink-500 hover:to-rose-400 border border-pink-400/40 shadow-[0_4px_25px_rgba(236,72,153,0.35)]"
+                          : "bg-gradient-to-r from-blue-600 via-sky-500 to-blue-500 hover:from-blue-500 hover:to-sky-400 border border-blue-400/30 shadow-[0_4px_25px_rgba(59,130,246,0.35)]"
+                      }`}
+                    >
+                      <span>Lanjut ke Kuesioner Gaya {subcatLabel}</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               );
             })()

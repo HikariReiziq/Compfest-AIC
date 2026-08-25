@@ -422,23 +422,24 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-7">
-        {/* Questions List — 2-column grid to fill the screen left-right (minimize scrolling) */}
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Questions List — 2-column grid to fill the screen left-right */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-7 items-start">
         {questionsList.map((q, index) => {
           const isAnswered = !!answers[q.id];
 
           return (
+            /* Double-Bezel Luxury Outer Shell */
             <div
               key={q.id}
-              className={`relative rounded-3xl p-7 sm:p-8 space-y-5 transition-all duration-300 border backdrop-blur-xl shadow-xl ${
+              className={`relative p-1.5 sm:p-2 rounded-[2.25rem] border backdrop-blur-2xl transition-all duration-500 shadow-xl ${
                 questionsList.length % 2 === 1 && index === questionsList.length - 1 ? 'xl:col-span-2' : ''
               } ${
                 !isAnswered && validationError
-                  ? 'border-rose-500/60 bg-[#14060b]/90'
+                  ? 'border-rose-500/60 bg-rose-950/20'
                   : isFemale
-                  ? 'bg-[#180918]/90 border-pink-500/20 hover:border-pink-500/40'
-                  : 'bg-[#0B1528]/90 border-blue-500/20 hover:border-blue-500/40'
+                  ? 'bg-gradient-to-b from-pink-500/10 via-pink-500/[0.02] to-transparent border-pink-500/25 hover:border-pink-400/50'
+                  : 'bg-gradient-to-b from-blue-500/10 via-blue-500/[0.02] to-transparent border-blue-500/25 hover:border-blue-400/50'
               }`}
             >
               {/* Floating Compact Re-Roll Button Attached to Container */}
@@ -447,10 +448,10 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
                   type="button"
                   onClick={() => handleRerollQuestion(q.id)}
                   disabled={rerollingId === q.id}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-semibold bg-[#071120] border transition-all shadow-lg hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-50 ${
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-semibold border transition-all shadow-lg hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-50 ${
                     isFemale
-                      ? 'text-pink-300 border-pink-400/40 hover:border-pink-400 hover:bg-pink-600/25 hover:text-white'
-                      : 'text-[#38BDF8] border-blue-400/40 hover:border-blue-400 hover:bg-blue-600/25 hover:text-white'
+                      ? 'text-pink-300 border-pink-400/40 hover:border-pink-400 hover:bg-pink-600/25 hover:text-white bg-[#140613]'
+                      : 'text-[#38BDF8] border-blue-400/40 hover:border-blue-400 hover:bg-blue-600/25 hover:text-white bg-[#071120]'
                   }`}
                   title="Tidak ada pilihan yang cocok? Acak opsi alternatif lain"
                 >
@@ -463,84 +464,98 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
                 </button>
               </div>
 
-              {/* Question Header */}
-              <div className="flex items-start gap-4">
-                <span
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold font-mono shrink-0 text-white ${
-                    isFemale ? 'bg-pink-600 shadow-[0_0_12px_rgba(236,72,153,0.4)]' : 'bg-blue-600 shadow-md'
-                  }`}
-                >
-                  {index + 1}
-                </span>
+              {/* Inner Core */}
+              <div
+                className={`p-6 sm:p-7 rounded-[calc(2.25rem-0.375rem)] space-y-5 transition-all duration-500 ${
+                  isFemale
+                    ? 'bg-[#150714]/95 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]'
+                    : 'bg-[#071120]/95 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]'
+                }`}
+              >
+                {/* Question Header */}
+                <div className="flex items-start gap-4">
+                  <span
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold font-mono shrink-0 text-white shadow-md ${
+                      isFemale ? 'bg-pink-600 shadow-pink-600/30' : 'bg-blue-600 shadow-blue-600/30'
+                    }`}
+                  >
+                    {index + 1}
+                  </span>
 
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-center justify-between gap-3 flex-wrap">
-                    <h3 className="font-bold text-white text-lg sm:text-xl leading-snug">{q.question}</h3>
-                    {isAnswered && (
-                      <span
-                        className={`text-xs font-mono px-3 py-1 rounded-full shrink-0 flex items-center gap-1 border ${
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                      <h3
+                        className="font-bold text-white text-lg sm:text-xl leading-snug tracking-tight"
+                        style={{ fontFamily: 'var(--font-display)' }}
+                      >
+                        {q.question}
+                      </h3>
+                      {isAnswered && (
+                        <span
+                          className={`text-xs font-mono px-3 py-1 rounded-full shrink-0 flex items-center gap-1 border font-bold ${
+                            isFemale
+                              ? 'text-pink-300 bg-pink-500/20 border-pink-500/40'
+                              : 'text-[#93C5FD] bg-blue-500/20 border-blue-500/40'
+                          }`}
+                        >
+                          <Check className={`w-3 h-3 ${isFemale ? 'text-pink-400' : 'text-[#38BDF8]'}`} />
+                          <span>Terjawab</span>
+                        </span>
+                      )}
+                    </div>
+
+                    {q.reason && (
+                      <div
+                        className={`flex items-start gap-2 px-3.5 py-2.5 rounded-2xl border text-xs leading-relaxed font-light ${
                           isFemale
-                            ? 'text-pink-300 bg-pink-500/20 border-pink-500/30'
-                            : 'text-[#93C5FD] bg-blue-500/20 border-blue-500/30'
+                            ? 'bg-[#1f091d]/60 border-pink-500/20 text-pink-300/90'
+                            : 'bg-white/5 border-white/10 text-slate-300'
                         }`}
                       >
-                        <Check className={`w-3 h-3 ${isFemale ? 'text-pink-400' : 'text-[#38BDF8]'}`} />
-                        <span>Terjawab</span>
-                      </span>
+                        <span>{q.reason}</span>
+                      </div>
                     )}
                   </div>
-
-                  {q.reason && (
-                    <div
-                      className={`flex items-start gap-2 px-3.5 py-2.5 rounded-2xl border text-xs ${
-                        isFemale
-                          ? 'bg-[#120712] border-pink-500/20 text-pink-300/80'
-                          : 'bg-[#071120] border-blue-500/20 text-[#93C5FD]/80'
-                      }`}
-                    >
-                      <span>{q.reason}</span>
-                    </div>
-                  )}
                 </div>
-              </div>
 
-              {/* 4 Options Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {q.options.map((opt) => {
-                  const isSelected = answers[q.id] === opt.id;
-                  return (
-                    <button
-                      type="button"
-                      key={opt.id}
-                      onClick={() => handleSelectOption(q.id, opt.id)}
-                      className={`text-left p-5 rounded-2xl border cursor-pointer transition-all duration-200 ${
-                        isSelected
-                          ? isFemale
-                            ? 'bg-pink-600/20 border-pink-500 text-white shadow-[0_0_20px_rgba(236,72,153,0.15)]'
-                            : 'bg-blue-600/20 border-blue-500 text-white shadow-[0_0_20px_rgba(59,130,246,0.15)]'
-                          : isFemale
-                          ? 'bg-[#120712]/70 border-white/10 text-[#94A3B8] hover:border-pink-500/30 hover:bg-[#1a0c1a]'
-                          : 'bg-[#071120]/60 border-white/10 text-[#94A3B8] hover:border-blue-500/30 hover:bg-[#071120]'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold text-sm sm:text-base">{opt.label}</span>
-                        {isSelected ? (
-                          <div
-                            className={`w-6 h-6 rounded-full flex items-center justify-center text-white ${
-                              isFemale ? 'bg-pink-600' : 'bg-blue-600'
-                            }`}
-                          >
-                            <Check className="w-4 h-4" />
-                          </div>
-                        ) : (
-                          <div className="w-6 h-6 rounded-full border border-white/20" />
-                        )}
-                      </div>
-                      <p className="text-xs sm:text-sm text-[#64748B] mt-2 leading-relaxed">{opt.desc}</p>
-                    </button>
-                  );
-                })}
+                {/* 4 Options Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  {q.options.map((opt) => {
+                    const isSelected = answers[q.id] === opt.id;
+                    return (
+                      <button
+                        type="button"
+                        key={opt.id}
+                        onClick={() => handleSelectOption(q.id, opt.id)}
+                        className={`text-left p-4 sm:p-5 rounded-2xl border cursor-pointer transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] ${
+                          isSelected
+                            ? isFemale
+                              ? 'bg-gradient-to-br from-pink-500/25 to-pink-950/40 border-pink-400 text-white shadow-[0_0_25px_rgba(244,114,182,0.25)]'
+                              : 'bg-gradient-to-br from-blue-500/25 to-blue-950/40 border-blue-400 text-white shadow-[0_0_25px_rgba(56,189,248,0.25)]'
+                            : isFemale
+                            ? 'bg-[#180816]/70 border-white/10 text-slate-300 hover:border-pink-500/40 hover:bg-[#1f0b1d]'
+                            : 'bg-[#0b1424]/70 border-white/10 text-slate-300 hover:border-blue-500/40 hover:bg-[#0f1b30]'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-sm sm:text-base">{opt.label}</span>
+                          {isSelected ? (
+                            <div
+                              className={`w-6 h-6 rounded-full flex items-center justify-center text-white shadow-sm ${
+                                isFemale ? 'bg-pink-600' : 'bg-blue-600'
+                              }`}
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                            </div>
+                          ) : (
+                            <div className="w-6 h-6 rounded-full border border-white/20" />
+                          )}
+                        </div>
+                        <p className="text-xs sm:text-sm text-slate-400 mt-2 leading-relaxed font-light">{opt.desc}</p>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           );

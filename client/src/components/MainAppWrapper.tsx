@@ -337,7 +337,11 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
               <button
                 type="button"
                 onClick={() => setCurrentStep('QUIZ')}
-                className="px-6 py-3 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer border border-blue-400/30"
+                className={`px-6 py-3 rounded-full text-white font-semibold text-sm shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer border ${
+                  isFemale
+                    ? 'bg-gradient-to-r from-pink-600 to-rose-500 hover:from-pink-500 hover:to-rose-400 border-pink-400/40 shadow-pink-600/30'
+                    : 'bg-blue-600 hover:bg-blue-500 border-blue-400/30'
+                }`}
               >
                 Ulangi Kuesioner
               </button>
