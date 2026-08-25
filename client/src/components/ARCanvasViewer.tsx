@@ -63,7 +63,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   inputMode = "camera",
   gender,
 }) => {
-  const isFemale = gender === "female";
+  const isFemale = gender === "female" || (activeItem as any)?.gender === "female";
   const containerRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);

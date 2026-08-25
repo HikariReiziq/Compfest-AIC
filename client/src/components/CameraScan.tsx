@@ -1386,7 +1386,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                     <div className="relative z-10 flex items-center justify-center">
                       <img
                         src={
-                          scannedProfile?.gender?.label_id === "female"
+                          isFemaleTheme
                             ? "/images/mascot-pink.png"
                             : "/images/mascot.png"
                         }
@@ -1399,7 +1399,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                     {/* Tulisan Loading Bergelombang */}
                     <div
                       className={`flex items-center space-x-1 font-mono text-xs sm:text-sm font-bold tracking-[0.2em] uppercase ${
-                        scannedProfile?.gender?.label_id === "female"
+                        isFemaleTheme
                           ? "text-pink-400"
                           : "text-[#38BDF8]"
                       }`}
@@ -1434,7 +1434,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                         onClick={retryCamera}
                         type="button"
                         className={`w-full px-3 py-2 rounded-xl text-xs font-semibold text-white flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md ${
-                          scannedProfile?.gender?.label_id === "female"
+                          isFemaleTheme
                             ? "bg-pink-600 hover:bg-pink-500"
                             : "bg-blue-600 hover:bg-blue-500"
                         }`}
@@ -1445,19 +1445,21 @@ export const CameraScan: React.FC<CameraScanProps> = ({
 
                       <button
                         onClick={() => {
-                          const defaultProfile = MOCK_PRESETS.indonesian_warm_sawo_matang.profile;
+                          const defaultProfile = isFemaleTheme
+                            ? MOCK_PRESETS.indonesian_female_bright.profile
+                            : MOCK_PRESETS.indonesian_warm_sawo_matang.profile;
                           setScannedProfile(defaultProfile);
                         }}
                         type="button"
                         className={`w-full px-3 py-2 rounded-xl text-xs font-medium bg-transparent hover:bg-white/5 border border-white/15 flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                          scannedProfile?.gender?.label_id === "female"
+                          isFemaleTheme
                             ? "text-pink-300 hover:border-pink-400/40"
                             : "text-[#93C5FD] hover:border-blue-400/40"
                         }`}
                       >
                         <UserCheck
                           className={`w-3.5 h-3.5 ${
-                            scannedProfile?.gender?.label_id === "female"
+                            isFemaleTheme
                               ? "text-pink-400"
                               : "text-[#38BDF8]"
                           }`}
