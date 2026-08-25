@@ -68,62 +68,112 @@ export default function LandingClient({ fontClass, initialGender = 'male', onOpe
         />
       </div>
 
-      {/* ============ Floating Center Top: Karakter Cowok & Cewek (Mode Pria / Wanita) ============ */}
-      <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 flex items-center">
+      {/* ============ Floating Center Top: Prominent Sliding Character Selector (Cowok & Cewek) ============ */}
+      <div className="fixed top-4 sm:top-5 left-1/2 -translate-x-1/2 z-50 flex items-center">
         <div
-          className={`inline-flex items-center h-[46px] sm:h-[50px] rounded-full p-1 border gap-1 sm:gap-1.5 backdrop-blur-2xl shadow-2xl transition-all ${
+          className={`relative flex items-center rounded-full p-1.5 border backdrop-blur-2xl shadow-2xl transition-all duration-300 ${
             isFemale
-              ? 'bg-[#1c0b1a]/90 border-pink-500/30 shadow-pink-950/40'
-              : 'bg-[#0B1528]/90 border-blue-500/30 shadow-blue-950/40'
+              ? 'bg-[#1c0b1a]/95 border-pink-500/40 shadow-[0_10px_35px_rgba(244,114,182,0.3)]'
+              : 'bg-[#0B1528]/95 border-blue-500/40 shadow-[0_10px_35px_rgba(56,189,248,0.3)]'
           }`}
         >
-          {/* Karakter Cowok (Pria) */}
+          {/* Arrow Left (Geser ke Karakter Cowok) */}
           <button
             type="button"
             onClick={() => setGender('male')}
-            className={`h-full px-3.5 sm:px-4 rounded-full text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-2 select-none ${
-              !isFemale
-                ? 'bg-gradient-to-r from-blue-600 to-sky-500 border border-blue-400 text-white shadow-md shadow-blue-600/40'
-                : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'
-            }`}
+            aria-label="Pilih Karakter Cowok"
+            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all cursor-pointer mr-0.5 sm:mr-1"
           >
-            <img
-              src="/images/mascot.png"
-              alt="Karakter Cowok"
-              className={`w-5 h-5 sm:w-6 sm:h-6 object-contain transition-transform ${!isFemale ? 'scale-110 drop-shadow' : 'opacity-60 grayscale-[30%]'}`}
-            />
-            <span className="tracking-wide">Cowok</span>
+            <ChevronLeft className="w-4 h-4" />
           </button>
 
-          {/* Karakter Cewek (Wanita) */}
+          {/* Sliding Character Track */}
+          <div className="relative flex items-center bg-black/40 rounded-full p-1 border border-white/10">
+            {/* Sliding Highlight Pill */}
+            <div
+              className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full transition-all duration-300 ease-out shadow-lg pointer-events-none ${
+                gender === 'male'
+                  ? 'left-1 bg-gradient-to-r from-blue-600 via-blue-500 to-sky-500 border border-sky-300/60 shadow-blue-600/50'
+                  : 'left-[calc(50%+3px)] bg-gradient-to-r from-pink-600 via-rose-500 to-pink-500 border border-pink-300/60 shadow-pink-600/50'
+              }`}
+            />
+
+            {/* Option 1: Karakter Cowok (Mascot Besar Jelas) */}
+            <button
+              type="button"
+              onClick={() => setGender('male')}
+              className={`relative z-10 flex items-center gap-2 sm:gap-3 px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-full cursor-pointer select-none transition-all duration-200 ${
+                gender === 'male' ? 'text-white scale-105' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <div className="relative -my-2.5 sm:-my-3 w-9 h-9 sm:w-11 sm:h-11 shrink-0 flex items-center justify-center">
+                <img
+                  src="/images/mascot.png"
+                  alt="Maskot Cowok"
+                  className={`w-full h-full object-contain filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)] transition-transform duration-300 ${
+                    gender === 'male' ? 'scale-125 -translate-y-0.5' : 'opacity-50 grayscale-[40%] scale-90'
+                  }`}
+                />
+              </div>
+              <div className="flex flex-col text-left">
+                <span className="text-xs sm:text-sm font-bold tracking-wide font-mono leading-none">
+                  Cowok
+                </span>
+                <span className="text-[9px] sm:text-[10px] font-mono opacity-80 uppercase tracking-widest mt-0.5">
+                  Pria
+                </span>
+              </div>
+            </button>
+
+            {/* Option 2: Karakter Cewek (Mascot Besar Jelas) */}
+            <button
+              type="button"
+              onClick={() => setGender('female')}
+              className={`relative z-10 flex items-center gap-2 sm:gap-3 px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-full cursor-pointer select-none transition-all duration-200 ${
+                gender === 'female' ? 'text-white scale-105' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <div className="relative -my-2.5 sm:-my-3 w-9 h-9 sm:w-11 sm:h-11 shrink-0 flex items-center justify-center">
+                <img
+                  src="/images/mascot-pink.png"
+                  alt="Maskot Cewek"
+                  className={`w-full h-full object-contain filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)] transition-transform duration-300 ${
+                    gender === 'female' ? 'scale-125 -translate-y-0.5' : 'opacity-50 grayscale-[40%] scale-90'
+                  }`}
+                />
+              </div>
+              <div className="flex flex-col text-left">
+                <span className="text-xs sm:text-sm font-bold tracking-wide font-mono leading-none">
+                  Cewek
+                </span>
+                <span className="text-[9px] sm:text-[10px] font-mono opacity-80 uppercase tracking-widest mt-0.5">
+                  Wanita
+                </span>
+              </div>
+            </button>
+          </div>
+
+          {/* Arrow Right (Geser ke Karakter Cewek) */}
           <button
             type="button"
             onClick={() => setGender('female')}
-            className={`h-full px-3.5 sm:px-4 rounded-full text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-2 select-none ${
-              isFemale
-                ? 'bg-gradient-to-r from-pink-600 to-rose-500 border border-pink-400 text-white shadow-md shadow-pink-600/40'
-                : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'
-            }`}
+            aria-label="Pilih Karakter Cewek"
+            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all cursor-pointer ml-0.5 sm:ml-1"
           >
-            <img
-              src="/images/mascot-pink.png"
-              alt="Karakter Cewek"
-              className={`w-5 h-5 sm:w-6 sm:h-6 object-contain transition-transform ${isFemale ? 'scale-110 drop-shadow' : 'opacity-60 grayscale-[30%]'}`}
-            />
-            <span className="tracking-wide">Cewek</span>
+            <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </div>
 
       {/* ============ Tombol Floating Kanan Atas: BUKA STUDIO VIRTUAL ============ */}
-      <div className="fixed top-5 right-4 sm:top-6 sm:right-8 z-50 flex items-center">
+      <div className="fixed top-4 sm:top-5 right-4 sm:right-8 z-50 flex items-center">
         <button
           type="button"
           onClick={() => onOpenStudio(undefined, gender)}
-          className={`group inline-flex h-[46px] sm:h-[50px] items-center gap-2 rounded-full border backdrop-blur-2xl px-5 sm:px-6 text-xs sm:text-sm font-bold tracking-[0.08em] transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-2xl ${
+          className={`group inline-flex h-[48px] sm:h-[54px] items-center gap-2 rounded-full border backdrop-blur-2xl px-5 sm:px-6 text-xs sm:text-sm font-bold tracking-[0.08em] transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-2xl ${
             isFemale
-              ? 'bg-[#1c0b1a]/85 border-pink-400/30 text-pink-300 hover:border-pink-500 hover:bg-pink-600 hover:text-white shadow-pink-600/20'
-              : 'bg-[#0B1528]/85 border-blue-400/30 text-[#93C5FD] hover:border-blue-500 hover:bg-blue-600 hover:text-white'
+              ? 'bg-[#1c0b1a]/90 border-pink-400/40 text-pink-300 hover:border-pink-500 hover:bg-pink-600 hover:text-white shadow-pink-600/25'
+              : 'bg-[#0B1528]/90 border-blue-400/40 text-[#93C5FD] hover:border-blue-500 hover:bg-blue-600 hover:text-white shadow-blue-600/25'
           }`}
           style={{ fontFamily: 'var(--font-mono)' }}
         >
