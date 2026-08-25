@@ -1198,10 +1198,14 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
             >
               {isAutoRotateStudio ? "Auto: ON" : "Auto: OFF"}
             </button>
-          </div>
-
-          {/* Bottom Floating Instructions */}
-          <div className="absolute bottom-4 right-4 z-20 hidden sm:flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#071120]/80 backdrop-blur-md border border-white/10 text-[10px] font-mono text-slate-400 pointer-events-none">
+          </div>          {/* Bottom Floating Instructions */}
+          <div
+            className={`absolute bottom-4 right-4 z-20 hidden sm:flex items-center space-x-1.5 px-3 py-1 rounded-full backdrop-blur-md border text-[10px] font-mono pointer-events-none ${
+              isFemale
+                ? "bg-[#180816]/90 border-pink-500/30 text-pink-300"
+                : "bg-[#071120]/80 border-white/10 text-slate-400"
+            }`}
+          >
             <RotateCw className={`w-3 h-3 ${isFemale ? "text-pink-400" : "text-sky-400"}`} />
             <span>Geser layar untuk memutar 360° • Scroll untuk zoom</span>
           </div>
@@ -1209,18 +1213,30 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
       )}
 
       {/* AR Fine-Tuning Micro-Controls (Single Line Seamless Bar) */}
-      <div className="glass-panel py-2 px-3 rounded-2xl border border-white/10 bg-[#081322]/95 backdrop-blur-xl flex flex-nowrap items-center justify-between gap-2 text-xs overflow-x-auto no-scrollbar shadow-lg w-full min-w-0">
+      <div
+        className={`py-2 px-3 rounded-2xl border backdrop-blur-xl flex flex-nowrap items-center justify-between gap-2 text-xs overflow-x-auto no-scrollbar shadow-xl w-full min-w-0 transition-all ${
+          isFemale
+            ? "bg-[#150714]/95 border-pink-500/30 shadow-pink-950/30"
+            : "bg-[#071120]/95 border-blue-500/30 shadow-blue-950/30"
+        }`}
+      >
         {/* Left: 2 Opsi Interaksi, Koordinat Live, & Reset */}
         <div className="flex flex-nowrap items-center gap-1.5 shrink-0">
           {/* 2 Opsi Interaksi Layar: Opsi 1 (Rotasi) vs Opsi 2 (Posisi) */}
-          <div className="inline-flex rounded-xl bg-slate-900/90 p-0.5 border border-white/10 gap-0.5 shadow-inner shrink-0">
+          <div
+            className={`inline-flex rounded-xl p-0.5 border gap-0.5 shadow-inner shrink-0 ${
+              isFemale ? "bg-[#1e0a1c] border-pink-500/20" : "bg-[#0b1526] border-white/10"
+            }`}
+          >
             <button
               onClick={() => setDragMode("rotate")}
               className={`px-2 py-1 rounded-lg text-xs font-mono font-bold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
                 dragMode === "rotate"
                   ? isFemale
-                    ? "bg-pink-600 border border-pink-400 text-white shadow-sm"
+                    ? "bg-gradient-to-r from-pink-600 to-rose-500 border border-pink-400 text-white shadow-sm"
                     : "bg-blue-600 border border-blue-400 text-white shadow-sm"
+                  : isFemale
+                  ? "text-pink-300/70 hover:text-white hover:bg-pink-500/10"
                   : "text-slate-400 hover:text-white"
               }`}
               title="Opsi 1: Geser di layar ke segala arah untuk memutar model 3D (360° Horizontal, Vertikal & Diagonal)"
@@ -1233,8 +1249,10 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               className={`px-2 py-1 rounded-lg text-xs font-mono font-bold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
                 dragMode === "pan"
                   ? isFemale
-                    ? "bg-rose-600 border border-rose-400 text-white shadow-sm"
+                    ? "bg-gradient-to-r from-pink-600 to-rose-500 border border-pink-400 text-white shadow-sm"
                     : "bg-sky-600 border border-sky-400 text-white shadow-sm"
+                  : isFemale
+                  ? "text-pink-300/70 hover:text-white hover:bg-pink-500/10"
                   : "text-slate-400 hover:text-white"
               }`}
               title="Opsi 2: Geser di layar ke segala arah untuk memindahkan posisi (Atas, Bawah, Kiri, Kanan)"
@@ -1245,7 +1263,13 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           </div>
 
           {/* Indikator Status Koordinat */}
-          <div className="flex items-center space-x-1.5 bg-slate-900/70 px-2 py-1 rounded-xl border border-white/5 text-[10px] font-mono text-slate-400 shrink-0 whitespace-nowrap">
+          <div
+            className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-xl border text-[10px] font-mono shrink-0 whitespace-nowrap ${
+              isFemale
+                ? "bg-[#1e0a1c] border-pink-500/20 text-pink-300/80"
+                : "bg-[#0b1526] border-white/5 text-slate-400"
+            }`}
+          >
             <span>X:<strong className="text-white ml-0.5">{offsetX.toFixed(1)}</strong></span>
             <span>Y:<strong className="text-white ml-0.5">{offsetY.toFixed(1)}</strong></span>
             <span>Putar:<strong className="text-white ml-0.5">{Math.round((rotOffsetY * 180) / Math.PI)}°</strong></span>
@@ -1267,7 +1291,11 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               setScaleMultiplier(100);
               scaleMultiplierRef.current = 100;
             }}
-            className="px-2 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-400 hover:text-white border border-white/10 transition-all flex items-center space-x-1 cursor-pointer shrink-0"
+            className={`px-2.5 py-1 rounded-xl border active:scale-95 transition-all flex items-center space-x-1 cursor-pointer shrink-0 ${
+              isFemale
+                ? "bg-[#1e0a1c] hover:bg-pink-600 hover:text-white text-pink-300 border-pink-500/30"
+                : "bg-[#0b1526] hover:bg-blue-600 hover:text-white text-slate-400 border-white/10"
+            }`}
             title="Reset Posisi & Rotasi ke Default"
           >
             <RotateCcw className="w-3 h-3" />
@@ -1276,12 +1304,16 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
         </div>
 
         {/* Right: Scale Slider with Fixed-Width Percentage Label */}
-        <div className="flex flex-nowrap items-center space-x-2 text-xs bg-slate-900/70 px-2 py-1 rounded-xl border border-white/5 shrink-0 whitespace-nowrap">
+        <div
+          className={`flex flex-nowrap items-center space-x-2 text-xs px-2.5 py-1 rounded-xl border shrink-0 whitespace-nowrap ${
+            isFemale ? "bg-[#1e0a1c] border-pink-500/20" : "bg-[#0b1526] border-white/5"
+          }`}
+        >
           <span className="text-slate-400 font-mono text-[11px] flex items-center">
             <span>Ukuran:</span>
             <strong
               className={`inline-block w-9 text-right ml-1 font-mono ${
-                isFemale ? "text-pink-400" : "text-blue-400"
+                isFemale ? "text-pink-400 font-bold" : "text-[#38BDF8] font-bold"
               }`}
             >
               {scaleMultiplier}%
@@ -1297,8 +1329,8 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               scaleMultiplierRef.current = val;
               setScaleMultiplier(val);
             }}
-            className={`w-16 sm:w-20 h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer shrink-0 ${
-              isFemale ? "accent-pink-500" : "accent-blue-500"
+            className={`w-16 sm:w-20 h-1.5 rounded-lg appearance-none cursor-pointer shrink-0 ${
+              isFemale ? "bg-[#2a0d27] accent-pink-500" : "bg-[#08101E] accent-blue-500"
             }`}
           />
         </div>

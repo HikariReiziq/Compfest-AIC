@@ -31,7 +31,7 @@ interface LandingClientProps {
 }
 
 export default function LandingClient({ fontClass, initialGender = 'male', onOpenStudio }: LandingClientProps) {
-  const [currentIndex, setCurrentIndex] = useState(0); // Default to hat-09
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [gender, setGender] = useState<'male' | 'female'>(initialGender);
   const isFemale = gender === 'female';
   const activeAsset = FASHION_ASET[currentIndex] || FASHION_ASET[0];
@@ -69,10 +69,10 @@ export default function LandingClient({ fontClass, initialGender = 'male', onOpe
       </div>
 
       {/* ============ Tombol Floating Kanan Atas: Toggle Gender + BUKA STUDIO VIRTUAL ============ */}
-      <div className="fixed top-5 right-4 sm:top-6 sm:right-8 z-50 flex items-center gap-2 sm:gap-3">
-        {/* Toggle Mode Pria / Wanita */}
+      <div className="fixed top-5 right-4 sm:top-6 sm:right-8 z-50 flex items-center gap-2.5 sm:gap-3">
+        {/* Toggle Mode Pria / Wanita (Tinggi Presisi Sama dengan Tombol Kanan) */}
         <div
-          className={`inline-flex rounded-full p-1 border gap-1 backdrop-blur-2xl shadow-2xl transition-all ${
+          className={`inline-flex items-center h-[46px] sm:h-[48px] rounded-full p-1 border gap-1 backdrop-blur-2xl shadow-2xl transition-all ${
             isFemale
               ? 'bg-[#1c0b1a]/90 border-pink-500/30'
               : 'bg-[#0B1528]/90 border-blue-500/30'
@@ -81,7 +81,7 @@ export default function LandingClient({ fontClass, initialGender = 'male', onOpe
           <button
             type="button"
             onClick={() => setGender('male')}
-            className={`px-3 sm:px-3.5 py-1.5 rounded-full text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`h-full px-3.5 sm:px-4 rounded-full text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
               !isFemale
                 ? 'bg-blue-600 border border-blue-400 text-white shadow-md'
                 : 'text-slate-400 hover:text-white'
@@ -106,9 +106,9 @@ export default function LandingClient({ fontClass, initialGender = 'male', onOpe
           <button
             type="button"
             onClick={() => setGender('female')}
-            className={`px-3 sm:px-3.5 py-1.5 rounded-full text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`h-full px-3.5 sm:px-4 rounded-full text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
               isFemale
-                ? 'bg-pink-600 border border-pink-400 text-white shadow-md'
+                ? 'bg-gradient-to-r from-pink-600 to-rose-500 border border-pink-400 text-white shadow-md'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -133,7 +133,7 @@ export default function LandingClient({ fontClass, initialGender = 'male', onOpe
         <button
           type="button"
           onClick={() => onOpenStudio(undefined, gender)}
-          className={`group inline-flex min-h-[44px] items-center gap-2 rounded-full border backdrop-blur-2xl px-4 sm:px-6 text-[12px] sm:text-[14px] font-bold tracking-[0.08em] transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-2xl ${
+          className={`group inline-flex h-[46px] sm:h-[48px] items-center gap-2 rounded-full border backdrop-blur-2xl px-5 sm:px-6 text-xs sm:text-sm font-bold tracking-[0.08em] transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-2xl ${
             isFemale
               ? 'bg-[#1c0b1a]/85 border-pink-400/30 text-pink-300 hover:border-pink-500 hover:bg-pink-600 hover:text-white shadow-pink-600/20'
               : 'bg-[#0B1528]/85 border-blue-400/30 text-[#93C5FD] hover:border-blue-500 hover:bg-blue-600 hover:text-white'
@@ -196,7 +196,7 @@ export default function LandingClient({ fontClass, initialGender = 'male', onOpe
               secara langsung di tubuh Anda lewat 3D Virtual Try-On realtime.
             </p>
 
-            {/* Tombol Utama Gabungan (Clean Solid - Tanpa Efek Glow) */}
+            {/* Tombol Utama Gabungan */}
             <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <button
                 type="button"
@@ -223,18 +223,18 @@ export default function LandingClient({ fontClass, initialGender = 'male', onOpe
           <div className="lg:col-span-5 flex flex-col items-center justify-center relative">
             {/* Interactive 3D Canvas Showcase Area (Expanded Size) */}
             <div className="relative w-full h-[440px] sm:h-[500px] lg:h-[540px] rounded-3xl overflow-hidden flex items-center justify-center">
-              {/* Product Info Badge (Floating Minimalist) */}
+              {/* Product Info Badge (Floating Minimalist - Centered at the bottom of the 3D model) */}
               <div
-                className={`absolute top-4 left-4 z-20 rounded-2xl border px-4 py-2.5 backdrop-blur-xl transition-all shadow-xl ${
+                className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-20 rounded-2xl border px-5 py-2.5 backdrop-blur-xl transition-all shadow-xl text-center max-w-[90%] ${
                   isFemale
-                    ? 'border-pink-500/30 bg-[#1c0b1a]/85'
-                    : 'border-blue-500/30 bg-[#0B1528]/85'
+                    ? 'border-pink-500/30 bg-[#1c0b1a]/90 shadow-pink-950/40'
+                    : 'border-blue-500/30 bg-[#0B1528]/90 shadow-blue-950/40'
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  <span className={`w-2 h-2 rounded-full animate-ping ${isFemale ? 'bg-pink-400' : 'bg-sky-400'}`} />
+                <div className="flex items-center justify-center gap-2">
+                  <span className={`w-2 h-2 rounded-full animate-ping shrink-0 ${isFemale ? 'bg-pink-400' : 'bg-sky-400'}`} />
                   <span
-                    className={`text-[11px] font-bold tracking-[0.14em] uppercase ${
+                    className={`text-[11px] sm:text-xs font-bold tracking-[0.14em] uppercase truncate ${
                       isFemale ? 'text-pink-300' : 'text-[#93C5FD]'
                     }`}
                     style={{ fontFamily: 'var(--font-mono)' }}
@@ -260,85 +260,38 @@ export default function LandingClient({ fontClass, initialGender = 'male', onOpe
               <button
                 type="button"
                 onClick={handleNext}
-                aria-label="Produk berikutnya"
+                aria-label="Produk selanjutnya"
                 className="absolute right-3 top-1/2 -translate-y-1/2 z-20 h-11 w-11 rounded-full border border-white/20 bg-black/60 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white hover:bg-black/90 hover:scale-110 active:scale-95 transition-all cursor-pointer shadow-lg"
               >
                 <ChevronRight className="h-5 w-5" />
               </button>
 
-              {/* Three.js Turntable */}
-              <div className="w-full h-full">
+              {/* 3D WebGL Model */}
+              <div className="w-full h-full cursor-grab active:cursor-grabbing">
                 <FashionTurntable3D
                   modelPath={activeAsset.glbPath}
-                  category={activeAsset.kategori as any}
+                  category={activeAsset.subkategori}
                   accentColor={isFemale ? '#F472B6' : '#38BDF8'}
-                  autoRotateSpeed={0.015}
                 />
               </div>
-            </div>
-
-            {/* Dot indicators */}
-            <div className="flex items-center gap-1.5 mt-3">
-              {FASHION_ASET.map((_, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => setCurrentIndex(i)}
-                  className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                    i === currentIndex
-                      ? isFemale
-                        ? 'w-6 bg-pink-500 shadow-sm'
-                        : 'w-6 bg-blue-500 shadow-sm'
-                      : 'w-1.5 bg-white/20 hover:bg-white/40'
-                  }`}
-                  aria-label={`Pilih produk ${i + 1}`}
-                />
-              ))}
             </div>
           </div>
         </div>
       </main>
 
-      {/* ============ Maskot COBA di Kanan Bawah (Bubble Chat & Maskot Naik Turun Bersama) ============ */}
-      <div
-        onClick={() => onOpenStudio(undefined, gender)}
-        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex flex-col items-center cursor-pointer group select-none animate-bounce"
-        style={{ animationDuration: '2.8s' }}
-        title="Mulai Fitting Virtual bersama Maskot COBA!"
-      >
-        {/* Bubble Chat dengan Ekor Penunjuk ke Maskot */}
-        <div
-          className={`relative mb-2 px-4 py-2 rounded-2xl border text-white text-xs font-mono shadow-2xl transition-transform duration-300 group-hover:scale-105 ${
-            isFemale
-              ? 'border-pink-500/30 bg-[#1c0b1a]/95'
-              : 'border-blue-500/30 bg-[#0B1528]/95'
-          }`}
-        >
-          <span className={`font-bold ${isFemale ? 'text-pink-400' : 'text-[#38BDF8]'}`}>COBA:</span> Siap fitting?
-          {/* Ekor Balon Chat Segitiga */}
-          <div
-            className={`absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] ${
-              isFemale ? 'border-t-[#1c0b1a]' : 'border-t-[#0B1528]'
-            }`}
+      {/* ============ Modern Footer Minimalist ============ */}
+      <footer className="relative z-10 w-full border-t border-white/10 bg-[#060B14]/80 backdrop-blur-md py-6 px-6 sm:px-12 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-[#64748B]">
+        <div className="flex items-center gap-2">
+          <img
+            src={isFemale ? '/images/mascot-pink.png' : '/images/mascot.png'}
+            alt="COBA Mascot"
+            className="w-5 h-5 object-contain"
           />
-          <div
-            className={`absolute -bottom-[9px] left-1/2 -translate-x-1/2 -z-10 w-0 h-0 border-l-[7px] border-l-transparent border-r-[7px] border-r-transparent border-t-[9px] ${
-              isFemale ? 'border-t-pink-500/30' : 'border-t-blue-500/30'
-            }`}
-          />
+          <span>COBA — Studio Fitting Virtual AI &amp; AR (Haute-Couture Edition)</span>
         </div>
-
-        {/* Mascot Image */}
-        <img
-          src={isFemale ? '/images/mascot-pink.png' : '/images/mascot.png'}
-          alt="COBA Mascot"
-          className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 object-contain drop-shadow-2xl transition-transform duration-300 group-hover:scale-110"
-        />
-      </div>
-
-      {/* ============ Footer ============ */}
-      <footer className="relative z-10 w-full py-4 text-center text-xs text-[#64748B] font-mono">
-        <p>© 2026 COBA — Cocokkan Outfit Sesuai Badan Anda • Kompetisi AIC 2026</p>
+        <div>
+          <span>Kompetisi AIC 2026 • Zero Persistent Biometrics</span>
+        </div>
       </footer>
     </div>
   );

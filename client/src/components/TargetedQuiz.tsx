@@ -301,7 +301,11 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
   const totalQuestions = questionsList.length;
   const answeredCount = Object.keys(answers).length;
   const isAllAnswered = totalQuestions > 0 && answeredCount === totalQuestions;
-  const isFemale = userProfile?.gender?.label_id === 'female';
+  const isFemale =
+    userProfile?.gender === 'female' ||
+    userProfile?.gender?.label_id === 'female' ||
+    userProfile?.gender === 'Wanita' ||
+    userProfile?.gender_label === 'female';
 
   if (isLoadingInitial) {
     return (
@@ -310,6 +314,7 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
         subtitle={`AI sedang menganalisis karakteristik biometrik Anda untuk merumuskan pertanyaan gaya ${subcategory}`}
         badgeText={`TAHAP 3: SINTESIS GAYA (${subcategory.toUpperCase()})`}
         subcategory={subcategory}
+        gender={isFemale ? 'female' : 'male'}
       />
     );
   }

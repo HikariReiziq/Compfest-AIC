@@ -15,7 +15,11 @@ export const ProcessingLoadingScreen: React.FC<ProcessingLoadingScreenProps> = (
   onComplete,
 }) => {
   const letters = ['L', 'O', 'A', 'D', 'I', 'N', 'G', '.', '.', '.'];
-  const isFemale = userProfile?.gender?.label_id === 'female';
+  const isFemale =
+    userProfile?.gender === 'female' ||
+    userProfile?.gender?.label_id === 'female' ||
+    userProfile?.gender === 'Wanita' ||
+    userProfile?.gender_label === 'female';
 
   useEffect(() => {
     // 1.8s duration for smooth transition to recommendation stage

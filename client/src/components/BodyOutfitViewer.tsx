@@ -22,6 +22,7 @@ export interface BodyOutfitViewerProps {
   mediaStream?: MediaStream | null;
   userSnapshotUrl?: string | null;
   inputMode?: "camera" | "upload";
+  gender?: "male" | "female";
 }
 
 export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
@@ -30,7 +31,9 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
   mediaStream,
   userSnapshotUrl,
   inputMode = "camera",
+  gender = "male",
 }) => {
+  const isFemale = gender === "female";
   const containerRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -657,35 +660,61 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
           </div>
         ) : (
           /* Mode 2: 3D Studio Turntable */
-          <div className="relative w-full h-full flex items-center justify-center bg-gradient-to-b from-[#0B1528] via-[#060B14] to-[#040810]">
-            <div className="absolute top-4 left-4 inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-[#0B1528] text-[#93C5FD] border border-blue-500/30 text-[11px] font-mono z-20 shadow-lg">
-              <Box className="w-3.5 h-3.5 text-[#38BDF8]" />
+          <div
+            className={`relative w-full h-full flex items-center justify-center ${
+              isFemale
+                ? "bg-gradient-to-b from-[#180816] via-[#0d040c] to-[#060205]"
+                : "bg-gradient-to-b from-[#0B1528] via-[#060B14] to-[#040810]"
+            }`}
+          >
+            <div
+              className={`absolute top-4 left-4 inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full border text-[11px] font-mono z-20 shadow-lg ${
+                isFemale
+                  ? "bg-[#180816] text-pink-300 border-pink-500/30"
+                  : "bg-[#0B1528] text-[#93C5FD] border-blue-500/30"
+              }`}
+            >
+              <Box className={`w-3.5 h-3.5 ${isFemale ? "text-pink-400" : "text-[#38BDF8]"}`} />
               <span>3D STUDIO GARMENT INSPECTION</span>
             </div>
           </div>
         )}
 
         {/* Top Floating View Controls */}
-        <div className="absolute top-4 right-4 z-30 flex items-center space-x-2 bg-[#0B1528]/90 backdrop-blur-2xl p-1.5 rounded-full border border-blue-500/30 shadow-2xl">
+        <div
+          className={`absolute top-4 right-4 z-30 flex items-center space-x-2 backdrop-blur-2xl p-1.5 rounded-full border shadow-2xl ${
+            isFemale
+              ? "bg-[#180816]/90 border-pink-500/30"
+              : "bg-[#0B1528]/90 border-blue-500/30"
+          }`}
+        >
           <button
             onClick={() => setViewMode("ar")}
             disabled={isUploadMode}
             className={`px-4 py-2 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer ${
               viewMode === "ar"
-                ? "bg-blue-600 text-white shadow-md"
+                ? isFemale
+                  ? "bg-gradient-to-r from-pink-600 to-rose-500 text-white shadow-md shadow-pink-600/30"
+                  : "bg-blue-600 text-white shadow-md"
                 : isUploadMode
                 ? "text-[#64748B] cursor-not-allowed opacity-50"
                 : "text-[#94A3B8] hover:text-white"
             }`}
           >
-            {isUploadMode ? <Lock className="w-3.5 h-3.5" /> : <Box className="w-3.5 h-3.5 text-[#38BDF8]" />}
+            {isUploadMode ? (
+              <Lock className="w-3.5 h-3.5" />
+            ) : (
+              <Box className={`w-3.5 h-3.5 ${isFemale ? "text-pink-400" : "text-[#38BDF8]"}`} />
+            )}
             <span>{isUploadMode ? "AR Mode Terkunci" : "Pasang ke Badan (AR 3D)"}</span>
           </button>
           <button
             onClick={() => setViewMode("studio")}
             className={`px-4 py-2 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer ${
               viewMode === "studio"
-                ? "bg-blue-600 text-white shadow-md"
+                ? isFemale
+                  ? "bg-gradient-to-r from-pink-600 to-rose-500 text-white shadow-md shadow-pink-600/30"
+                  : "bg-blue-600 text-white shadow-md"
                 : "text-[#94A3B8] hover:text-white"
             }`}
           >
@@ -695,8 +724,14 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
         </div>
 
         {/* Bottom Floating Info Badge */}
-        <div className="absolute bottom-4 left-4 z-20 hidden sm:flex items-center space-x-2.5 px-4 py-2 rounded-full bg-[#0B1528]/90 backdrop-blur-2xl border border-blue-500/20 text-xs shadow-xl">
-          <Box className="w-4 h-4 text-[#38BDF8]" />
+        <div
+          className={`absolute bottom-4 left-4 z-20 hidden sm:flex items-center space-x-2.5 px-4 py-2 rounded-full backdrop-blur-2xl border text-xs shadow-xl ${
+            isFemale
+              ? "bg-[#180816]/90 border-pink-500/25"
+              : "bg-[#0B1528]/90 border-blue-500/20"
+          }`}
+        >
+          <Box className={`w-4 h-4 ${isFemale ? "text-pink-400" : "text-[#38BDF8]"}`} />
           <span className="font-semibold text-white">{activeItem.name}</span>
           <span className="text-[#FACC15] text-xs font-mono font-bold">
             [{modelSource}]
@@ -705,20 +740,32 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
       </div>
 
       {/* Interactive Micro-Adjustments & Fit Controls */}
-      <div className="p-4 sm:p-5 rounded-3xl border border-blue-500/20 bg-[#0B1528]/90 backdrop-blur-xl shadow-xl flex flex-wrap items-center justify-between gap-4">
+      <div
+        className={`p-4 sm:p-5 rounded-3xl border backdrop-blur-xl shadow-xl flex flex-wrap items-center justify-between gap-4 ${
+          isFemale
+            ? "border-pink-500/20 bg-[#180816]/90"
+            : "border-blue-500/20 bg-[#0B1528]/90"
+        }`}
+      >
         {/* Fit Style & Skeletal Rigging Toggle */}
         <div className="flex items-center space-x-3 text-xs flex-wrap gap-2">
           <div className="flex items-center space-x-2">
-            <Sliders className="w-4 h-4 text-[#38BDF8]" />
+            <Sliders className={`w-4 h-4 ${isFemale ? "text-pink-400" : "text-[#38BDF8]"}`} />
             <span className="font-semibold text-[#94A3B8]">Siluet:</span>
-            <div className="inline-flex rounded-full bg-[#071120] p-1 border border-blue-500/20">
+            <div
+              className={`inline-flex rounded-full p-1 border ${
+                isFemale ? "bg-[#120712] border-pink-500/20" : "bg-[#071120] border-blue-500/20"
+              }`}
+            >
               {(["slim", "regular", "oversized"] as const).map((style) => (
                 <button
                   key={style}
                   onClick={() => setFitStyle(style)}
                   className={`px-3.5 py-1 rounded-full text-xs font-medium capitalize transition-all cursor-pointer ${
                     fitStyle === style
-                      ? "bg-blue-600 text-white shadow-sm"
+                      ? isFemale
+                        ? "bg-gradient-to-r from-pink-600 to-rose-500 text-white shadow-sm"
+                        : "bg-blue-600 text-white shadow-sm"
                       : "text-[#94A3B8] hover:text-white"
                   }`}
                 >
@@ -733,6 +780,8 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
             className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer border ${
               skeletalRiggingActive
                 ? "bg-emerald-600/30 text-emerald-300 border-emerald-500/40 shadow-sm"
+                : isFemale
+                ? "bg-[#120712] text-[#64748B] border-pink-500/20 hover:text-white"
                 : "bg-[#071120] text-[#64748B] border-blue-500/20 hover:text-white"
             }`}
             title="Aktifkan/Nonaktifkan Pelacakan Lengan & Tulang Gerak"
@@ -748,14 +797,22 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
             <span className="text-[#94A3B8] font-semibold">Tinggi:</span>
             <button
               onClick={() => setOffsetY((prev) => prev + 2)}
-              className="px-2.5 py-1 rounded-full bg-[#071120] hover:bg-blue-600 text-white border border-blue-500/30 font-bold text-xs transition-colors flex items-center justify-center"
+              className={`px-2.5 py-1 rounded-full text-white border font-bold text-xs transition-colors flex items-center justify-center ${
+                isFemale
+                  ? "bg-[#120712] hover:bg-pink-600 border-pink-500/30"
+                  : "bg-[#071120] hover:bg-blue-600 border-blue-500/30"
+              }`}
               title="Geser Naik"
             >
               <ChevronUp className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => setOffsetY((prev) => prev - 2)}
-              className="px-2.5 py-1 rounded-full bg-[#071120] hover:bg-blue-600 text-white border border-blue-500/30 font-bold text-xs transition-colors flex items-center justify-center"
+              className={`px-2.5 py-1 rounded-full text-white border font-bold text-xs transition-colors flex items-center justify-center ${
+                isFemale
+                  ? "bg-[#120712] hover:bg-pink-600 border-pink-500/30"
+                  : "bg-[#071120] hover:bg-blue-600 border-blue-500/30"
+              }`}
               title="Geser Turun"
             >
               <ChevronDown className="w-3.5 h-3.5" />
@@ -773,7 +830,11 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
               setOffsetZ(0);
               setScaleMultiplier(100);
             }}
-            className="p-2 rounded-full bg-[#071120] hover:bg-blue-600 text-[#93C5FD] hover:text-white border border-blue-500/30 transition-colors"
+            className={`p-2 rounded-full border transition-colors ${
+              isFemale
+                ? "bg-[#120712] hover:bg-pink-600 text-pink-300 hover:text-white border-pink-500/30"
+                : "bg-[#071120] hover:bg-blue-600 text-[#93C5FD] hover:text-white border-blue-500/30"
+            }`}
             title="Reset Posisi &amp; Skala"
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -782,27 +843,35 @@ export const BodyOutfitViewer: React.FC<BodyOutfitViewerProps> = ({
 
         {/* Shoulder Scale Multiplier */}
         <div className="flex items-center space-x-2.5 text-xs">
-          <span className="text-[#94A3B8] font-mono">Lebar: <strong className="text-[#93C5FD]">{scaleMultiplier}%</strong></span>
+          <span className="text-[#94A3B8] font-mono">
+            Lebar: <strong className={isFemale ? "text-pink-300" : "text-[#93C5FD]"}>{scaleMultiplier}%</strong>
+          </span>
           <input
             type="range"
             min={80}
             max={125}
             value={scaleMultiplier}
             onChange={(e) => setScaleMultiplier(Number(e.target.value))}
-            className="w-24 h-2 bg-[#071120] rounded-full appearance-none cursor-pointer accent-blue-500"
+            className={`w-24 h-1.5 rounded-lg appearance-none cursor-pointer ${
+              isFemale ? "bg-[#120712] accent-pink-500" : "bg-[#071120] accent-blue-500"
+            }`}
           />
         </div>
 
         {/* Transparency */}
         <div className="flex items-center space-x-2.5 text-xs">
-          <span className="text-[#94A3B8] font-mono">Opasitas: <strong className="text-[#93C5FD]">{garmentOpacity}%</strong></span>
+          <span className="text-[#94A3B8] font-mono">
+            Opasitas: <strong className={isFemale ? "text-pink-300" : "text-[#93C5FD]"}>{garmentOpacity}%</strong>
+          </span>
           <input
             type="range"
             min={30}
             max={100}
             value={garmentOpacity}
             onChange={(e) => setGarmentOpacity(Number(e.target.value))}
-            className="w-24 h-2 bg-[#071120] rounded-full appearance-none cursor-pointer accent-blue-500"
+            className={`w-24 h-1.5 rounded-lg appearance-none cursor-pointer ${
+              isFemale ? "bg-[#120712] accent-pink-500" : "bg-[#071120] accent-blue-500"
+            }`}
           />
         </div>
       </div>

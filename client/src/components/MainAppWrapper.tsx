@@ -235,7 +235,9 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
   }
 
   // If in Studio Mode, render the 4-step Virtual Fitting Room with COBA logo & mascot aesthetics
-  const isFemale = userProfile?.gender?.label_id === 'female';
+  const currentGender: ('male' | 'female') =
+    ((userProfile?.gender as any)?.label_id || userProfile?.gender || 'male') as ('male' | 'female');
+  const isFemale = currentGender === 'female';
 
   return (
     <main
@@ -252,14 +254,20 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
             backgroundImage: 'url(/images/dahlia-flowers.jpg)',
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#060B14]/65 via-[#060B14]/55 to-[#060B14]/75" />
+        <div
+          className={`absolute inset-0 ${
+            isFemale
+              ? 'bg-gradient-to-b from-[#180816]/75 via-[#180816]/65 to-[#180816]/85'
+              : 'bg-gradient-to-b from-[#060B14]/65 via-[#060B14]/55 to-[#060B14]/75'
+          }`}
+        />
       </div>
 
       {/* Navigation Header */}
       {currentStep !== 'PROCESSING' && !(currentStep === 'QUIZ' && isQuizLoading) && (
         <HeaderNavbar
           currentStep={currentStep}
-          gender={userProfile?.gender?.label_id as ('male' | 'female')}
+          gender={currentGender}
           onReset={handleResetFlow}
           onBackToLanding={() => {
             if (mediaStream) {
@@ -284,7 +292,7 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
         {/* STEP 1: CATEGORY SELECTION */}
         {currentStep === 'CATEGORY' && (
           <CategorySelector
-            gender={userProfile?.gender?.label_id as ('male' | 'female')}
+            gender={currentGender}
             onSelectCategory={handleCategorySelected}
           />
         )}
@@ -447,7 +455,7 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
                   subcategory={selectedSubcategory}
                   mediaStream={mediaStream}
                   inputMode={userProfile?.face_analysis_meta?.input_mode || (mediaStream ? 'camera' : 'upload')}
-                  gender={userProfile?.gender?.label_id as ('male' | 'female')}
+                  gender={currentGender}
                 />
               </div>
 
@@ -473,7 +481,7 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
         <ProductDetailModal
           item={activeItem}
           userProfile={userProfile}
-          gender={userProfile?.gender?.label_id as ('male' | 'female')}
+          gender={currentGender}
           onClose={() => setIsDetailModalOpen(false)}
         />
       )}
