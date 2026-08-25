@@ -9,6 +9,7 @@ interface FashionTurntable3DProps {
   category: 'glasses' | 'hats' | 'shirts';
   accentColor?: string;
   autoRotateSpeed?: number;
+  gender?: 'male' | 'female';
 }
 
 export default function FashionTurntable3D({
@@ -16,7 +17,15 @@ export default function FashionTurntable3D({
   category,
   accentColor = '#FB7185',
   autoRotateSpeed = 0.012,
+  gender = 'female',
 }: FashionTurntable3DProps) {
+  const isFemaleTheme =
+    gender === 'female' ||
+    accentColor.toLowerCase().includes('f4') ||
+    accentColor.toLowerCase().includes('fb') ||
+    accentColor.toLowerCase().includes('pink') ||
+    accentColor.toLowerCase().includes('db');
+
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -59,31 +68,38 @@ export default function FashionTurntable3D({
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Crisp Clean Studio Lighting (Matching Logo & Mascot Blue / Star Gold)
+    // Crisp Clean Studio Lighting (Adaptive to Male Sky Blue vs Female Rose Pink)
     const ambient = new THREE.AmbientLight('#FFFFFF', 2.6);
     scene.add(ambient);
 
-    const hemi = new THREE.HemisphereLight('#38BDF8', '#08101E', 1.5);
+    const hemi = new THREE.HemisphereLight(
+      isFemaleTheme ? '#F472B6' : '#38BDF8',
+      isFemaleTheme ? '#180816' : '#08101E',
+      1.5
+    );
     scene.add(hemi);
 
     const keyLight = new THREE.DirectionalLight('#FFFFFF', 3.4);
     keyLight.position.set(5, 8, 5);
     scene.add(keyLight);
 
-    const fillLight = new THREE.DirectionalLight('#60A5FA', 1.8);
+    const fillLight = new THREE.DirectionalLight(
+      isFemaleTheme ? '#FB7185' : '#60A5FA',
+      1.8
+    );
     fillLight.position.set(-5, 4, -4);
     scene.add(fillLight);
 
     // ========================================================
-    // PIJAKAN PIALA STATIK (TETAP DIAM / TIDAK IKUT BERPUTAR)
+    // PIJAKAN PIALA STATIK / SINGGASANA (TETAP DIAM)
     // ========================================================
     const podiumGroup = new THREE.Group();
     podiumGroup.position.set(0, -0.92, 0);
 
-    // Tingkat 1: Base podium silinder bawah (Matte Deep Obsidian Navy)
+    // Tingkat 1: Base podium silinder bawah (Deep Obsidian Noir / Navy)
     const baseGeo = new THREE.CylinderGeometry(1.6, 1.75, 0.14, 48);
     const baseMat = new THREE.MeshStandardMaterial({
-      color: '#08101E',
+      color: isFemaleTheme ? '#180816' : '#08101E',
       metalness: 0.85,
       roughness: 0.3,
     });
@@ -91,13 +107,14 @@ export default function FashionTurntable3D({
     baseCyl.position.y = 0.07;
     podiumGroup.add(baseCyl);
 
-    // Tingkat 2: Cincin beveled electric-blue metalik (COBA Brand Theme)
-    const PODIUM_BLUE = '#2563EB';
+    // Tingkat 2: Cincin beveled singgasana (Pink Rose Metalik vs Blue Metalik)
+    const PODIUM_RING_COLOR = isFemaleTheme ? '#DB2777' : '#2563EB';
+    const PODIUM_RING_EMISSIVE = isFemaleTheme ? '#BE185D' : '#1D4ED8';
     const ringMat = new THREE.MeshStandardMaterial({
-      color: PODIUM_BLUE,
+      color: PODIUM_RING_COLOR,
       metalness: 0.9,
       roughness: 0.15,
-      emissive: '#1D4ED8',
+      emissive: PODIUM_RING_EMISSIVE,
       emissiveIntensity: 0.35,
     });
     const ringGeo = new THREE.CylinderGeometry(1.45, 1.55, 0.08, 48);
@@ -105,10 +122,10 @@ export default function FashionTurntable3D({
     ringCyl.position.y = 0.17;
     podiumGroup.add(ringCyl);
 
-    // Tingkat 3: Piringan atas piala
+    // Tingkat 3: Piringan atas piala singgasana
     const topGeo = new THREE.CylinderGeometry(1.35, 1.4, 0.06, 48);
     const topMat = new THREE.MeshStandardMaterial({
-      color: '#040812',
+      color: isFemaleTheme ? '#120511' : '#040812',
       metalness: 0.7,
       roughness: 0.4,
     });

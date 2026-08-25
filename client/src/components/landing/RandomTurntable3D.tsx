@@ -8,12 +8,15 @@ import { FASHION_ASET, FashionAset } from './fashionAset';
 interface RandomTurntable3DProps {
   autoRotateSpeed?: number;
   onModelLoaded?: (modelName: string) => void;
+  gender?: 'male' | 'female';
 }
 
 export default function RandomTurntable3D({
   autoRotateSpeed = 0.018,
   onModelLoaded,
+  gender = 'female',
 }: RandomTurntable3DProps) {
+  const isFemaleTheme = gender === 'female';
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -30,16 +33,16 @@ export default function RandomTurntable3D({
     const container = containerRef.current;
     if (!container) return;
 
-    const width = container.clientWidth || 320;
-    const height = container.clientHeight || 320;
+    const width = container.clientWidth || 400;
+    const height = container.clientHeight || 400;
 
     // 100% Transparent Alpha Scene
     const scene = new THREE.Scene();
     sceneRef.current = scene;
 
     // Camera
-    const camera = new THREE.PerspectiveCamera(30, width / height, 0.1, 100);
-    camera.position.set(0, 0.75, 5.8);
+    const camera = new THREE.PerspectiveCamera(32, width / height, 0.1, 100);
+    camera.position.set(0, 0.8, 6.0);
     camera.lookAt(0, 0.0, 0);
     cameraRef.current = camera;
 
@@ -53,7 +56,7 @@ export default function RandomTurntable3D({
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.35;
+    renderer.toneMappingExposure = 1.3;
     container.innerHTML = '';
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
@@ -62,14 +65,21 @@ export default function RandomTurntable3D({
     const ambient = new THREE.AmbientLight('#FFFFFF', 2.6);
     scene.add(ambient);
 
-    const hemi = new THREE.HemisphereLight('#38BDF8', '#08101E', 1.5);
+    const hemi = new THREE.HemisphereLight(
+      isFemaleTheme ? '#F472B6' : '#38BDF8',
+      isFemaleTheme ? '#180816' : '#08101E',
+      1.5
+    );
     scene.add(hemi);
 
     const keyLight = new THREE.DirectionalLight('#FFFFFF', 3.4);
     keyLight.position.set(5, 8, 5);
     scene.add(keyLight);
 
-    const fillLight = new THREE.DirectionalLight('#60A5FA', 2.0);
+    const fillLight = new THREE.DirectionalLight(
+      isFemaleTheme ? '#FB7185' : '#60A5FA',
+      1.8
+    );
     fillLight.position.set(-5, 4, -4);
     scene.add(fillLight);
 
@@ -81,7 +91,7 @@ export default function RandomTurntable3D({
 
     const baseGeo = new THREE.CylinderGeometry(1.5, 1.65, 0.12, 48);
     const baseMat = new THREE.MeshStandardMaterial({
-      color: '#08101E',
+      color: isFemaleTheme ? '#180816' : '#08101E',
       metalness: 0.85,
       roughness: 0.3,
     });
@@ -90,10 +100,10 @@ export default function RandomTurntable3D({
     podiumGroup.add(baseCyl);
 
     const ringMat = new THREE.MeshStandardMaterial({
-      color: '#2563EB',
+      color: isFemaleTheme ? '#DB2777' : '#2563EB',
       metalness: 0.9,
       roughness: 0.15,
-      emissive: '#1D4ED8',
+      emissive: isFemaleTheme ? '#BE185D' : '#1D4ED8',
       emissiveIntensity: 0.35,
     });
     const ringGeo = new THREE.CylinderGeometry(1.35, 1.45, 0.07, 48);
@@ -103,7 +113,7 @@ export default function RandomTurntable3D({
 
     const topGeo = new THREE.CylinderGeometry(1.25, 1.3, 0.05, 48);
     const topMat = new THREE.MeshStandardMaterial({
-      color: '#040812',
+      color: isFemaleTheme ? '#120511' : '#040812',
       metalness: 0.7,
       roughness: 0.4,
     });

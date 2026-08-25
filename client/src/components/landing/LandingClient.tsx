@@ -223,25 +223,22 @@ export default function LandingClient({ fontClass, initialGender = 'male', onOpe
           <div className="lg:col-span-5 flex flex-col items-center justify-center relative">
             {/* Interactive 3D Canvas Showcase Area (Expanded Size) */}
             <div className="relative w-full h-[440px] sm:h-[500px] lg:h-[540px] rounded-3xl overflow-hidden flex items-center justify-center">
-              {/* Product Info Badge (Floating Minimalist - Centered at the bottom of the 3D model) */}
+              {/* Product Info Badge (Floating Minimalist - Centered at the TOP of the 3D model) */}
               <div
-                className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-20 rounded-2xl border px-5 py-2.5 backdrop-blur-xl transition-all shadow-xl text-center max-w-[90%] ${
+                className={`absolute top-4 left-1/2 -translate-x-1/2 z-20 rounded-2xl border px-6 py-2.5 backdrop-blur-xl transition-all shadow-xl text-center max-w-[90%] whitespace-nowrap ${
                   isFemale
                     ? 'border-pink-500/30 bg-[#1c0b1a]/90 shadow-pink-950/40'
                     : 'border-blue-500/30 bg-[#0B1528]/90 shadow-blue-950/40'
                 }`}
               >
-                <div className="flex items-center justify-center gap-2">
-                  <span className={`w-2 h-2 rounded-full animate-ping shrink-0 ${isFemale ? 'bg-pink-400' : 'bg-sky-400'}`} />
-                  <span
-                    className={`text-[11px] sm:text-xs font-bold tracking-[0.14em] uppercase truncate ${
-                      isFemale ? 'text-pink-300' : 'text-[#93C5FD]'
-                    }`}
-                    style={{ fontFamily: 'var(--font-mono)' }}
-                  >
-                    {activeAsset.nama}
-                  </span>
-                </div>
+                <h3
+                  className={`text-[11px] sm:text-xs font-bold tracking-[0.14em] uppercase truncate ${
+                    isFemale ? 'text-pink-300' : 'text-[#93C5FD]'
+                  }`}
+                  style={{ fontFamily: 'var(--font-mono)' }}
+                >
+                  {activeAsset.nama}
+                </h3>
                 <p className="text-[10px] text-slate-400 font-mono mt-0.5">
                   Kategori: {activeAsset.kategori.toUpperCase()} • 3D GLB Realtime
                 </p>
@@ -272,6 +269,7 @@ export default function LandingClient({ fontClass, initialGender = 'male', onOpe
                   modelPath={activeAsset.glbPath}
                   category={activeAsset.subkategori}
                   accentColor={isFemale ? '#F472B6' : '#38BDF8'}
+                  gender={gender}
                 />
               </div>
             </div>
