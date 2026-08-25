@@ -25,18 +25,18 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-xl animate-fadeIn text-white">
       {/* Double-Bezel Luxury Outer Shell */}
       <div
-        className={`relative w-full max-w-2xl p-1.5 sm:p-2 rounded-[2.25rem] border backdrop-blur-2xl transition-all duration-500 shadow-2xl ${
+        className={`relative w-full max-w-2xl p-1.5 sm:p-2 rounded-[2.25rem] border backdrop-blur-2xl transition-all duration-300 ${
           isFemale
-            ? 'bg-gradient-to-b from-pink-500/15 via-pink-500/[0.03] to-transparent border-pink-500/40 shadow-[0_16px_50px_rgba(244,114,182,0.25)]'
-            : 'bg-gradient-to-b from-blue-500/15 via-blue-500/[0.03] to-transparent border-blue-500/40 shadow-[0_16px_50px_rgba(56,189,248,0.25)]'
+            ? 'bg-[#1c0b1a] border-pink-500/40'
+            : 'bg-[#0B1528] border-blue-500/40'
         }`}
       >
         {/* Inner Core */}
         <div
-          className={`p-6 sm:p-7 rounded-[calc(2.25rem-0.375rem)] space-y-5 max-h-[88vh] overflow-y-auto transition-all duration-500 ${
+          className={`p-6 sm:p-7 rounded-[calc(2.25rem-0.375rem)] space-y-5 max-h-[88vh] overflow-y-auto transition-all duration-300 ${
             isFemale
-              ? 'bg-[#150714]/95 shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)]'
-              : 'bg-[#071120]/95 shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)]'
+              ? 'bg-[#140613]'
+              : 'bg-[#071120]'
           }`}
         >
           {/* Close Button */}

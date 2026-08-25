@@ -96,18 +96,18 @@ export const SwitchControls: React.FC<SwitchControlsProps> = ({
 
       {/* 2. Double-Bezel Editorial Fashion Showcase Card */}
       <div
-        className={`p-1.5 sm:p-2 rounded-[2.25rem] border backdrop-blur-2xl transition-all duration-500 shadow-2xl ${
+        className={`p-1.5 sm:p-2 rounded-[2.25rem] border backdrop-blur-2xl transition-all duration-300 ${
           isFemale
-            ? 'bg-gradient-to-b from-pink-500/15 via-pink-500/[0.03] to-transparent border-pink-500/30 shadow-pink-950/30'
-            : 'bg-gradient-to-b from-blue-500/15 via-blue-500/[0.03] to-transparent border-blue-500/30 shadow-blue-950/30'
+            ? 'bg-[#1c0b1a] border-pink-500/40'
+            : 'bg-[#0B1528] border-blue-500/40'
         }`}
       >
         {/* Inner Core */}
         <div
-          className={`p-6 sm:p-7 rounded-[calc(2.25rem-0.375rem)] space-y-5 transition-all duration-500 ${
+          className={`p-6 sm:p-7 rounded-[calc(2.25rem-0.375rem)] space-y-5 transition-all duration-300 ${
             isFemale
-              ? 'bg-[#150714]/95 shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)]'
-              : 'bg-[#071120]/95 shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)]'
+              ? 'bg-[#140613]'
+              : 'bg-[#071120]'
           }`}
         >
           {/* Top Header: Title, Category, Price & Navigation */}

@@ -241,7 +241,7 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
 
   return (
     <main
-      className={`${fontClass} relative min-h-screen bg-[#060B14] text-white flex flex-col justify-between ${
+      className={`${fontClass} relative min-h-screen ${isFemale ? 'bg-[#180816]' : 'bg-[#060B14]'} text-white flex flex-col justify-between ${
         isFemale ? 'selection:bg-pink-600 selection:text-white' : 'selection:bg-blue-600 selection:text-white'
       }`}
       style={{ fontFamily: 'var(--font-sans)' }}
@@ -301,6 +301,8 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
         {currentStep === 'SCAN' && (
           <CameraScan
             subcategory={selectedSubcategory}
+            gender={currentGender}
+            onProfileChange={(newProf) => setUserProfile(newProf)}
             onScanComplete={handleScanComplete}
             onBack={() => setCurrentStep('CATEGORY')}
             overrideProfile={userProfile || undefined}
@@ -311,6 +313,7 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
         {currentStep === 'QUIZ' && (
           <TargetedQuiz
             subcategory={selectedSubcategory}
+            gender={currentGender}
             userProfile={userProfileDict}
             onSubmitQuiz={handleQuizSubmit}
             onBack={() => setCurrentStep('SCAN')}

@@ -33,6 +33,7 @@ export interface DynamicQuestion {
 interface TargetedQuizProps {
   subcategory: 'glasses' | 'hats' | 'shirts';
   userProfile: Record<string, any>;
+  gender?: 'male' | 'female';
   onSubmitQuiz: (
     answers: Record<string, string>,
     questionsMap: Record<string, { question: string; options: QuestionOption[] }>
@@ -53,7 +54,7 @@ function normalizeQuestions(rawList: DynamicQuestion[], batchNumber: number): Dy
 
     const optSeen = new Set<string>();
     const options = (q.options || []).map((opt, optIdx) => {
-      let optId = opt.id || `opt_${idx + 1}_${optIdx + 1}`;
+      let optId = opt.id || `opt_${optIdx + 1}`;
       if (optSeen.has(optId)) {
         optId = `${optId}_${optIdx + 1}`;
       }
@@ -78,6 +79,7 @@ function normalizeQuestions(rawList: DynamicQuestion[], batchNumber: number): Dy
 export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
   subcategory,
   userProfile,
+  gender,
   onSubmitQuiz,
   onBack,
   isLoading,
@@ -302,6 +304,7 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
   const answeredCount = Object.keys(answers).length;
   const isAllAnswered = totalQuestions > 0 && answeredCount === totalQuestions;
   const isFemale =
+    gender === 'female' ||
     userProfile?.gender === 'female' ||
     userProfile?.gender?.label_id === 'female' ||
     userProfile?.gender === 'Wanita' ||
@@ -335,10 +338,10 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
           <button
             type="button"
             onClick={() => setRetryTick((t) => t + 1)}
-            className={`px-6 py-3 rounded-full text-white font-semibold text-sm shadow-lg hover:scale-[1.02] active:scale-95 transition-all cursor-pointer ${
+            className={`px-6 py-3 rounded-full text-white font-semibold text-sm hover:scale-[1.02] active:scale-95 transition-all cursor-pointer ${
               isFemale
-                ? 'bg-gradient-to-r from-pink-600 to-rose-500'
-                : 'bg-gradient-to-r from-blue-600 to-sky-500'
+                ? 'bg-pink-600 hover:bg-pink-700 border border-pink-400'
+                : 'bg-blue-600 hover:bg-blue-700 border border-blue-400'
             }`}
           >
             Coba Lagi
@@ -480,8 +483,8 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
                 {/* Question Header */}
                 <div className="flex items-start gap-4">
                   <span
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold font-mono shrink-0 text-white shadow-md ${
-                      isFemale ? 'bg-pink-600 shadow-pink-600/30' : 'bg-blue-600 shadow-blue-600/30'
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold font-mono shrink-0 text-white ${
+                      isFemale ? 'bg-pink-600' : 'bg-blue-600'
                     }`}
                   >
                     {index + 1}
@@ -532,21 +535,21 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
                         type="button"
                         key={opt.id}
                         onClick={() => handleSelectOption(q.id, opt.id)}
-                        className={`text-left p-4 sm:p-5 rounded-2xl border cursor-pointer transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] ${
+                        className={`text-left p-4 sm:p-5 rounded-2xl border cursor-pointer transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] ${
                           isSelected
                             ? isFemale
-                              ? 'bg-gradient-to-br from-pink-500/25 to-pink-950/40 border-pink-400 text-white shadow-[0_0_25px_rgba(244,114,182,0.25)]'
-                              : 'bg-gradient-to-br from-blue-500/25 to-blue-950/40 border-blue-400 text-white shadow-[0_0_25px_rgba(56,189,248,0.25)]'
+                              ? 'bg-[#2a0e27] border-2 border-pink-400 text-white'
+                              : 'bg-[#0e2246] border-2 border-blue-400 text-white'
                             : isFemale
-                            ? 'bg-[#180816]/70 border-white/10 text-slate-300 hover:border-pink-500/40 hover:bg-[#1f0b1d]'
-                            : 'bg-[#0b1424]/70 border-white/10 text-slate-300 hover:border-blue-500/40 hover:bg-[#0f1b30]'
+                            ? 'bg-[#180816] border-white/10 text-slate-300 hover:border-pink-500/40 hover:bg-[#1f0b1d]'
+                            : 'bg-[#0b1424] border-white/10 text-slate-300 hover:border-blue-500/40 hover:bg-[#0f1b30]'
                         }`}
                       >
                         <div className="flex items-center justify-between">
                           <span className="font-bold text-sm sm:text-base">{opt.label}</span>
                           {isSelected ? (
                             <div
-                              className={`w-6 h-6 rounded-full flex items-center justify-center text-white shadow-sm ${
+                              className={`w-6 h-6 rounded-full flex items-center justify-center text-white ${
                                 isFemale ? 'bg-pink-600' : 'bg-blue-600'
                               }`}
                             >

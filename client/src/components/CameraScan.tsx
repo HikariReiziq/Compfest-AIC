@@ -78,16 +78,18 @@ interface CameraScanProps {
   ) => void;
   overrideProfile?: UserPersonalProfile | null;
   subcategory?: "glasses" | "hats" | "shirts";
+  gender?: "male" | "female";
+  onProfileChange?: (profile: UserPersonalProfile) => void;
   onBack?: () => void;
 }
 
 /* ------------------------------------------------------------------ */
-/*  Guide oval colors                                                 */
+/*  Guide oval colors (Solid borders, NO glow)                        */
 /* ------------------------------------------------------------------ */
 const GUIDE_COLORS: Record<FaceGuideState, { border: string; glow: string; text: string }> = {
-  NO_FACE:    { border: "#EF4444", glow: "0 0 28px rgba(239,68,68,0.45)",  text: "#FCA5A5" },
-  MISALIGNED: { border: "#EAB308", glow: "0 0 28px rgba(234,179,8,0.45)",  text: "#FDE68A" },
-  ALIGNED:    { border: "#22C55E", glow: "0 0 32px rgba(34,197,94,0.55)",  text: "#86EFAC" },
+  NO_FACE:    { border: "#EF4444", glow: "none", text: "#FCA5A5" },
+  MISALIGNED: { border: "#EAB308", glow: "none", text: "#FDE68A" },
+  ALIGNED:    { border: "#22C55E", glow: "none", text: "#86EFAC" },
 };
 
 /* ------------------------------------------------------------------ */
@@ -173,6 +175,8 @@ export const CameraScan: React.FC<CameraScanProps> = ({
   onScanComplete,
   overrideProfile,
   subcategory = "glasses",
+  gender,
+  onProfileChange,
   onBack,
 }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -1907,28 +1911,45 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                             )}
                           </span>
                         </div>
-                        <div className="inline-flex rounded-2xl bg-black/40 p-1 border border-white/15 gap-1 shadow-inner">
+                        <div className="inline-flex rounded-2xl bg-black/40 p-1 border border-white/15 gap-1">
                           <button
                             type="button"
-                            onClick={() =>
-                              setScannedProfile((prev) =>
-                                prev
-                                  ? {
-                                      ...prev,
-                                      gender: {
-                                        label: "Pria (Male)",
-                                        label_id: "male",
-                                        confidence: 1.0,
-                                        method: "manual_selection",
-                                        rule: "dipilih pengguna",
-                                      },
-                                    }
-                                  : prev
-                              )
-                            }
+                            onClick={() => {
+                              const newProfile: UserPersonalProfile = scannedProfile
+                                ? {
+                                    ...scannedProfile,
+                                    gender: {
+                                      label: "Pria (Male)",
+                                      label_id: "male",
+                                      confidence: 1.0,
+                                      method: "manual_selection",
+                                      rule: "dipilih pengguna",
+                                    },
+                                    body_shape_classification: {
+                                      body_shape: "Trapezoid (Atletis)",
+                                      confidence: 1.0,
+                                    },
+                                  }
+                                : {
+                                    ...MOCK_PRESETS.indonesian_warm_sawo_matang.profile,
+                                    gender: {
+                                      label: "Pria (Male)",
+                                      label_id: "male",
+                                      confidence: 1.0,
+                                      method: "manual_selection",
+                                      rule: "dipilih pengguna",
+                                    },
+                                    body_shape_classification: {
+                                      body_shape: "Trapezoid (Atletis)",
+                                      confidence: 1.0,
+                                    },
+                                  };
+                              setScannedProfile(newProfile);
+                              onProfileChange?.(newProfile);
+                            }}
                             className={`px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                               !isFemale
-                                ? "bg-blue-600 border border-blue-400 text-white shadow-md"
+                                ? "bg-blue-600 border border-blue-400 text-white"
                                 : "text-slate-400 hover:text-white"
                             }`}
                           >
@@ -1949,25 +1970,42 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                           </button>
                           <button
                             type="button"
-                            onClick={() =>
-                              setScannedProfile((prev) =>
-                                prev
-                                  ? {
-                                      ...prev,
-                                      gender: {
-                                        label: "Wanita (Female)",
-                                        label_id: "female",
-                                        confidence: 1.0,
-                                        method: "manual_selection",
-                                        rule: "dipilih pengguna",
-                                      },
-                                    }
-                                  : prev
-                              )
-                            }
+                            onClick={() => {
+                              const newProfile: UserPersonalProfile = scannedProfile
+                                ? {
+                                    ...scannedProfile,
+                                    gender: {
+                                      label: "Wanita (Female)",
+                                      label_id: "female",
+                                      confidence: 1.0,
+                                      method: "manual_selection",
+                                      rule: "dipilih pengguna",
+                                    },
+                                    body_shape_classification: {
+                                      body_shape: "Hourglass (Gitar Spanyol)",
+                                      confidence: 1.0,
+                                    },
+                                  }
+                                : {
+                                    ...MOCK_PRESETS.indonesian_warm_sawo_matang.profile,
+                                    gender: {
+                                      label: "Wanita (Female)",
+                                      label_id: "female",
+                                      confidence: 1.0,
+                                      method: "manual_selection",
+                                      rule: "dipilih pengguna",
+                                    },
+                                    body_shape_classification: {
+                                      body_shape: "Hourglass (Gitar Spanyol)",
+                                      confidence: 1.0,
+                                    },
+                                  };
+                              setScannedProfile(newProfile);
+                              onProfileChange?.(newProfile);
+                            }}
                             className={`px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                               isFemale
-                                ? "bg-pink-600 border border-pink-400 text-white shadow-md shadow-pink-600/30"
+                                ? "bg-pink-600 border border-pink-400 text-white"
                                 : "text-slate-400 hover:text-white"
                             }`}
                           >

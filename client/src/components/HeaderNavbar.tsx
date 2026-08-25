@@ -77,10 +77,10 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
         <button
           type="button"
           onClick={handleBackPreviousStep}
-          className={`fixed top-5 left-4 sm:left-6 z-50 inline-flex items-center gap-2 px-4 py-3 rounded-full border bg-[#0B1528]/90 backdrop-blur-2xl text-xs font-mono font-bold transition-all cursor-pointer shadow-2xl hover:scale-105 ${
+          className={`fixed top-5 left-4 sm:left-6 z-50 inline-flex items-center gap-2 px-4 py-3 rounded-full border backdrop-blur-2xl text-xs font-mono font-bold transition-all cursor-pointer hover:scale-105 ${
             isFemale
-              ? 'border-pink-500/30 text-pink-300 hover:bg-pink-600 hover:text-white'
-              : 'border-blue-500/30 text-sky-300 hover:bg-blue-600 hover:text-white'
+              ? 'bg-[#140613] border-pink-500/40 text-pink-300 hover:bg-pink-600 hover:text-white'
+              : 'bg-[#0B1528] border-blue-500/40 text-sky-300 hover:bg-blue-600 hover:text-white'
           }`}
           title="Kembali ke Tahap Sebelumnya"
         >
@@ -97,8 +97,8 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
 
       {/* Main Centered Floating Header Navbar */}
       <header
-        className={`fixed top-5 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-2.5rem)] max-w-6xl rounded-full border backdrop-blur-2xl px-5 sm:px-8 py-3 flex items-center justify-between transition-all shadow-2xl text-white ${
-          isFemale ? 'bg-[#140613]/90 border-pink-500/30 shadow-pink-950/30' : 'bg-[#0B1528]/85 border-blue-500/20 shadow-blue-950/30'
+        className={`fixed top-5 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-2.5rem)] max-w-6xl rounded-full border backdrop-blur-2xl px-5 sm:px-8 py-3 flex items-center justify-between transition-all text-white ${
+          isFemale ? 'bg-[#140613] border-pink-500/40' : 'bg-[#0B1528] border-blue-500/40'
         }`}
       >
         {/* Left: Brand Logo */}
@@ -110,7 +110,7 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
           <img
             src={isFemale ? '/images/logo-pink.png' : '/images/logo.png'}
             alt="COBA Logo"
-            className="w-9 h-9 sm:w-10 sm:h-10 object-contain drop-shadow-md group-hover:scale-105 transition-transform"
+            className="w-9 h-9 sm:w-10 sm:h-10 object-contain group-hover:scale-105 transition-transform"
           />
           <div>
             <div className="flex items-center gap-2">
@@ -119,7 +119,7 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
               </span>
               <span
                 className={`text-[9px] uppercase font-mono tracking-widest px-2.5 py-0.5 rounded-full border hidden sm:inline-block ${
-                  isFemale ? 'text-pink-300 border-pink-500/30 bg-[#1e0a1c]' : 'text-[#93C5FD] border-blue-500/30 bg-[#071120]'
+                  isFemale ? 'text-pink-300 border-pink-500/40 bg-[#1e0a1c]' : 'text-[#93C5FD] border-blue-500/40 bg-[#071120]'
                 }`}
               >
                 STUDIO FITTING 3D
@@ -134,7 +134,7 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
         {/* Step Flow Indicators (Interactive Floating Breadcrumbs) */}
         <div
           className={`hidden md:flex items-center gap-1.5 p-1.5 rounded-full border font-mono ${
-            isFemale ? 'bg-[#1e0a1c] border-pink-500/20' : 'bg-[#08101E] border-blue-500/20'
+            isFemale ? 'bg-[#1e0a1c] border-pink-500/30' : 'bg-[#08101E] border-blue-500/30'
           }`}
         >
           {steps.map((s) => {
@@ -155,8 +155,8 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
                 className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all flex items-center gap-1.5 ${
                   isActive
                     ? isFemale
-                      ? 'bg-gradient-to-r from-pink-600 to-rose-500 text-white font-bold shadow-[0_0_15px_rgba(236,72,153,0.4)] border border-pink-400/30'
-                      : 'bg-blue-600 text-white font-bold shadow-md'
+                      ? 'bg-pink-600 text-white font-bold border border-pink-400'
+                      : 'bg-blue-600 text-white font-bold border border-blue-400'
                     : isCompleted
                     ? 'text-[#FACC15] hover:text-[#FDE047] hover:bg-white/5 cursor-pointer'
                     : 'text-[#475569] cursor-not-allowed opacity-60'
@@ -174,10 +174,10 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
             <button
               type="button"
               onClick={onBackToLanding}
-              className={`inline-flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full border text-xs font-mono font-semibold transition-all cursor-pointer shadow-md ${
+              className={`inline-flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full border text-xs font-mono font-semibold transition-all cursor-pointer ${
                 isFemale
-                  ? 'bg-[#1e0a1c] border-pink-500/30 text-pink-300 hover:bg-pink-600 hover:text-white'
-                  : 'bg-[#08101E] border-blue-500/30 text-[#93C5FD] hover:bg-blue-600 hover:text-white'
+                  ? 'bg-[#1e0a1c] border-pink-500/40 text-pink-300 hover:bg-pink-600 hover:text-white'
+                  : 'bg-[#08101E] border-blue-500/40 text-[#93C5FD] hover:bg-blue-600 hover:text-white'
               }`}
             >
               <ArrowLeft className="w-4 h-4" />

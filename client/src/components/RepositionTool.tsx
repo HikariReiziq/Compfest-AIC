@@ -305,8 +305,8 @@ export default function RepositionTool({ photoDataUrl, gender, onConfirm, onBack
             disabled={!imgReady}
             className={`flex-[2] py-3 rounded-full disabled:opacity-50 text-white font-bold font-mono text-xs flex items-center justify-center gap-2 border transition-all cursor-pointer ${
               isFemale
-                ? "bg-gradient-to-r from-pink-600 via-rose-500 to-pink-500 hover:from-pink-500 hover:to-rose-400 border-pink-400/30 shadow-[0_4px_20px_rgba(236,72,153,0.3)]"
-                : "bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 border-blue-400/30"
+                ? "bg-pink-600 hover:bg-pink-700 border-pink-400"
+                : "bg-blue-600 hover:bg-blue-700 border-blue-400"
             }`}
           >
             <ScanFace className="w-4 h-4" />

@@ -54,19 +54,11 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
     <div className="w-full space-y-10 animate-fadeIn text-white max-w-6xl mx-auto">
       {/* Top Header */}
       <div className="text-center space-y-4 relative">
-        {/* Subtle Ambient Radial Glow */}
         <div
-          aria-hidden
-          className={`pointer-events-none absolute left-1/2 -top-12 -translate-x-1/2 w-96 h-32 blur-[90px] rounded-full opacity-40 ${
-            isFemale ? 'bg-pink-600' : 'bg-blue-600'
-          }`}
-        />
-
-        <div
-          className={`inline-flex items-center gap-2.5 px-5 py-2 rounded-full border text-xs sm:text-sm font-mono font-bold tracking-[0.14em] uppercase backdrop-blur-xl shadow-xl transition-all ${
+          className={`inline-flex items-center gap-2.5 px-5 py-2 rounded-full border text-xs sm:text-sm font-mono font-bold tracking-[0.14em] uppercase backdrop-blur-xl transition-all ${
             isFemale
-              ? 'bg-[#1c0b1a]/90 border-pink-500/40 text-pink-300 shadow-pink-950/40'
-              : 'bg-[#0B1528]/90 border-blue-500/40 text-[#93C5FD] shadow-blue-950/40'
+              ? 'bg-[#1c0b1a] border-pink-500/40 text-pink-300'
+              : 'bg-[#0B1528] border-blue-500/40 text-[#93C5FD]'
           }`}
         >
           <Sparkles className={`w-3.5 h-3.5 ${isFemale ? 'text-pink-400' : 'text-[#38BDF8]'}`} />
@@ -94,35 +86,35 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
             <div
               key={cat.subcat}
               onClick={() => onSelectCategory(cat.domain, cat.subcat)}
-              className={`group relative p-2 rounded-[2.25rem] border backdrop-blur-2xl transition-all duration-500 cursor-pointer flex flex-col justify-between hover:scale-[1.02] active:scale-[0.98] ${
+              className={`group relative p-2 rounded-[2.25rem] border backdrop-blur-2xl transition-all duration-300 cursor-pointer flex flex-col justify-between hover:scale-[1.02] active:scale-[0.98] ${
                 isFemale
-                  ? 'bg-gradient-to-b from-pink-500/10 via-pink-500/[0.03] to-transparent border-pink-500/20 hover:border-pink-400 hover:shadow-[0_16px_45px_rgba(244,114,182,0.25)]'
-                  : 'bg-gradient-to-b from-blue-500/10 via-blue-500/[0.03] to-transparent border-blue-500/20 hover:border-blue-400 hover:shadow-[0_16px_45px_rgba(56,189,248,0.25)]'
+                  ? 'bg-[#1c0b1a] border-pink-500/30 hover:border-pink-400'
+                  : 'bg-[#0B1528] border-blue-500/30 hover:border-blue-400'
               }`}
             >
               {/* Inner Core */}
               <div
-                className={`w-full h-full p-6 sm:p-7 rounded-[calc(2.25rem-0.5rem)] flex flex-col justify-between space-y-6 transition-all duration-500 ${
+                className={`w-full h-full p-6 sm:p-7 rounded-[calc(2.25rem-0.5rem)] flex flex-col justify-between space-y-6 transition-all duration-300 ${
                   isFemale
-                    ? 'bg-[#150714]/90 shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)] group-hover:bg-[#1a0919]/95'
-                    : 'bg-[#071120]/90 shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)] group-hover:bg-[#0b172a]/95'
+                    ? 'bg-[#140613] group-hover:bg-[#1a0919]'
+                    : 'bg-[#071120] group-hover:bg-[#0b172a]'
                 }`}
               >
                 <div className="space-y-5">
-                  {/* Top Badge & Glowing Icon */}
+                  {/* Top Badge & Icon */}
                   <div className="flex items-center justify-between">
                     <div
-                      className={`w-14 h-14 rounded-2xl border flex items-center justify-center shadow-lg transition-all duration-500 group-hover:scale-110 ${
+                      className={`w-14 h-14 rounded-2xl border flex items-center justify-center transition-all duration-300 group-hover:scale-110 ${
                         isFemale
-                          ? 'bg-gradient-to-br from-pink-500/20 to-pink-950/40 border-pink-400/40 text-pink-300 shadow-pink-950/50 group-hover:border-pink-300'
-                          : 'bg-gradient-to-br from-blue-500/20 to-blue-950/40 border-blue-400/40 text-[#93C5FD] shadow-blue-950/50 group-hover:border-blue-300'
+                          ? 'bg-[#220a20] border-pink-500/40 text-pink-300 group-hover:border-pink-300'
+                          : 'bg-[#0a1832] border-blue-500/40 text-[#93C5FD] group-hover:border-blue-300'
                       }`}
                     >
                       <IconComp className="w-7 h-7" />
                     </div>
 
                     <span
-                      className={`text-[11px] font-mono px-3 py-1 rounded-full border font-bold flex items-center gap-1.5 backdrop-blur-md shadow-sm ${
+                      className={`text-[11px] font-mono px-3 py-1 rounded-full border font-bold flex items-center gap-1.5 backdrop-blur-md ${
                         isFemale
                           ? 'bg-pink-500/15 text-pink-300 border-pink-500/30'
                           : 'bg-blue-500/15 text-[#93C5FD] border-blue-500/30'
