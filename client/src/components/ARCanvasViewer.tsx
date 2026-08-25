@@ -64,6 +64,11 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   const [rotOffsetX, setRotOffsetX] = useState<number>(0);
   const [scaleMultiplier, setScaleMultiplier] = useState<number>(100);
   const [dragMode, setDragMode] = useState<"pan" | "rotate">("pan");
+  const [selectedFrame, setSelectedFrame] = useState<"canon" | "flower">(() => (isFemale ? "flower" : "canon"));
+
+  useEffect(() => {
+    setSelectedFrame(isFemale ? "flower" : "canon");
+  }, [isFemale]);
 
   const studioYawRef = useRef<number>(0);
   const studioPitchRef = useRef<number>(0);
@@ -453,7 +458,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
       cancelAnimationFrame(rafRef.current);
       renderer.dispose();
     };
-  }, [viewMode, activeItem, subcategory, isShirt]);
+  }, [viewMode, activeItem, subcategory, isShirt, selectedFrame]);
 
   /* ------------------------------------------------------------------ */
   /*  4. Load 3D Model File with Optical Glass Shaders & Auto-Alignment */
@@ -902,19 +907,36 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
   return (
     <div className="w-full h-full flex flex-col space-y-3.5">
-      {/* Top Header: Mode Switcher & AR Fine-Tuning Micro-Controls (Posisi di atas agar sejajar dengan kartu sebelah kanan) */}
+      {/* Top Header: Mode Switcher, Frame Switcher, & AR Fine-Tuning Micro-Controls */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 w-full">
-        {/* Mode Switcher Pill (AR vs 360°) */}
-        <div
-          className={`h-[46px] inline-flex items-center p-1 rounded-full backdrop-blur-xl border shrink-0 ${
-            isFemale ? 'bg-[#1c0b1a] border-pink-500/30' : 'bg-[#0B1528] border-blue-500/30'
-          }`}
-        >
-          {!isUploadMode && (
+        {/* Mode Switcher Pill (AR vs 360°) & Frame Selector Pill */}
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <div
+            className={`h-[46px] inline-flex items-center p-1 rounded-full backdrop-blur-xl border shrink-0 ${
+              isFemale ? 'bg-[#1c0b1a] border-pink-500/30' : 'bg-[#0B1528] border-blue-500/30'
+            }`}
+          >
+            {!isUploadMode && (
+              <button
+                onClick={() => setViewMode("ar")}
+                className={`h-full px-4 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer select-none ${
+                  viewMode === "ar"
+                    ? isFemale
+                      ? "bg-pink-600 hover:bg-pink-700 text-white font-bold border border-pink-400"
+                      : "bg-blue-600 hover:bg-blue-700 text-white font-bold border border-blue-400"
+                    : isFemale
+                    ? "text-pink-300/70 hover:text-white"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <span>AR Live</span>
+              </button>
+            )}
             <button
-              onClick={() => setViewMode("ar")}
+              onClick={() => setViewMode("studio")}
               className={`h-full px-4 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer select-none ${
-                viewMode === "ar"
+                viewMode === "studio"
                   ? isFemale
                     ? "bg-pink-600 hover:bg-pink-700 text-white font-bold border border-pink-400"
                     : "bg-blue-600 hover:bg-blue-700 text-white font-bold border border-blue-400"
@@ -923,25 +945,54 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
                   : "text-slate-400 hover:text-white"
               }`}
             >
-              <Camera className="w-3.5 h-3.5" />
-              <span>AR Live</span>
+              <Box className="w-3.5 h-3.5" />
+              <span>360° Studio</span>
             </button>
+          </div>
+
+          {/* Frame Selector Pill in AR Live Mode */}
+          {viewMode === "ar" && (
+            <div
+              className={`h-[46px] inline-flex items-center p-1 rounded-full backdrop-blur-xl border shrink-0 ${
+                isFemale ? 'bg-[#1c0b1a] border-pink-500/30' : 'bg-[#0B1528] border-blue-500/30'
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => setSelectedFrame("canon")}
+                className={`h-full px-3 rounded-full text-xs font-semibold font-mono flex items-center space-x-1 transition-all cursor-pointer select-none ${
+                  selectedFrame === "canon"
+                    ? isFemale
+                      ? "bg-pink-600 text-white font-bold border border-pink-400"
+                      : "bg-blue-600 text-white font-bold border border-blue-400"
+                    : isFemale
+                    ? "text-pink-300/70 hover:text-white"
+                    : "text-slate-400 hover:text-white"
+                }`}
+                title="Bingkai 1: Canon DSLR Camera Frame"
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <span>DSLR</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedFrame("flower")}
+                className={`h-full px-3 rounded-full text-xs font-semibold font-mono flex items-center space-x-1 transition-all cursor-pointer select-none ${
+                  selectedFrame === "flower"
+                    ? isFemale
+                      ? "bg-pink-600 text-white font-bold border border-pink-400"
+                      : "bg-blue-600 text-white font-bold border border-blue-400"
+                    : isFemale
+                    ? "text-pink-300/70 hover:text-white"
+                    : "text-slate-400 hover:text-white"
+                }`}
+                title="Bingkai 2: Watercolor Flower Frame"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Flower</span>
+              </button>
+            </div>
           )}
-          <button
-            onClick={() => setViewMode("studio")}
-            className={`h-full px-4 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer select-none ${
-              viewMode === "studio"
-                ? isFemale
-                  ? "bg-pink-600 hover:bg-pink-700 text-white font-bold border border-pink-400"
-                  : "bg-blue-600 hover:bg-blue-700 text-white font-bold border border-blue-400"
-                : isFemale
-                ? "text-pink-300/70 hover:text-white"
-                : "text-slate-400 hover:text-white"
-            }`}
-          >
-            <Box className="w-3.5 h-3.5" />
-            <span>360° Studio</span>
-          </button>
         </div>
 
         {viewMode === "ar" ? (
@@ -1090,24 +1141,36 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
       {/* Main Viewport Container */}
       {viewMode === "ar" ? (
-        /* MODE 1: LIVE AR WITH CANON DSLR CAMERA FRAME */
+        /* MODE 1: LIVE AR WITH DUAL CAMERA FRAME (CANON DSLR OR FLOWER WREATH) */
         <div
-          className="relative w-full max-w-[800px] mx-auto drop-shadow-2xl flex items-center justify-center select-none animate-fadeIn"
-          style={{ aspectRatio: "548 / 455" }}
+          className={
+            selectedFrame === "flower"
+              ? "relative w-full max-w-[620px] mx-auto drop-shadow-2xl flex items-center justify-center select-none animate-fadeIn"
+              : "relative w-full max-w-[800px] mx-auto drop-shadow-2xl flex items-center justify-center select-none animate-fadeIn"
+          }
+          style={selectedFrame === "flower" ? { aspectRatio: "1 / 1" } : { aspectRatio: "548 / 455" }}
         >
-          {/* Bingkai kamera DSLR Canon EOS 4K Ultra HD — tajam & jernih */}
+          {/* Bingkai Kamera (Canon DSLR HD atau Watercolor Flower Frame) */}
           <img
-            src="/images/camera-frame.png"
-            alt="Canon Camera Frame"
+            src={selectedFrame === "flower" ? "/images/camera-frame-female.png" : "/images/camera-frame-male.png"}
+            alt={selectedFrame === "flower" ? "Flower Frame" : "Canon Camera Frame"}
             aria-hidden
             draggable={false}
             className="absolute inset-0 w-full h-full object-contain pointer-events-none z-20 select-none drop-shadow-[0_25px_45px_rgba(0,0,0,0.85)]"
           />
 
-          {/* Layar LCD Kamera DSLR Canon — proporsi pas di dalam bezel layar */}
+          {/* Layar Kamera — proporsi pas di dalam LCD Canon atau Lingkaran Flower Frame */}
           <div
-            className="absolute z-10 overflow-hidden rounded-[3px] bg-black shadow-[inset_0_0_20px_rgba(0,0,0,0.95)]"
-            style={{ left: "16.42%", top: "42.20%", width: "45.07%", height: "36.26%" }}
+            className={
+              selectedFrame === "flower"
+                ? "absolute z-10 overflow-hidden rounded-full bg-black shadow-[inset_0_0_20px_rgba(0,0,0,0.95)]"
+                : "absolute z-10 overflow-hidden rounded-[3px] bg-black shadow-[inset_0_0_20px_rgba(0,0,0,0.95)]"
+            }
+            style={
+              selectedFrame === "flower"
+                ? { left: "28.5%", top: "24.5%", width: "50%", height: "50%" }
+                : { left: "16.42%", top: "42.20%", width: "45.07%", height: "36.26%" }
+            }
           >
             {/* 3D WebGL Canvas Layer Overlay */}
             <div ref={containerRef} className="absolute inset-0 w-full h-full z-10 pointer-events-none" />

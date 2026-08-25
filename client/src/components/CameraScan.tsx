@@ -1117,7 +1117,12 @@ export const CameraScan: React.FC<CameraScanProps> = ({
   /* ---- Derived styling ---- */
   const guideStyle = GUIDE_COLORS[faceGuideState];
   const subcatLabel = subcategory === "hats" ? "Topi (Hats)" : subcategory === "shirts" ? "Pakaian (Shirts)" : "Kacamata (Glasses)";
-  const isFemaleTheme = scannedProfile?.gender?.label_id === "female" || overrideProfile?.gender?.label_id === "female";
+  const isFemaleTheme = scannedProfile?.gender?.label_id === "female" || overrideProfile?.gender?.label_id === "female" || gender === "female";
+  const [selectedFrame, setSelectedFrame] = useState<"canon" | "flower">(() => (isFemaleTheme ? "flower" : "canon"));
+
+  useEffect(() => {
+    setSelectedFrame(isFemaleTheme ? "flower" : "canon");
+  }, [isFemaleTheme]);
 
   return (
     <div className="w-full space-y-8 animate-fadeIn text-white">
@@ -1144,8 +1149,8 @@ export const CameraScan: React.FC<CameraScanProps> = ({
         </p>
       </div>
 
-      {/* Dual-mode tabs: Kamera Live vs Upload Foto */}
-      <div className="flex justify-center">
+      {/* Dual-mode tabs: Kamera Live vs Upload Foto & Frame Selector */}
+      <div className="flex flex-wrap items-center justify-center gap-2.5">
         <div
           className={`inline-flex rounded-full border p-1.5 gap-1.5 backdrop-blur-xl transition-all shadow-lg ${
             isFemaleTheme
@@ -1186,6 +1191,51 @@ export const CameraScan: React.FC<CameraScanProps> = ({
             Upload Foto
           </button>
         </div>
+
+        {mode === "camera" && (
+          <div
+            className={`inline-flex rounded-full border p-1.5 gap-1.5 backdrop-blur-xl transition-all shadow-lg ${
+              isFemaleTheme
+                ? "border-pink-500/30 bg-[#1c0b1a]/90"
+                : "border-blue-500/30 bg-[#0B1528]/90"
+            }`}
+          >
+            <button
+              type="button"
+              onClick={() => setSelectedFrame("canon")}
+              className={`flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-semibold font-mono transition-all cursor-pointer ${
+                selectedFrame === "canon"
+                  ? isFemaleTheme
+                    ? "bg-pink-600 text-white border border-pink-400 font-bold"
+                    : "bg-blue-600 text-white border border-blue-400 font-bold"
+                  : isFemaleTheme
+                  ? "text-pink-300 hover:text-white"
+                  : "text-[#93C5FD] hover:text-white"
+              }`}
+              title="Bingkai 1: Canon DSLR Camera Frame"
+            >
+              <Camera className="w-3.5 h-3.5" />
+              <span>Canon DSLR</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedFrame("flower")}
+              className={`flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-semibold font-mono transition-all cursor-pointer ${
+                selectedFrame === "flower"
+                  ? isFemaleTheme
+                    ? "bg-pink-600 text-white border border-pink-400 font-bold"
+                    : "bg-blue-600 text-white border border-blue-400 font-bold"
+                  : isFemaleTheme
+                  ? "text-pink-300 hover:text-white"
+                  : "text-[#93C5FD] hover:text-white"
+              }`}
+              title="Bingkai 2: Watercolor Flower Frame"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Flower Frame</span>
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center pt-2">
@@ -1195,15 +1245,17 @@ export const CameraScan: React.FC<CameraScanProps> = ({
             className={
               mode === "upload"
                 ? "relative bg-black rounded-3xl overflow-hidden border-2 border-slate-400/60 shadow-[0_0_0_1px_rgba(255,255,255,0.15),0_20px_60px_rgba(0,0,0,0.6)] flex items-center justify-center aspect-auto min-h-[480px] p-6"
-                : "relative w-full max-w-[800px] mx-auto drop-shadow-2xl"
+                : selectedFrame === "flower"
+                ? "relative w-full max-w-[620px] mx-auto drop-shadow-2xl flex items-center justify-center"
+                : "relative w-full max-w-[800px] mx-auto drop-shadow-2xl flex items-center justify-center"
             }
-            style={mode === "upload" ? undefined : { aspectRatio: "548 / 455" }}
+            style={mode === "upload" ? undefined : selectedFrame === "flower" ? { aspectRatio: "1 / 1" } : { aspectRatio: "548 / 455" }}
           >
             {mode === "upload" ? null : (
-              /* Bingkai kamera DSLR Canon EOS 4K Ultra HD — tajam & jernih */
+              /* Bingkai Kamera (Canon DSLR HD atau Watercolor Flower Frame) */
               <img
-                src="/images/camera-frame.png"
-                alt="Canon Camera Frame"
+                src={selectedFrame === "flower" ? "/images/camera-frame-female.png" : "/images/camera-frame-male.png"}
+                alt={selectedFrame === "flower" ? "Flower Frame" : "Canon Camera Frame"}
                 aria-hidden
                 draggable={false}
                 className="absolute inset-0 w-full h-full object-contain pointer-events-none z-20 select-none drop-shadow-[0_25px_45px_rgba(0,0,0,0.85)]"
@@ -1300,10 +1352,18 @@ export const CameraScan: React.FC<CameraScanProps> = ({
               </div>
             ) : (
               <>
-              {/* Layar LCD kamera DSLR Canon — proporsi pas di dalam bezel layar */}
+              {/* Layar Kamera — proporsi pas di dalam bezel/lingkaran frame */}
               <div
-                className="absolute z-10 overflow-hidden rounded-[3px] bg-black shadow-[inset_0_0_20px_rgba(0,0,0,0.95)]"
-                style={{ left: "16.42%", top: "42.20%", width: "45.07%", height: "36.26%" }}
+                className={
+                  selectedFrame === "flower"
+                    ? "absolute z-10 overflow-hidden rounded-full bg-black shadow-[inset_0_0_20px_rgba(0,0,0,0.95)]"
+                    : "absolute z-10 overflow-hidden rounded-[3px] bg-black shadow-[inset_0_0_20px_rgba(0,0,0,0.95)]"
+                }
+                style={
+                  selectedFrame === "flower"
+                    ? { left: "28.5%", top: "24.5%", width: "50%", height: "50%" }
+                    : { left: "16.42%", top: "42.20%", width: "45.07%", height: "36.26%" }
+                }
               >
               <div className="relative w-full h-full bg-black flex items-center justify-center">
             {hasCamera ? (
