@@ -1719,20 +1719,20 @@ export const CameraScan: React.FC<CameraScanProps> = ({
               const skinHex = scannedProfile.monk_tone?.hex || scannedProfile.skin_tone?.hex || "#C58C66";
 
               return (
-                /* Double-Bezel Luxury Outer Shell */
+                /* Single Clean Luxury Outer Shell */
                 <div
-                  className={`p-1.5 sm:p-2 rounded-[2.25rem] border backdrop-blur-2xl transition-all duration-500 shadow-2xl ${
+                  className={`p-1.5 sm:p-2 rounded-[2.25rem] border backdrop-blur-2xl transition-all duration-300 ${
                     isFemale
-                      ? "bg-gradient-to-b from-pink-500/15 via-pink-500/[0.03] to-transparent border-pink-500/40 shadow-[0_16px_50px_rgba(244,114,182,0.25)]"
-                      : "bg-gradient-to-b from-blue-500/15 via-blue-500/[0.03] to-transparent border-blue-500/40 shadow-[0_16px_50px_rgba(56,189,248,0.25)]"
+                      ? "bg-[#1c0b1a] border-pink-500/40"
+                      : "bg-[#0B1528] border-blue-500/40"
                   }`}
                 >
                   {/* Inner Core */}
                   <div
-                    className={`p-6 sm:p-7 rounded-[calc(2.25rem-0.375rem)] space-y-5 transition-all duration-500 ${
+                    className={`p-6 sm:p-7 rounded-[calc(2.25rem-0.375rem)] space-y-5 transition-all duration-300 ${
                       isFemale
-                        ? "bg-[#150714]/95 shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)]"
-                        : "bg-[#071120]/95 shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)]"
+                        ? "bg-[#140613]"
+                        : "bg-[#071120]"
                     }`}
                   >
                     {/* Top Header */}
@@ -1784,28 +1784,28 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                     <div
                       className={`rounded-2xl p-4 border space-y-3 ${
                         isFemale
-                          ? "bg-gradient-to-br from-pink-500/[0.08] to-pink-950/20 border-pink-500/25"
-                          : "bg-gradient-to-br from-blue-500/[0.08] to-blue-950/20 border-blue-500/25"
+                          ? "bg-[#1f091d] border-pink-500/25"
+                          : "bg-[#0c192f] border-blue-500/25"
                       }`}
                     >
                       {/* 1. Warna Kulit */}
                       <div
-                        className="p-4 rounded-2xl flex items-center justify-between shadow-lg transition-all border backdrop-blur-md"
+                        className="p-4 rounded-2xl flex items-center justify-between border backdrop-blur-md"
                         style={{
-                          background: `linear-gradient(135deg, ${skinHex}40 0%, ${skinHex}20 100%)`,
+                          backgroundColor: `${skinHex}25`,
                           borderColor: `${skinHex}55`,
                         }}
                       >
                         <div className="flex items-center gap-3.5">
                           <div
-                            className="w-10 h-10 rounded-2xl border flex items-center justify-center shadow-md backdrop-blur-md"
+                            className="w-10 h-10 rounded-2xl border flex items-center justify-center backdrop-blur-md"
                             style={{
                               backgroundColor: `${skinHex}30`,
                               borderColor: `${skinHex}70`,
                             }}
                           >
                             <span
-                              className="w-5 h-5 rounded-full border-2 border-white shadow-sm"
+                              className="w-5 h-5 rounded-full border-2 border-white"
                               style={{ backgroundColor: skinHex }}
                             />
                           </div>
@@ -1819,7 +1819,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                           </div>
                         </div>
                         <div
-                          className="px-3.5 py-1.5 rounded-full border font-mono font-bold text-xs shadow-inner"
+                          className="px-3.5 py-1.5 rounded-full border font-mono font-bold text-xs"
                           style={{
                             backgroundColor: `${skinHex}35`,
                             borderColor: `${skinHex}70`,
@@ -1833,7 +1833,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                       {/* 2. Siluet Tubuh / Bentuk Wajah */}
                       <div
                         className={`p-3.5 rounded-2xl border flex items-center justify-between ${
-                          isFemale ? "bg-[#1f091d]/60 border-pink-500/20" : "bg-white/5 border-white/10"
+                          isFemale ? "bg-[#140613] border-pink-500/20" : "bg-[#071120] border-white/10"
                         }`}
                       >
                         <div>
@@ -1862,7 +1862,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                       {/* 3. Gender / Jenis Kelamin */}
                       <div
                         className={`p-3.5 rounded-2xl border flex items-center justify-between ${
-                          isFemale ? "bg-[#1f091d]/60 border-pink-500/20" : "bg-white/5 border-white/10"
+                          isFemale ? "bg-[#140613] border-pink-500/20" : "bg-[#071120] border-white/10"
                         }`}
                       >
                         <div>
@@ -1978,7 +1978,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                                       rule: "dipilih pengguna",
                                     },
                                     body_shape_classification: {
-                                      body_shape: "Hourglass (Gitar Spanyol)",
+                                      body_shape: "Hourglass (Proporsional)",
                                       confidence: 1.0,
                                     },
                                   }
@@ -1992,7 +1992,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                                       rule: "dipilih pengguna",
                                     },
                                     body_shape_classification: {
-                                      body_shape: "Hourglass (Gitar Spanyol)",
+                                      body_shape: "Hourglass (Proporsional)",
                                       confidence: 1.0,
                                     },
                                   };
@@ -2028,8 +2028,8 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                     <div
                       className={`rounded-2xl p-4 border space-y-3 ${
                         isFemale
-                          ? "bg-gradient-to-br from-pink-500/[0.08] to-pink-950/20 border-pink-500/25"
-                          : "bg-gradient-to-br from-blue-500/[0.08] to-blue-950/20 border-blue-500/25"
+                          ? "bg-[#1f091d] border-pink-500/25"
+                          : "bg-[#0c192f] border-blue-500/25"
                       }`}
                     >
                       <div className="flex items-center justify-between pb-1 border-b border-white/5">
@@ -2047,7 +2047,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                         <div className="space-y-2">
                           <div
                             className={`p-3 rounded-2xl border flex items-center justify-between ${
-                              isFemale ? "bg-[#1f091d]/60 border-pink-500/20" : "bg-white/5 border-white/10"
+                              isFemale ? "bg-[#140613] border-pink-500/20" : "bg-[#071120] border-white/10"
                             }`}
                           >
                             <span className="text-xs font-mono text-slate-300 uppercase font-semibold">Lebar Bahu</span>
@@ -2057,7 +2057,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                           </div>
                           <div
                             className={`p-3 rounded-2xl border flex items-center justify-between ${
-                              isFemale ? "bg-[#1f091d]/60 border-pink-500/20" : "bg-white/5 border-white/10"
+                              isFemale ? "bg-[#140613] border-pink-500/20" : "bg-[#071120] border-white/10"
                             }`}
                           >
                             <span className="text-xs font-mono text-slate-300 uppercase font-semibold">Lebar Dada</span>
@@ -2067,7 +2067,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                           </div>
                           <div
                             className={`p-3 rounded-2xl border flex items-center justify-between ${
-                              isFemale ? "bg-[#1f091d]/60 border-pink-500/20" : "bg-white/5 border-white/10"
+                              isFemale ? "bg-[#140613] border-pink-500/20" : "bg-[#071120] border-white/10"
                             }`}
                           >
                             <span className="text-xs font-mono text-slate-300 uppercase font-semibold">Rasio V-Shape</span>
@@ -2086,7 +2086,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                         <div className="space-y-2">
                           <div
                             className={`p-3 rounded-2xl border flex items-center justify-between ${
-                              isFemale ? "bg-[#1f091d]/60 border-pink-500/20" : "bg-white/5 border-white/10"
+                              isFemale ? "bg-[#140613] border-pink-500/20" : "bg-[#071120] border-white/10"
                             }`}
                           >
                             <span className="text-xs font-mono text-slate-300 uppercase font-semibold">Lebar Dahi</span>
@@ -2096,7 +2096,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                           </div>
                           <div
                             className={`p-3 rounded-2xl border flex items-center justify-between ${
-                              isFemale ? "bg-[#1f091d]/60 border-pink-500/20" : "bg-white/5 border-white/10"
+                              isFemale ? "bg-[#140613] border-pink-500/20" : "bg-[#071120] border-white/10"
                             }`}
                           >
                             <span className="text-xs font-mono text-slate-300 uppercase font-semibold">Lebar Pipi (Cheekbone)</span>
@@ -2106,7 +2106,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                           </div>
                           <div
                             className={`p-3 rounded-2xl border flex items-center justify-between ${
-                              isFemale ? "bg-[#1f091d]/60 border-pink-500/20" : "bg-white/5 border-white/10"
+                              isFemale ? "bg-[#140613] border-pink-500/20" : "bg-[#071120] border-white/10"
                             }`}
                           >
                             <span className="text-xs font-mono text-slate-300 uppercase font-semibold">Lebar Rahang (Jawline)</span>
@@ -2116,7 +2116,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                           </div>
                           <div
                             className={`p-3 rounded-2xl border flex items-center justify-between text-xs ${
-                              isFemale ? "bg-[#1f091d]/60 border-pink-500/20" : "bg-white/5 border-white/10"
+                              isFemale ? "bg-[#140613] border-pink-500/20" : "bg-[#071120] border-white/10"
                             }`}
                           >
                             <span className="text-slate-400 font-mono text-[11px]">Karakteristik Sensorik:</span>
@@ -2140,8 +2140,8 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                       }
                       className={`w-full py-4 rounded-full font-bold text-sm text-white flex items-center justify-center gap-2 cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99] ${
                         isFemale
-                          ? "bg-gradient-to-r from-pink-600 via-rose-500 to-pink-500 hover:from-pink-500 hover:to-rose-400 border border-pink-400/40 shadow-[0_4px_25px_rgba(236,72,153,0.35)]"
-                          : "bg-gradient-to-r from-blue-600 via-sky-500 to-blue-500 hover:from-blue-500 hover:to-sky-400 border border-blue-400/30 shadow-[0_4px_25px_rgba(59,130,246,0.35)]"
+                          ? "bg-pink-600 hover:bg-pink-700 border border-pink-400"
+                          : "bg-blue-600 hover:bg-blue-700 border border-blue-400"
                       }`}
                     >
                       <span>Lanjut ke Kuesioner Gaya {subcatLabel}</span>
