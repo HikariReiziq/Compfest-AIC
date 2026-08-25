@@ -79,6 +79,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   const [cameraReady, setCameraReady] = useState(false);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [isModelLoading, setIsModelLoading] = useState<boolean>(true);
   const [modelSource, setModelSource] = useState<string>("Memuat 3D Model...");
   const [offsetX, setOffsetX] = useState<number>(0);
   const [offsetY, setOffsetY] = useState<number>(0);
@@ -272,6 +273,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     let cancelled = false;
 
     async function initLandmarker() {
+      setIsModelLoading(true);
       try {
         const vision = await import("@mediapipe/tasks-vision");
         const { FaceLandmarker, PoseLandmarker, FilesetResolver } = vision;
@@ -332,6 +334,8 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
         }
       } catch (err) {
         console.warn("AR Landmarker initialization failed:", err);
+      } finally {
+        setIsModelLoading(false);
       }
     }
 
@@ -559,6 +563,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   /*  4. Load 3D Model File with Optical Glass Shaders & Auto-Alignment */
   /* ------------------------------------------------------------------ */
   const loadCategorized3DModel = async (group: THREE.Group) => {
+    setIsModelLoading(true);
     while (group.children.length > 0) {
       group.remove(group.children[0]);
     }
@@ -666,12 +671,16 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           group.add(wrapper);
 
           setModelSource(`3D GLB (${filename})`);
+          setIsModelLoading(false);
         },
         undefined,
         (error) => {
           console.warn(`GLB load failed for ${modelPath}:`, error);
+          setIsModelLoading(false);
         }
       );
+    } else {
+      setIsModelLoading(false);
     }
   };
 
@@ -1347,6 +1356,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
                 style={{
                   filter: "brightness(1.35) contrast(1.05)",
                 }}
+                disablePictureInPicture
                 autoPlay
                 playsInline
                 muted
@@ -1373,7 +1383,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               </div>
 
               {/* Maskot & Tulisan saat kamera sedang loading/menghubungkan */}
-              {(!isVideoPlaying || !cameraReady) && !cameraError && (
+              {(!isVideoPlaying || !cameraReady || isModelLoading) && !cameraError && (
                 <div className="absolute inset-0 z-30 bg-[#071120] flex flex-col items-center justify-center space-y-3 p-4 text-center">
                   <div className="relative z-10 flex items-center justify-center">
                     <img
