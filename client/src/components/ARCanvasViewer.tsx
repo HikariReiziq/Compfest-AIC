@@ -26,6 +26,7 @@ interface ARCanvasViewerProps {
   subcategory: string;
   mediaStream?: MediaStream | null;
   inputMode?: "camera" | "upload";
+  gender?: "male" | "female";
 }
 
 /* ------------------------------------------------------------------ */
@@ -36,7 +37,9 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   subcategory,
   mediaStream,
   inputMode = "camera",
+  gender,
 }) => {
+  const isFemale = gender === "female";
   const containerRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -887,13 +890,19 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     <div className="w-full h-full flex flex-col space-y-3.5">
       {/* Mode Switcher Pill (AR vs 360°) — Berada di tengah tanpa card nama produk */}
       <div className="flex justify-center w-full">
-        <div className="inline-flex items-center bg-[#071120] p-1 rounded-full border border-blue-500/20 shadow-xl backdrop-blur-xl">
+        <div
+          className={`inline-flex items-center p-1 rounded-full shadow-xl backdrop-blur-xl border ${
+            isFemale ? 'bg-[#180918] border-pink-500/20' : 'bg-[#071120] border-blue-500/20'
+          }`}
+        >
           {!isUploadMode && (
             <button
               onClick={() => setViewMode("ar")}
               className={`px-4 py-1.5 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer select-none ${
                 viewMode === "ar"
-                  ? "bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-md shadow-blue-500/25 border border-blue-400/40"
+                  ? isFemale
+                    ? "bg-gradient-to-r from-pink-600 to-rose-500 hover:from-pink-500 hover:to-rose-400 text-white font-bold shadow-md shadow-pink-500/25 border border-pink-400/40"
+                    : "bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-md shadow-blue-500/25 border border-blue-400/40"
                   : "text-slate-400 hover:text-white"
               }`}
             >
@@ -905,7 +914,9 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
             onClick={() => setViewMode("studio")}
             className={`px-4 py-1.5 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer select-none ${
               viewMode === "studio"
-                ? "bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-md shadow-blue-500/25 border border-blue-400/40"
+                ? isFemale
+                  ? "bg-gradient-to-r from-pink-600 to-rose-500 hover:from-pink-500 hover:to-rose-400 text-white font-bold shadow-md shadow-pink-500/25 border border-pink-400/40"
+                  : "bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-md shadow-blue-500/25 border border-blue-400/40"
                 : "text-slate-400 hover:text-white"
             }`}
           >
@@ -1107,14 +1118,26 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           }}
         >
           {/* Radial Studio Spotlight */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(56,189,248,0.18)_0%,_transparent_75%)] pointer-events-none" />
+          <div
+            className={`absolute inset-0 pointer-events-none ${
+              isFemale
+                ? "bg-[radial-gradient(ellipse_at_center,_rgba(244,114,182,0.22)_0%,_transparent_75%)]"
+                : "bg-[radial-gradient(ellipse_at_center,_rgba(56,189,248,0.18)_0%,_transparent_75%)]"
+            }`}
+          />
 
           {/* 3D WebGL Canvas Layer Overlay */}
           <div ref={containerRef} className="absolute inset-0 w-full h-full z-10 pointer-events-none" />
 
           {/* Top-Left: 360 Studio Badge */}
-          <div className="absolute top-4 left-4 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-blue-500/20 text-sky-300 border border-blue-500/30 text-xs font-mono z-30 shadow-lg backdrop-blur-md pointer-events-none">
-            <Box className="w-3.5 h-3.5 text-sky-400" />
+          <div
+            className={`absolute top-4 left-4 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-mono z-30 shadow-lg backdrop-blur-md pointer-events-none border ${
+              isFemale
+                ? "bg-pink-500/20 text-pink-300 border-pink-500/30"
+                : "bg-blue-500/20 text-sky-300 border-blue-500/30"
+            }`}
+          >
+            <Box className={`w-3.5 h-3.5 ${isFemale ? "text-pink-400" : "text-sky-400"}`} />
             <span>STUDIO 360° INSPECTION</span>
           </div>
 
@@ -1168,7 +1191,9 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               }}
               className={`px-3 py-1 rounded-full text-[10px] font-mono transition-all cursor-pointer font-bold ${
                 isAutoRotateStudio
-                  ? "bg-blue-600 border border-blue-400 text-white shadow-md"
+                  ? isFemale
+                    ? "bg-pink-600 border border-pink-400 text-white shadow-md shadow-pink-600/30"
+                    : "bg-blue-600 border border-blue-400 text-white shadow-md"
                   : "bg-black/40 text-slate-400 hover:text-white"
               }`}
               title="Toggle Auto-Spin 360°"
@@ -1179,7 +1204,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
           {/* Bottom Floating Instructions */}
           <div className="absolute bottom-4 right-4 z-20 hidden sm:flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#071120]/80 backdrop-blur-md border border-white/10 text-[10px] font-mono text-slate-400 pointer-events-none">
-            <RotateCw className="w-3 h-3 text-sky-400" />
+            <RotateCw className={`w-3 h-3 ${isFemale ? "text-pink-400" : "text-sky-400"}`} />
             <span>Geser layar untuk memutar 360° • Scroll untuk zoom</span>
           </div>
         </div>
@@ -1195,7 +1220,9 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               onClick={() => setDragMode("rotate")}
               className={`px-2 py-1 rounded-lg text-xs font-mono font-bold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
                 dragMode === "rotate"
-                  ? "bg-blue-600 border border-blue-400 text-white shadow-sm"
+                  ? isFemale
+                    ? "bg-pink-600 border border-pink-400 text-white shadow-sm"
+                    : "bg-blue-600 border border-blue-400 text-white shadow-sm"
                   : "text-slate-400 hover:text-white"
               }`}
               title="Opsi 1: Geser di layar ke segala arah untuk memutar model 3D (360° Horizontal, Vertikal & Diagonal)"
@@ -1207,7 +1234,9 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               onClick={() => setDragMode("pan")}
               className={`px-2 py-1 rounded-lg text-xs font-mono font-bold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
                 dragMode === "pan"
-                  ? "bg-sky-600 border border-sky-400 text-white shadow-sm"
+                  ? isFemale
+                    ? "bg-rose-600 border border-rose-400 text-white shadow-sm"
+                    : "bg-sky-600 border border-sky-400 text-white shadow-sm"
                   : "text-slate-400 hover:text-white"
               }`}
               title="Opsi 2: Geser di layar ke segala arah untuk memindahkan posisi (Atas, Bawah, Kiri, Kanan)"
@@ -1252,7 +1281,13 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
         <div className="flex flex-nowrap items-center space-x-2 text-xs bg-slate-900/70 px-2 py-1 rounded-xl border border-white/5 shrink-0 whitespace-nowrap">
           <span className="text-slate-400 font-mono text-[11px] flex items-center">
             <span>Ukuran:</span>
-            <strong className="text-blue-400 inline-block w-9 text-right ml-1 font-mono">{scaleMultiplier}%</strong>
+            <strong
+              className={`inline-block w-9 text-right ml-1 font-mono ${
+                isFemale ? "text-pink-400" : "text-blue-400"
+              }`}
+            >
+              {scaleMultiplier}%
+            </strong>
           </span>
           <input
             type="range"
@@ -1264,7 +1299,9 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               scaleMultiplierRef.current = val;
               setScaleMultiplier(val);
             }}
-            className="w-16 sm:w-20 h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500 shrink-0"
+            className={`w-16 sm:w-20 h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer shrink-0 ${
+              isFemale ? "accent-pink-500" : "accent-blue-500"
+            }`}
           />
         </div>
       </div>

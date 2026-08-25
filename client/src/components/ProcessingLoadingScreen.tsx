@@ -11,9 +11,11 @@ export interface ProcessingLoadingScreenProps {
 }
 
 export const ProcessingLoadingScreen: React.FC<ProcessingLoadingScreenProps> = ({
+  userProfile,
   onComplete,
 }) => {
   const letters = ['L', 'O', 'A', 'D', 'I', 'N', 'G', '.', '.', '.'];
+  const isFemale = userProfile?.gender?.label_id === 'female';
 
   useEffect(() => {
     // 1.8s duration for smooth transition to recommendation stage
@@ -34,7 +36,13 @@ export const ProcessingLoadingScreen: React.FC<ProcessingLoadingScreenProps> = (
             backgroundImage: 'url(/images/dahlia-flowers.jpg)',
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#060B14]/70 via-[#060B14]/60 to-[#060B14]/80" />
+        <div
+          className={`absolute inset-0 ${
+            isFemale
+              ? 'bg-gradient-to-b from-[#180816]/75 via-[#180816]/65 to-[#180816]/85'
+              : 'bg-gradient-to-b from-[#060B14]/70 via-[#060B14]/60 to-[#060B14]/80'
+          }`}
+        />
       </div>
 
       {/* Maskot COBA dengan Efek Melayang Lembut */}
@@ -48,7 +56,11 @@ export const ProcessingLoadingScreen: React.FC<ProcessingLoadingScreenProps> = (
       </div>
 
       {/* Tulisan Loading Bergelombang */}
-      <div className="relative z-10 flex items-center space-x-1 font-mono text-base sm:text-lg font-bold tracking-[0.2em] text-[#38BDF8] uppercase">
+      <div
+        className={`relative z-10 flex items-center space-x-1 font-mono text-base sm:text-lg font-bold tracking-[0.2em] uppercase ${
+          isFemale ? 'text-pink-400' : 'text-[#38BDF8]'
+        }`}
+      >
         {letters.map((char, index) => (
           <span
             key={index}
@@ -67,7 +79,13 @@ export const ProcessingLoadingScreen: React.FC<ProcessingLoadingScreenProps> = (
           untuk menyusun rekomendasi Top-4.
         </p>
         <div className="w-64 sm:w-80 h-1.5 rounded-full bg-white/10 overflow-hidden">
-          <div className="animate-loading-slide h-full w-1/3 rounded-full bg-gradient-to-r from-blue-600 via-sky-400 to-blue-600" />
+          <div
+            className={`animate-loading-slide h-full w-1/3 rounded-full ${
+              isFemale
+                ? 'bg-gradient-to-r from-pink-600 via-rose-400 to-pink-600'
+                : 'bg-gradient-to-r from-blue-600 via-sky-400 to-blue-600'
+            }`}
+          />
         </div>
       </div>
     </div>

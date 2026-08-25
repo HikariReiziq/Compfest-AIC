@@ -1195,6 +1195,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                   <div className="space-y-4">
                     <PhotoUpload
                       subcategory={subcategory}
+                      gender={scannedProfile?.gender?.label_id as ('male' | 'female')}
                       onPhotoLoaded={(dataUrl) => {
                         setPhotoDataUrl(dataUrl);
                         setUploadStage("reposition");
@@ -1213,6 +1214,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                       subcategory === "shirts" ? (
                         <BodyRepositionTool
                           photoDataUrl={photoDataUrl}
+                          gender={scannedProfile?.gender?.label_id as ('male' | 'female')}
                           onConfirm={(snap) => {
                             lastSnapshotRef.current = snap;
                             void analyzePhoto(snap, false);
@@ -1226,6 +1228,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                       ) : (
                         <RepositionTool
                           photoDataUrl={photoDataUrl}
+                          gender={scannedProfile?.gender?.label_id as ('male' | 'female')}
                           onConfirm={(snap) => {
                             lastSnapshotRef.current = snap;
                             void analyzePhoto(snap, false);

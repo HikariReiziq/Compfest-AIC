@@ -213,9 +213,13 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
   }
 
   // If in Studio Mode, render the 4-step Virtual Fitting Room with COBA logo & mascot aesthetics
+  const isFemale = userProfile?.gender?.label_id === 'female';
+
   return (
     <main
-      className={`${fontClass} relative min-h-screen bg-[#060B14] text-white flex flex-col justify-between selection:bg-blue-600 selection:text-white`}
+      className={`${fontClass} relative min-h-screen bg-[#060B14] text-white flex flex-col justify-between ${
+        isFemale ? 'selection:bg-pink-600 selection:text-white' : 'selection:bg-blue-600 selection:text-white'
+      }`}
       style={{ fontFamily: 'var(--font-sans)' }}
     >
       {/* Background Wallpaper Dahlia Flowers */}
@@ -334,9 +338,15 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
               </div>
             )}
             {/* Header: All aligned in 1 single clean row */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-blue-500/20 pb-4">
-              <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
-                <div className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full bg-[#0B1528] border border-blue-500/30 text-[#93C5FD] text-xs sm:text-sm font-mono font-bold shadow-xl tracking-wider shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-white/10">
+              <div>
+                <div
+                  className={`inline-flex items-center gap-3 px-6 py-2 rounded-full border text-xs font-mono font-bold shadow-xl tracking-wider mb-2 ${
+                    isFemale
+                      ? 'bg-[#1c0b1a] border-pink-500/30 text-pink-300'
+                      : 'bg-[#0B1528] border-blue-500/30 text-[#93C5FD]'
+                  }`}
+                >
                   <span>TAHAP 4: VALIDASI VISUAL TRY-ON</span>
                 </div>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white tracking-tight">
@@ -348,7 +358,11 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
                 <button
                   type="button"
                   onClick={() => setCurrentStep('QUIZ')}
-                  className="px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold text-[#93C5FD] bg-[#08101E] hover:bg-blue-600 hover:text-white border border-blue-500/30 flex items-center gap-2 transition-all cursor-pointer shadow-md hover:scale-105 active:scale-95"
+                  className={`px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold border flex items-center gap-2 transition-all cursor-pointer shadow-md hover:scale-105 active:scale-95 ${
+                    isFemale
+                      ? 'text-pink-300 bg-[#160716] hover:bg-pink-600 hover:text-white border-pink-500/30'
+                      : 'text-[#93C5FD] bg-[#08101E] hover:bg-blue-600 hover:text-white border-blue-500/30'
+                  }`}
                   title="Kembali ke Kuesioner"
                 >
                   <ArrowLeft className="w-4 h-4" />
@@ -364,7 +378,11 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
                     }
                     setCurrentStep('SCAN');
                   }}
-                  className="px-5 py-2.5 rounded-full text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 border border-blue-400/30 flex items-center gap-2 transition-all cursor-pointer hover:scale-105 active:scale-95"
+                  className={`px-5 py-2.5 rounded-full text-xs sm:text-sm font-semibold text-white border flex items-center gap-2 transition-all cursor-pointer hover:scale-105 active:scale-95 ${
+                    isFemale
+                      ? 'bg-gradient-to-r from-pink-600 to-rose-500 hover:from-pink-500 hover:to-rose-400 border-pink-400/30 shadow-[0_0_20px_rgba(236,72,153,0.3)]'
+                      : 'bg-blue-600 hover:bg-blue-500 border-blue-400/30 shadow-md'
+                  }`}
                 >
                   <Camera className="w-4 h-4" />
                   <span>Scan Ulang</span>
@@ -379,7 +397,11 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
                     }
                     setCurrentStep('CATEGORY');
                   }}
-                  className="px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold text-[#93C5FD] bg-[#08101E] hover:bg-blue-600 hover:text-white border border-blue-500/30 flex items-center gap-2 transition-all cursor-pointer hover:scale-105 active:scale-95"
+                  className={`px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold border flex items-center gap-2 transition-all cursor-pointer hover:scale-105 active:scale-95 ${
+                    isFemale
+                      ? 'text-pink-300 bg-[#160716] hover:bg-pink-600 hover:text-white border-pink-500/30'
+                      : 'text-[#93C5FD] bg-[#08101E] hover:bg-blue-600 hover:text-white border-blue-500/30'
+                  }`}
                   title="Ganti Kategori"
                 >
                   <Undo2 className="w-4 h-4" />
@@ -396,6 +418,7 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
                   subcategory={selectedSubcategory}
                   mediaStream={mediaStream}
                   inputMode={userProfile?.face_analysis_meta?.input_mode || (mediaStream ? 'camera' : 'upload')}
+                  gender={userProfile?.gender?.label_id as ('male' | 'female')}
                 />
               </div>
 
@@ -421,6 +444,7 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
         <ProductDetailModal
           item={activeItem}
           userProfile={userProfile}
+          gender={userProfile?.gender?.label_id as ('male' | 'female')}
           onClose={() => setIsDetailModalOpen(false)}
         />
       )}

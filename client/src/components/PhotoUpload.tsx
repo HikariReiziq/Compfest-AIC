@@ -44,15 +44,17 @@ function decodeImage(dataUrl: string): Promise<HTMLImageElement> {
 
 export interface PhotoUploadProps {
   subcategory?: "glasses" | "hats" | "shirts" | string;
+  gender?: "male" | "female";
   onPhotoLoaded: (dataUrl: string, width: number, height: number) => void;
 }
 
-export default function PhotoUpload({ onPhotoLoaded, subcategory }: PhotoUploadProps) {
+export default function PhotoUpload({ onPhotoLoaded, subcategory, gender }: PhotoUploadProps) {
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const isFemale = gender === "female";
   const isBody = subcategory === "shirts";
 
   const handleFile = useCallback(
@@ -114,15 +116,23 @@ export default function PhotoUpload({ onPhotoLoaded, subcategory }: PhotoUploadP
         }}
         className={`w-full border-2 border-dashed rounded-2xl p-8 flex flex-col items-center gap-3 cursor-pointer transition-colors ${
           isDragging
-            ? "border-blue-500 bg-blue-500/10"
+            ? isFemale
+              ? "border-pink-500 bg-pink-500/10"
+              : "border-blue-500 bg-blue-500/10"
+            : isFemale
+            ? "border-pink-500/30 hover:border-pink-400 hover:bg-pink-500/5 bg-[#180918]/90 backdrop-blur-xl"
             : "border-blue-500/30 hover:border-blue-400 hover:bg-blue-500/5 bg-[#0B1528]/90 backdrop-blur-xl"
         }`}
       >
-        <div className="w-14 h-14 rounded-2xl bg-[#071120] border border-blue-500/20 flex items-center justify-center">
+        <div
+          className={`w-14 h-14 rounded-2xl border flex items-center justify-center ${
+            isFemale ? "bg-[#140614] border-pink-500/20" : "bg-[#071120] border-blue-500/20"
+          }`}
+        >
           {isProcessing ? (
-            <Upload className="w-7 h-7 text-[#38BDF8] animate-pulse" />
+            <Upload className={`w-7 h-7 animate-pulse ${isFemale ? "text-pink-400" : "text-[#38BDF8]"}`} />
           ) : (
-            <ImageIcon className="w-7 h-7 text-[#38BDF8]" />
+            <ImageIcon className={`w-7 h-7 ${isFemale ? "text-pink-400" : "text-[#38BDF8]"}`} />
           )}
         </div>
         <span className="font-semibold text-white">
