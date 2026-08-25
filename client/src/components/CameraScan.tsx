@@ -1361,7 +1361,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                 }
                 style={
                   selectedFrame === "flower"
-                    ? { left: "19.5%", top: "17.2%", width: "66%", height: "66%" }
+                    ? { left: "22.80%", top: "20.71%", width: "58.93%", height: "58.93%" }
                     : { left: "14.69%", top: "43.09%", width: "47.53%", height: "42.27%" }
                 }
               >
