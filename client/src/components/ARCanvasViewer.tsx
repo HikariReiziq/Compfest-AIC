@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import {
@@ -14,6 +14,8 @@ import {
   RotateCw,
   Move,
   Camera,
+  VideoOff,
+  RefreshCw,
 } from "lucide-react";
 import { RecommendationItem } from "../lib/mockData";
 
@@ -28,6 +30,27 @@ interface ARCanvasViewerProps {
   mediaStream?: MediaStream | null;
   inputMode?: "camera" | "upload";
   gender?: "male" | "female";
+}
+
+/* ------------------------------------------------------------------ */
+/*  Camera error messages helper                                      */
+/* ------------------------------------------------------------------ */
+function getCameraErrorMessage(err: unknown): string {
+  if (err instanceof DOMException) {
+    switch (err.name) {
+      case "NotAllowedError":
+        return "Izin kamera ditolak. Silakan aktifkan di pengaturan peramban Anda.";
+      case "NotFoundError":
+        return "Kamera tidak ditemukan. Pastikan webcam terhubung ke komputer.";
+      case "NotReadableError":
+        return "Kamera sedang digunakan oleh aplikasi lain. Tutup aplikasi tersebut dan coba lagi.";
+      case "OverconstrainedError":
+        return "Resolusi kamera tidak didukung. Coba lepas dan pasang kembali webcam.";
+      default:
+        return `Kesalahan kamera: ${err.message}`;
+    }
+  }
+  return "Kamera tidak tersedia. Silakan coba lagi atau gunakan 360° Studio.";
 }
 
 /* ------------------------------------------------------------------ */
@@ -136,8 +159,52 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   const isShirt = sub === "shirts" || sub === "shirt" || sub.includes("shirt") || sub.includes("baju") || sub.includes("apparel");
 
   /* ------------------------------------------------------------------ */
-  /*  1. Initialize / Manage Camera Stream                              */
+  /*  1. Initialize / Manage Camera Stream & Retry Handler              */
   /* ------------------------------------------------------------------ */
+  const retryCamera = useCallback(async () => {
+    setCameraError(null);
+    setCameraReady(false);
+    setIsVideoPlaying(false);
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach((t) => t.stop());
+      localStreamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+
+    await new Promise((r) => setTimeout(r, 200));
+
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setCameraError("API MediaDevices tidak tersedia di peramban ini.");
+        return;
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 1920, min: 1280 },
+          height: { ideal: 1080, min: 720 },
+          frameRate: { ideal: 60, min: 30 },
+          facingMode: "user",
+        },
+      });
+
+      localStreamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play().catch(() => {});
+          setCameraReady(true);
+          setIsVideoPlaying(true);
+        };
+      }
+    } catch (err: any) {
+      console.warn("Webcam setup retry error in ARCanvasViewer:", err);
+      setCameraError(getCameraErrorMessage(err));
+    }
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -183,8 +250,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
       } catch (err: any) {
         if (!cancelled) {
           console.warn("Camera init error in ARCanvasViewer:", err);
-          setCameraError("Kamera tidak dapat diakses.");
-          setViewMode("studio");
+          setCameraError(getCameraErrorMessage(err));
         }
       }
     }
@@ -1266,25 +1332,79 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
                 <span>{isTrackingLive ? "AI TRACKING ON" : "AI TRACKING..."}</span>
               </div>
 
-              {cameraError ? (
-                <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center p-4 text-center z-30">
-                  <p className="text-red-400 font-medium text-xs mb-1 font-mono">
-                    Gagal Mengakses Kamera
-                  </p>
-                  <p className="text-slate-400 text-[10px] max-w-xs">{cameraError}</p>
-                </div>
-              ) : !cameraReady ? (
-                <div className="absolute inset-0 bg-[#071120] flex flex-col items-center justify-center space-y-2 z-30">
+              {/* Maskot & Tulisan saat kamera sedang loading/menghubungkan */}
+              {(!isVideoPlaying || !cameraReady) && !cameraError && (
+                <div className="absolute inset-0 z-30 bg-[#071120] flex flex-col items-center justify-center space-y-3 p-4 text-center">
+                  <div className="relative z-10 flex items-center justify-center">
+                    <img
+                      src={isFemale ? "/images/mascot-pink.png" : "/images/mascot.png"}
+                      alt="COBA Mascot"
+                      className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-md animate-bounce"
+                      style={{ animationDuration: '2s' }}
+                    />
+                  </div>
+
+                  {/* Tulisan Loading Bergelombang */}
                   <div
-                    className={`w-6 h-6 border-2 border-t-transparent rounded-full animate-spin ${
-                      isFemale ? 'border-pink-500' : 'border-blue-500'
+                    className={`flex items-center space-x-1 font-mono text-xs sm:text-sm font-bold tracking-[0.2em] uppercase ${
+                      isFemale ? "text-pink-400" : "text-[#38BDF8]"
                     }`}
-                  />
-                  <p className="text-slate-400 text-xs font-mono">
-                    Menghubungkan Kamera AR...
-                  </p>
+                  >
+                    {['L', 'O', 'A', 'D', 'I', 'N', 'G', '.', '.', '.'].map((char, index) => (
+                      <span
+                        key={index}
+                        className="animate-text-wave inline-block text-white"
+                        style={{ animationDelay: `${index * 120}ms` }}
+                      >
+                        {char}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              ) : null}
+              )}
+
+              {/* Error State: Card Error Selaras dengan Pindai */}
+              {cameraError && (
+                <div className="absolute inset-0 z-30 bg-[#071120] flex flex-col items-center justify-center p-4 text-center">
+                  <div className="w-full max-w-[260px] sm:max-w-xs rounded-2xl border border-white/10 bg-[#0B1528] p-3.5 space-y-2.5 flex flex-col items-center shadow-xl">
+                    <div className="w-9 h-9 rounded-xl bg-rose-500/15 border border-rose-400/25 flex items-center justify-center">
+                      <VideoOff className="w-4 h-4 text-rose-300" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold text-white">Kamera tidak dapat diakses</p>
+                      <p className="text-[10px] text-[#94A3B8] leading-relaxed line-clamp-2">{cameraError}</p>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 w-full pt-0.5">
+                      <button
+                        onClick={retryCamera}
+                        type="button"
+                        className={`w-full px-3 py-1.5 rounded-xl text-xs font-semibold text-white flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md ${
+                          isFemale
+                            ? "bg-pink-600 hover:bg-pink-500"
+                            : "bg-blue-600 hover:bg-blue-500"
+                        }`}
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>Coba Lagi</span>
+                      </button>
+
+                      <button
+                        onClick={() => setViewMode("studio")}
+                        type="button"
+                        className={`w-full px-3 py-1.5 rounded-xl text-xs font-medium bg-transparent hover:bg-white/5 border border-white/15 flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                          isFemale
+                            ? "text-pink-300 hover:border-pink-400/40"
+                            : "text-[#93C5FD] hover:border-blue-400/40"
+                        }`}
+                      >
+                        <Box className="w-3.5 h-3.5" />
+                        <span>Gunakan 360° Studio</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
