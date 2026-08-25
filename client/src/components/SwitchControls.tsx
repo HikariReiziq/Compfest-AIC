@@ -56,9 +56,9 @@ export const SwitchControls: React.FC<SwitchControlsProps> = ({
 
   return (
     <div className="w-full space-y-3.5 text-white animate-fadeIn">
-      {/* 1. Selector Tab Berbentuk Pill Selengkung Navbar */}
+      {/* 1. Selector Tab Berbentuk Pill Selengkung Navbar (Responsive & Overflow-Safe) */}
       <div
-        className={`h-[46px] flex items-center gap-1.5 p-1 rounded-full backdrop-blur-2xl shadow-xl border ${
+        className={`w-full min-h-[46px] p-1 rounded-2xl sm:rounded-full backdrop-blur-2xl shadow-xl border flex items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar ${
           isFemale ? 'bg-[#1c0b1a] border-pink-500/30' : 'bg-[#0B1528] border-blue-500/30'
         }`}
       >
@@ -71,11 +71,11 @@ export const SwitchControls: React.FC<SwitchControlsProps> = ({
               key={item.id}
               onClick={() => onSelectIndex(idx)}
               type="button"
-              className={`flex-1 h-full px-3 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer select-none ${
+              className={`flex-1 min-w-fit sm:min-w-0 py-2 px-2.5 sm:px-2 md:px-3 rounded-xl sm:rounded-full text-[11px] sm:text-xs font-semibold tracking-tight transition-all duration-200 flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer select-none whitespace-nowrap shrink-0 sm:shrink ${
                 isSelected
                   ? isFemale
-                    ? 'bg-pink-600 text-white font-bold border border-pink-400'
-                    : 'bg-blue-600 text-white font-bold border border-blue-400'
+                    ? 'bg-pink-600 text-white font-bold border border-pink-400 shadow-md'
+                    : 'bg-blue-600 text-white font-bold border border-blue-400 shadow-md'
                   : isFemale
                   ? 'text-pink-300/70 hover:text-white hover:bg-pink-500/10 border border-transparent'
                   : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'
@@ -83,7 +83,7 @@ export const SwitchControls: React.FC<SwitchControlsProps> = ({
             >
               <span className="truncate">{label}</span>
               <span
-                className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full shrink-0 ${
+                className={`text-[9px] sm:text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full shrink-0 ${
                   isSelected ? 'bg-white/20 text-white' : 'bg-white/5 text-slate-400'
                 }`}
               >
