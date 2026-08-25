@@ -269,10 +269,10 @@ export default function LandingClient({ fontClass, initialGender = 'male', onOpe
         </div>
       </main>
 
-      {/* ============ Maskot COBA di Kanan Bawah (Bubble Chat & Maskot Naik Turun) ============ */}
+      {/* ============ Maskot COBA di Kanan Bawah (Tepat Berdiri di Atas Garis Footer) ============ */}
       <div
         onClick={() => onOpenStudio(undefined, gender)}
-        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex flex-col items-center cursor-pointer group select-none animate-bounce"
+        className="fixed bottom-[72px] sm:bottom-[80px] right-4 sm:right-8 z-40 flex flex-col items-center cursor-pointer group select-none animate-bounce"
         style={{ animationDuration: '2.8s' }}
         title="Mulai Fitting Virtual bersama Maskot COBA!"
       >
@@ -302,12 +302,18 @@ export default function LandingClient({ fontClass, initialGender = 'male', onOpe
         <img
           src={isFemale ? '/images/mascot-pink.png' : '/images/mascot.png'}
           alt="COBA Mascot"
-          className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]"
+          className="w-18 h-18 sm:w-22 sm:h-22 md:w-26 md:h-26 object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]"
         />
       </div>
 
       {/* ============ Modern Footer Minimalist ============ */}
-      <footer className="relative z-10 w-full border-t border-white/10 bg-[#060B14]/80 backdrop-blur-md py-6 px-6 sm:px-12 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-[#64748B]">
+      <footer
+        className={`relative z-10 w-full border-t backdrop-blur-md py-4 sm:py-5 px-6 sm:px-12 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono transition-colors ${
+          isFemale
+            ? 'border-pink-500/20 bg-[#180816]/90 text-pink-300/70'
+            : 'border-white/10 bg-[#060B14]/80 text-[#64748B]'
+        }`}
+      >
         <div className="flex items-center gap-2">
           <span>COBA — Studio Fitting Virtual AI &amp; AR (Haute-Couture Edition)</span>
         </div>
