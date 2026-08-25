@@ -1206,11 +1206,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                 alt="Canon Camera Frame"
                 aria-hidden
                 draggable={false}
-                className="absolute inset-0 w-full h-full object-contain pointer-events-none z-20 select-none"
-                style={{
-                  filter: "drop-shadow(0 25px 50px rgba(0,0,0,0.85)) contrast(1.04) brightness(1.02)",
-                  imageRendering: "auto",
-                }}
+                className="absolute inset-0 w-full h-full object-contain pointer-events-none z-20 select-none drop-shadow-[0_25px_45px_rgba(0,0,0,0.85)]"
               />
             )}
             {mode === "upload" ? (
