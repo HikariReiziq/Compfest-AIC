@@ -888,41 +888,170 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
   return (
     <div className="w-full h-full flex flex-col space-y-3.5">
-      {/* Mode Switcher Pill (AR vs 360°) — Berada di tengah tanpa card nama produk */}
-      <div className="flex justify-center w-full">
+      {/* Top Header: Mode Switcher & AR Fine-Tuning Micro-Controls (Posisi di atas agar sejajar dengan kartu sebelah kanan) */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 w-full">
+        {/* Mode Switcher Pill (AR vs 360°) */}
         <div
-          className={`inline-flex items-center p-1 rounded-full shadow-xl backdrop-blur-xl border ${
-            isFemale ? 'bg-[#180918] border-pink-500/20' : 'bg-[#071120] border-blue-500/20'
+          className={`inline-flex items-center p-1 rounded-full backdrop-blur-xl border shrink-0 ${
+            isFemale ? 'bg-[#1c0b1a] border-pink-500/30' : 'bg-[#0B1528] border-blue-500/30'
           }`}
         >
           {!isUploadMode && (
             <button
               onClick={() => setViewMode("ar")}
-              className={`px-4 py-1.5 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer select-none ${
+              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer select-none ${
                 viewMode === "ar"
                   ? isFemale
-                    ? "bg-gradient-to-r from-pink-600 to-rose-500 hover:from-pink-500 hover:to-rose-400 text-white font-bold shadow-md shadow-pink-500/25 border border-pink-400/40"
-                    : "bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-md shadow-blue-500/25 border border-blue-400/40"
+                    ? "bg-pink-600 hover:bg-pink-700 text-white font-bold border border-pink-400"
+                    : "bg-blue-600 hover:bg-blue-700 text-white font-bold border border-blue-400"
+                  : isFemale
+                  ? "text-pink-300/70 hover:text-white"
                   : "text-slate-400 hover:text-white"
               }`}
             >
               <Camera className="w-3.5 h-3.5" />
-              <span>AR (Kamera Live)</span>
+              <span>AR Live</span>
             </button>
           )}
           <button
             onClick={() => setViewMode("studio")}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer select-none ${
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer select-none ${
               viewMode === "studio"
                 ? isFemale
-                  ? "bg-gradient-to-r from-pink-600 to-rose-500 hover:from-pink-500 hover:to-rose-400 text-white font-bold shadow-md shadow-pink-500/25 border border-pink-400/40"
-                  : "bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-md shadow-blue-500/25 border border-blue-400/40"
+                  ? "bg-pink-600 hover:bg-pink-700 text-white font-bold border border-pink-400"
+                  : "bg-blue-600 hover:bg-blue-700 text-white font-bold border border-blue-400"
+                : isFemale
+                ? "text-pink-300/70 hover:text-white"
                 : "text-slate-400 hover:text-white"
             }`}
           >
             <Box className="w-3.5 h-3.5" />
             <span>360° Studio</span>
           </button>
+        </div>
+
+        {/* AR Fine-Tuning Micro-Controls (Single Line Seamless Bar) */}
+        <div
+          className={`py-1.5 px-3 rounded-2xl border backdrop-blur-xl flex flex-nowrap items-center justify-between gap-2 text-xs overflow-x-auto no-scrollbar flex-1 w-full min-w-0 transition-all ${
+            isFemale
+              ? "bg-[#1c0b1a] border-pink-500/30"
+              : "bg-[#0B1528] border-blue-500/30"
+          }`}
+        >
+          {/* Left: 2 Opsi Interaksi, Koordinat Live, & Reset */}
+          <div className="flex flex-nowrap items-center gap-1.5 shrink-0">
+            {/* 2 Opsi Interaksi Layar: Opsi 1 (Rotasi) vs Opsi 2 (Posisi) */}
+            <div
+              className={`inline-flex rounded-xl p-0.5 border gap-0.5 shadow-inner shrink-0 ${
+                isFemale ? "bg-[#140613] border-pink-500/20" : "bg-[#071120] border-white/10"
+              }`}
+            >
+              <button
+                onClick={() => setDragMode("rotate")}
+                className={`px-2 py-1 rounded-lg text-xs font-mono font-bold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
+                  dragMode === "rotate"
+                    ? isFemale
+                      ? "bg-pink-600 border border-pink-400 text-white"
+                      : "bg-blue-600 border border-blue-400 text-white"
+                    : isFemale
+                    ? "text-pink-300/70 hover:text-white hover:bg-pink-500/10"
+                    : "text-slate-400 hover:text-white"
+                }`}
+                title="Opsi 1: Geser di layar ke segala arah untuk memutar model 3D (360° Horizontal, Vertikal & Diagonal)"
+              >
+                <RotateCw className="w-3 h-3" />
+                <span>Opsi 1: Rotasi</span>
+              </button>
+              <button
+                onClick={() => setDragMode("pan")}
+                className={`px-2 py-1 rounded-lg text-xs font-mono font-bold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
+                  dragMode === "pan"
+                    ? isFemale
+                      ? "bg-pink-600 border border-pink-400 text-white"
+                      : "bg-sky-600 border border-sky-400 text-white"
+                    : isFemale
+                    ? "text-pink-300/70 hover:text-white hover:bg-pink-500/10"
+                    : "text-slate-400 hover:text-white"
+                }`}
+                title="Opsi 2: Geser di layar ke segala arah untuk memindahkan posisi (Atas, Bawah, Kiri, Kanan)"
+              >
+                <Move className="w-3 h-3" />
+                <span>Opsi 2: Posisi</span>
+              </button>
+            </div>
+
+            {/* Indikator Status Koordinat */}
+            <div
+              className={`flex items-center space-x-1.5 px-2 py-1 rounded-xl border text-[10px] font-mono shrink-0 whitespace-nowrap ${
+                isFemale
+                  ? "bg-[#140613] border-pink-500/20 text-pink-300/80"
+                  : "bg-[#071120] border-white/5 text-slate-400"
+              }`}
+            >
+              <span>X:<strong className="text-white ml-0.5">{offsetX.toFixed(1)}</strong></span>
+              <span>Y:<strong className="text-white ml-0.5">{offsetY.toFixed(1)}</strong></span>
+              <span>Putar:<strong className="text-white ml-0.5">{Math.round((rotOffsetY * 180) / Math.PI)}°</strong></span>
+            </div>
+
+            {/* Reset */}
+            <button
+              onClick={() => {
+                setOffsetX(0);
+                offsetXRef.current = 0;
+                setOffsetY(0);
+                offsetYRef.current = 0;
+                setOffsetZ(0);
+                offsetZRef.current = 0;
+                setRotOffsetY(0);
+                rotOffsetYRef.current = 0;
+                setRotOffsetX(0);
+                rotOffsetXRef.current = 0;
+                setScaleMultiplier(100);
+                scaleMultiplierRef.current = 100;
+              }}
+              className={`px-2.5 py-1 rounded-xl border active:scale-95 transition-all flex items-center space-x-1 cursor-pointer shrink-0 ${
+                isFemale
+                  ? "bg-[#140613] hover:bg-pink-600 hover:text-white text-pink-300 border-pink-500/30"
+                  : "bg-[#071120] hover:bg-blue-600 hover:text-white text-slate-400 border-white/10"
+              }`}
+              title="Reset Posisi & Rotasi ke Default"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span className="text-[10px] font-medium">Reset</span>
+            </button>
+          </div>
+
+          {/* Right: Scale Slider with Fixed-Width Percentage Label */}
+          <div
+            className={`flex flex-nowrap items-center space-x-2 text-xs px-2.5 py-1 rounded-xl border shrink-0 whitespace-nowrap ${
+              isFemale ? "bg-[#140613] border-pink-500/20" : "bg-[#071120] border-white/5"
+            }`}
+          >
+            <span className="text-slate-400 font-mono text-[11px] flex items-center">
+              <span>Ukuran:</span>
+              <strong
+                className={`inline-block w-9 text-right ml-1 font-mono ${
+                  isFemale ? "text-pink-400 font-bold" : "text-[#38BDF8] font-bold"
+                }`}
+              >
+                {scaleMultiplier}%
+              </strong>
+            </span>
+            <input
+              type="range"
+              min={70}
+              max={130}
+              value={scaleMultiplier}
+              onChange={(e) => {
+                const val = Number(e.target.value);
+                scaleMultiplierRef.current = val;
+                setScaleMultiplier(val);
+              }}
+              className={`w-14 sm:w-20 h-1.5 rounded-lg appearance-none cursor-pointer shrink-0 ${
+                isFemale ? "bg-[#2a0d27] accent-pink-500" : "bg-[#08101E] accent-blue-500"
+              }`}
+            />
+          </div>
         </div>
       </div>
 
@@ -1186,20 +1315,22 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               className={`px-3 py-1 rounded-full text-[10px] font-mono transition-all cursor-pointer font-bold ${
                 isAutoRotateStudio
                   ? isFemale
-                    ? "bg-pink-600 border border-pink-400 text-white shadow-md shadow-pink-600/30"
-                    : "bg-blue-600 border border-blue-400 text-white shadow-md"
+                    ? "bg-pink-600 border border-pink-400 text-white"
+                    : "bg-blue-600 border border-blue-400 text-white"
                   : "bg-black/40 text-slate-400 hover:text-white"
               }`}
               title="Toggle Auto-Spin 360°"
             >
               {isAutoRotateStudio ? "Auto: ON" : "Auto: OFF"}
             </button>
-          </div>          {/* Bottom Floating Instructions */}
+          </div>
+
+          {/* Bottom Floating Instructions */}
           <div
             className={`absolute bottom-4 right-4 z-20 hidden sm:flex items-center space-x-1.5 px-3 py-1 rounded-full backdrop-blur-md border text-[10px] font-mono pointer-events-none ${
               isFemale
-                ? "bg-[#180816]/90 border-pink-500/30 text-pink-300"
-                : "bg-[#071120]/80 border-white/10 text-slate-400"
+                ? "bg-[#180816] border-pink-500/30 text-pink-300"
+                : "bg-[#071120] border-white/10 text-slate-400"
             }`}
           >
             <RotateCw className={`w-3 h-3 ${isFemale ? "text-pink-400" : "text-sky-400"}`} />
@@ -1207,130 +1338,6 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           </div>
         </div>
       )}
-
-      {/* AR Fine-Tuning Micro-Controls (Single Line Seamless Bar) */}
-      <div
-        className={`py-2 px-3 rounded-2xl border backdrop-blur-xl flex flex-nowrap items-center justify-between gap-2 text-xs overflow-x-auto no-scrollbar shadow-xl w-full min-w-0 transition-all ${
-          isFemale
-            ? "bg-[#150714]/95 border-pink-500/30 shadow-pink-950/30"
-            : "bg-[#071120]/95 border-blue-500/30 shadow-blue-950/30"
-        }`}
-      >
-        {/* Left: 2 Opsi Interaksi, Koordinat Live, & Reset */}
-        <div className="flex flex-nowrap items-center gap-1.5 shrink-0">
-          {/* 2 Opsi Interaksi Layar: Opsi 1 (Rotasi) vs Opsi 2 (Posisi) */}
-          <div
-            className={`inline-flex rounded-xl p-0.5 border gap-0.5 shadow-inner shrink-0 ${
-              isFemale ? "bg-[#1e0a1c] border-pink-500/20" : "bg-[#0b1526] border-white/10"
-            }`}
-          >
-            <button
-              onClick={() => setDragMode("rotate")}
-              className={`px-2 py-1 rounded-lg text-xs font-mono font-bold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
-                dragMode === "rotate"
-                  ? isFemale
-                    ? "bg-gradient-to-r from-pink-600 to-rose-500 border border-pink-400 text-white shadow-sm"
-                    : "bg-blue-600 border border-blue-400 text-white shadow-sm"
-                  : isFemale
-                  ? "text-pink-300/70 hover:text-white hover:bg-pink-500/10"
-                  : "text-slate-400 hover:text-white"
-              }`}
-              title="Opsi 1: Geser di layar ke segala arah untuk memutar model 3D (360° Horizontal, Vertikal & Diagonal)"
-            >
-              <RotateCw className="w-3 h-3" />
-              <span>Opsi 1: Rotasi</span>
-            </button>
-            <button
-              onClick={() => setDragMode("pan")}
-              className={`px-2 py-1 rounded-lg text-xs font-mono font-bold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
-                dragMode === "pan"
-                  ? isFemale
-                    ? "bg-gradient-to-r from-pink-600 to-rose-500 border border-pink-400 text-white shadow-sm"
-                    : "bg-sky-600 border border-sky-400 text-white shadow-sm"
-                  : isFemale
-                  ? "text-pink-300/70 hover:text-white hover:bg-pink-500/10"
-                  : "text-slate-400 hover:text-white"
-              }`}
-              title="Opsi 2: Geser di layar ke segala arah untuk memindahkan posisi (Atas, Bawah, Kiri, Kanan)"
-            >
-              <Move className="w-3 h-3" />
-              <span>Opsi 2: Posisi</span>
-            </button>
-          </div>
-
-          {/* Indikator Status Koordinat */}
-          <div
-            className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-xl border text-[10px] font-mono shrink-0 whitespace-nowrap ${
-              isFemale
-                ? "bg-[#1e0a1c] border-pink-500/20 text-pink-300/80"
-                : "bg-[#0b1526] border-white/5 text-slate-400"
-            }`}
-          >
-            <span>X:<strong className="text-white ml-0.5">{offsetX.toFixed(1)}</strong></span>
-            <span>Y:<strong className="text-white ml-0.5">{offsetY.toFixed(1)}</strong></span>
-            <span>Putar:<strong className="text-white ml-0.5">{Math.round((rotOffsetY * 180) / Math.PI)}°</strong></span>
-          </div>
-
-          {/* Reset */}
-          <button
-            onClick={() => {
-              setOffsetX(0);
-              offsetXRef.current = 0;
-              setOffsetY(0);
-              offsetYRef.current = 0;
-              setOffsetZ(0);
-              offsetZRef.current = 0;
-              setRotOffsetY(0);
-              rotOffsetYRef.current = 0;
-              setRotOffsetX(0);
-              rotOffsetXRef.current = 0;
-              setScaleMultiplier(100);
-              scaleMultiplierRef.current = 100;
-            }}
-            className={`px-2.5 py-1 rounded-xl border active:scale-95 transition-all flex items-center space-x-1 cursor-pointer shrink-0 ${
-              isFemale
-                ? "bg-[#1e0a1c] hover:bg-pink-600 hover:text-white text-pink-300 border-pink-500/30"
-                : "bg-[#0b1526] hover:bg-blue-600 hover:text-white text-slate-400 border-white/10"
-            }`}
-            title="Reset Posisi & Rotasi ke Default"
-          >
-            <RotateCcw className="w-3 h-3" />
-            <span className="text-[10px] font-medium">Reset</span>
-          </button>
-        </div>
-
-        {/* Right: Scale Slider with Fixed-Width Percentage Label */}
-        <div
-          className={`flex flex-nowrap items-center space-x-2 text-xs px-2.5 py-1 rounded-xl border shrink-0 whitespace-nowrap ${
-            isFemale ? "bg-[#1e0a1c] border-pink-500/20" : "bg-[#0b1526] border-white/5"
-          }`}
-        >
-          <span className="text-slate-400 font-mono text-[11px] flex items-center">
-            <span>Ukuran:</span>
-            <strong
-              className={`inline-block w-9 text-right ml-1 font-mono ${
-                isFemale ? "text-pink-400 font-bold" : "text-[#38BDF8] font-bold"
-              }`}
-            >
-              {scaleMultiplier}%
-            </strong>
-          </span>
-          <input
-            type="range"
-            min={70}
-            max={130}
-            value={scaleMultiplier}
-            onChange={(e) => {
-              const val = Number(e.target.value);
-              scaleMultiplierRef.current = val;
-              setScaleMultiplier(val);
-            }}
-            className={`w-16 sm:w-20 h-1.5 rounded-lg appearance-none cursor-pointer shrink-0 ${
-              isFemale ? "bg-[#2a0d27] accent-pink-500" : "bg-[#08101E] accent-blue-500"
-            }`}
-          />
-        </div>
-      </div>
     </div>
   );
 };
