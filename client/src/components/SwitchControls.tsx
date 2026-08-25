@@ -71,11 +71,11 @@ export const SwitchControls: React.FC<SwitchControlsProps> = ({
               key={item.id}
               onClick={() => onSelectIndex(idx)}
               type="button"
-              className={`flex-1 px-3 py-2.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer select-none ${
+              className={`flex-1 px-3 py-2.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer select-none ${
                 isSelected
                   ? isFemale
-                    ? 'bg-gradient-to-r from-pink-600 via-rose-500 to-pink-500 text-white font-bold shadow-md shadow-pink-600/40 border border-pink-400/40'
-                    : 'bg-gradient-to-r from-blue-600 via-sky-500 to-blue-600 text-white font-bold shadow-md shadow-blue-600/40 border border-blue-400/40'
+                    ? 'bg-pink-600 text-white font-bold border border-pink-400'
+                    : 'bg-blue-600 text-white font-bold border border-blue-400'
                   : isFemale
                   ? 'text-pink-300/70 hover:text-white hover:bg-pink-500/10 border border-transparent'
                   : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'

@@ -230,10 +230,10 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className={`w-full py-3.5 rounded-full font-bold text-xs sm:text-sm text-white transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg hover:scale-[1.01] active:scale-[0.99] ${
+            className={`w-full py-3.5 rounded-full font-bold text-xs sm:text-sm text-white transition-all cursor-pointer flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] ${
               isFemale
-                ? 'bg-gradient-to-r from-pink-600 via-rose-500 to-pink-500 hover:from-pink-500 hover:to-rose-400 border border-pink-400/40 shadow-[0_4px_25px_rgba(236,72,153,0.35)]'
-                : 'bg-gradient-to-r from-blue-600 via-sky-500 to-blue-500 hover:from-blue-500 hover:to-sky-400 border border-blue-400/30 shadow-[0_4px_25px_rgba(59,130,246,0.35)]'
+                ? 'bg-pink-600 hover:bg-pink-700 border border-pink-400'
+                : 'bg-blue-600 hover:bg-blue-700 border border-blue-400'
             }`}
           >
             <ArrowLeft className="w-4 h-4" />

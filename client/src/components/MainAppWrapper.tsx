@@ -345,10 +345,10 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
               <button
                 type="button"
                 onClick={() => setCurrentStep('QUIZ')}
-                className={`px-6 py-3 rounded-full text-white font-semibold text-sm shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer border ${
+                className={`px-6 py-3 rounded-full text-white font-semibold text-sm hover:scale-105 active:scale-95 transition-all cursor-pointer border ${
                   isFemale
-                    ? 'bg-gradient-to-r from-pink-600 to-rose-500 hover:from-pink-500 hover:to-rose-400 border-pink-400/40 shadow-pink-600/30'
-                    : 'bg-blue-600 hover:bg-blue-500 border-blue-400/30'
+                    ? 'bg-pink-600 hover:bg-pink-700 border-pink-400'
+                    : 'bg-blue-600 hover:bg-blue-700 border-blue-400'
                 }`}
               >
                 Ulangi Kuesioner
@@ -378,7 +378,7 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-white/10">
               <div>
                 <div
-                  className={`inline-flex items-center gap-3 px-6 py-2 rounded-full border text-xs font-mono font-bold shadow-xl tracking-wider mb-2 ${
+                  className={`inline-flex items-center gap-3 px-6 py-2 rounded-full border text-xs font-mono font-bold tracking-wider mb-2 ${
                     isFemale
                       ? 'bg-[#1c0b1a] border-pink-500/30 text-pink-300'
                       : 'bg-[#0B1528] border-blue-500/30 text-[#93C5FD]'
@@ -395,7 +395,7 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
                 <button
                   type="button"
                   onClick={() => setCurrentStep('QUIZ')}
-                  className={`px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold border flex items-center gap-2 transition-all cursor-pointer shadow-md hover:scale-105 active:scale-95 ${
+                  className={`px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold border flex items-center gap-2 transition-all cursor-pointer hover:scale-105 active:scale-95 ${
                     isFemale
                       ? 'text-pink-300 bg-[#160716] hover:bg-pink-600 hover:text-white border-pink-500/30'
                       : 'text-[#93C5FD] bg-[#08101E] hover:bg-blue-600 hover:text-white border-blue-500/30'
@@ -417,8 +417,8 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
                   }}
                   className={`px-5 py-2.5 rounded-full text-xs sm:text-sm font-semibold text-white border flex items-center gap-2 transition-all cursor-pointer hover:scale-105 active:scale-95 ${
                     isFemale
-                      ? 'bg-gradient-to-r from-pink-600 to-rose-500 hover:from-pink-500 hover:to-rose-400 border-pink-400/30 shadow-[0_0_20px_rgba(236,72,153,0.3)]'
-                      : 'bg-blue-600 hover:bg-blue-500 border-blue-400/30 shadow-md'
+                      ? 'bg-pink-600 hover:bg-pink-700 border-pink-400'
+                      : 'bg-blue-600 hover:bg-blue-700 border-blue-400'
                   }`}
                 >
                   <Camera className="w-4 h-4" />

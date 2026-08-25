@@ -1155,8 +1155,8 @@ export const CameraScan: React.FC<CameraScanProps> = ({
             className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-semibold font-mono transition-all cursor-pointer ${
               mode === "camera"
                 ? isFemaleTheme
-                  ? "bg-gradient-to-r from-pink-600 via-rose-500 to-pink-500 text-white border border-pink-400/40 font-bold shadow-md shadow-pink-600/30"
-                  : "bg-blue-600 text-white border border-blue-400/30 font-bold shadow-md"
+                  ? "bg-pink-600 text-white border border-pink-400 font-bold"
+                  : "bg-blue-600 text-white border border-blue-400 font-bold"
                 : isFemaleTheme
                 ? "text-pink-300 hover:text-white"
                 : "text-[#93C5FD] hover:text-white"
@@ -1171,8 +1171,8 @@ export const CameraScan: React.FC<CameraScanProps> = ({
             className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-semibold font-mono transition-all cursor-pointer ${
               mode === "upload"
                 ? isFemaleTheme
-                  ? "bg-gradient-to-r from-pink-600 via-rose-500 to-pink-500 text-white border border-pink-400/40 font-bold shadow-md shadow-pink-600/30"
-                  : "bg-blue-600 text-white border border-blue-400/30 font-bold shadow-md"
+                  ? "bg-pink-600 text-white border border-pink-400 font-bold"
+                  : "bg-blue-600 text-white border border-blue-400 font-bold"
                 : isFemaleTheme
                 ? "text-pink-300 hover:text-white"
                 : "text-[#93C5FD] hover:text-white"
@@ -1683,8 +1683,8 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                     className={`w-full py-4 rounded-full font-bold text-sm text-white transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
                       faceGuideState === "ALIGNED" || faceGuideState === "MISALIGNED" || lastAlignedLmRef.current || lastAlignedPoseRef.current
                         ? isFemaleTheme
-                          ? "bg-gradient-to-r from-pink-600 via-rose-500 to-pink-500 hover:from-pink-500 hover:to-rose-400 border border-pink-400/40 shadow-lg shadow-pink-600/30"
-                          : "bg-gradient-to-r from-blue-600 via-sky-500 to-blue-600 hover:from-blue-500 hover:to-sky-400 border border-blue-400/30 shadow-lg shadow-blue-500/20"
+                          ? "bg-pink-600 hover:bg-pink-700 border border-pink-400"
+                          : "bg-blue-600 hover:bg-blue-700 border border-blue-400"
                         : isFemaleTheme
                         ? "bg-[#180816] text-slate-500 border border-pink-500/20"
                         : "bg-[#071120] text-[#64748B] border border-blue-500/20"

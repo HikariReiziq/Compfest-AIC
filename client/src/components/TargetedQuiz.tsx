@@ -610,11 +610,11 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
         <button
           type="submit"
           disabled={isLoading}
-          className={`w-full py-4 min-h-[54px] rounded-full font-extrabold text-base sm:text-lg text-white transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-50 cursor-pointer shadow-2xl tracking-wide ${
+          className={`w-full py-4 min-h-[54px] rounded-full font-extrabold text-base sm:text-lg text-white transition-all duration-200 flex items-center justify-center gap-3 disabled:opacity-50 cursor-pointer tracking-wide ${
             isAllAnswered
               ? isFemale
-                ? 'bg-gradient-to-r from-pink-600 via-rose-500 to-pink-500 hover:from-pink-500 hover:to-rose-400 hover:scale-[1.01] active:scale-[0.99] border border-pink-400/30 shadow-[0_4px_25px_rgba(236,72,153,0.35)]'
-                : 'bg-gradient-to-r from-blue-600 via-sky-500 to-blue-500 hover:from-blue-500 hover:to-sky-400 hover:scale-[1.01] active:scale-[0.99] border border-blue-400/30 shadow-[0_4px_25px_rgba(59,130,246,0.35)]'
+                ? 'bg-pink-600 hover:bg-pink-700 hover:scale-[1.01] active:scale-[0.99] border border-pink-400'
+                : 'bg-blue-600 hover:bg-blue-700 hover:scale-[1.01] active:scale-[0.99] border border-blue-400'
               : 'bg-[#08101E] border border-white/15 text-[#64748B]'
           }`}
         >

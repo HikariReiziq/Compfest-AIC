@@ -68,100 +68,83 @@ export default function LandingClient({ fontClass, initialGender = 'male', onOpe
         />
       </div>
 
-      {/* ============ Floating Center Top: Prominent Sliding Character Selector (Cowok & Cewek) ============ */}
-      <div className="fixed top-4 sm:top-5 left-1/2 -translate-x-1/2 z-50 flex items-center">
-        <div
-          className={`relative flex items-center rounded-full p-1.5 border backdrop-blur-2xl shadow-2xl transition-all duration-300 ${
-            isFemale
-              ? 'bg-[#1c0b1a]/95 border-pink-500/40 shadow-[0_10px_35px_rgba(244,114,182,0.3)]'
-              : 'bg-[#0B1528]/95 border-blue-500/40 shadow-[0_10px_35px_rgba(56,189,248,0.3)]'
-          }`}
-        >
-          {/* Arrow Left (Geser ke Karakter Cowok) */}
+      {/* ============ Floating Center Top: Karakter Bebas di Luar Card (Seperti Showcase 3D) ============ */}
+      <div className="fixed top-3 sm:top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center">
+        {/* Karakter Area dengan Navigasi Panah Kiri & Kanan */}
+        <div className="relative flex items-center justify-center gap-2.5 sm:gap-4 select-none">
+          {/* Tombol Panah Kiri (Geser ke Pria) */}
           <button
             type="button"
             onClick={() => setGender('male')}
-            aria-label="Pilih Karakter Cowok"
-            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all cursor-pointer mr-0.5 sm:mr-1"
+            aria-label="Pilih Karakter Pria"
+            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full border flex items-center justify-center text-white transition-all hover:scale-110 active:scale-95 cursor-pointer ${
+              !isFemale
+                ? 'bg-blue-600 border-blue-400 opacity-100'
+                : 'bg-black/60 border-white/20 hover:bg-black/80 opacity-75'
+            }`}
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
 
-          {/* Sliding Character Track */}
-          <div className="relative flex items-center bg-black/40 rounded-full p-1 border border-white/10">
-            {/* Sliding Highlight Pill */}
+          {/* Maskot Karakter Berdiri Bebas di Luar Card (Besar & Jelas) */}
+          <button
+            type="button"
+            onClick={() => setGender(isFemale ? 'male' : 'female')}
+            className="group relative cursor-pointer flex flex-col items-center justify-center transition-transform hover:scale-105 active:scale-95"
+            title="Klik untuk ganti karakter Pria / Wanita"
+          >
+            <div className="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center">
+              <img
+                src={isFemale ? '/images/mascot-pink.png' : '/images/mascot.png'}
+                alt={isFemale ? 'Maskot Wanita' : 'Maskot Pria'}
+                className="w-full h-full object-contain filter drop-shadow-[0_6px_12px_rgba(0,0,0,0.6)] transition-all duration-300"
+              />
+            </div>
+            {/* Label Minimalis Pria / Wanita */}
             <div
-              className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full transition-all duration-300 ease-out shadow-lg pointer-events-none ${
-                gender === 'male'
-                  ? 'left-1 bg-gradient-to-r from-blue-600 via-blue-500 to-sky-500 border border-sky-300/60 shadow-blue-600/50'
-                  : 'left-[calc(50%+3px)] bg-gradient-to-r from-pink-600 via-rose-500 to-pink-500 border border-pink-300/60 shadow-pink-600/50'
-              }`}
-            />
-
-            {/* Option 1: Karakter Cowok (Mascot Besar Jelas) */}
-            <button
-              type="button"
-              onClick={() => setGender('male')}
-              className={`relative z-10 flex items-center gap-2 sm:gap-3 px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-full cursor-pointer select-none transition-all duration-200 ${
-                gender === 'male' ? 'text-white scale-105' : 'text-slate-400 hover:text-slate-200'
+              className={`mt-0.5 px-3.5 py-0.5 rounded-full border text-[11px] font-mono font-bold uppercase tracking-widest transition-all ${
+                isFemale
+                  ? 'bg-[#1c0b1a] border-pink-500/40 text-pink-300'
+                  : 'bg-[#0B1528] border-blue-500/40 text-[#93C5FD]'
               }`}
             >
-              <div className="relative -my-2.5 sm:-my-3 w-9 h-9 sm:w-11 sm:h-11 shrink-0 flex items-center justify-center">
-                <img
-                  src="/images/mascot.png"
-                  alt="Maskot Cowok"
-                  className={`w-full h-full object-contain filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)] transition-transform duration-300 ${
-                    gender === 'male' ? 'scale-125 -translate-y-0.5' : 'opacity-50 grayscale-[40%] scale-90'
-                  }`}
-                />
-              </div>
-              <div className="flex flex-col text-left">
-                <span className="text-xs sm:text-sm font-bold tracking-wide font-mono leading-none">
-                  Cowok
-                </span>
-                <span className="text-[9px] sm:text-[10px] font-mono opacity-80 uppercase tracking-widest mt-0.5">
-                  Pria
-                </span>
-              </div>
-            </button>
+              {isFemale ? 'Wanita' : 'Pria'}
+            </div>
+          </button>
 
-            {/* Option 2: Karakter Cewek (Mascot Besar Jelas) */}
-            <button
-              type="button"
-              onClick={() => setGender('female')}
-              className={`relative z-10 flex items-center gap-2 sm:gap-3 px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-full cursor-pointer select-none transition-all duration-200 ${
-                gender === 'female' ? 'text-white scale-105' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <div className="relative -my-2.5 sm:-my-3 w-9 h-9 sm:w-11 sm:h-11 shrink-0 flex items-center justify-center">
-                <img
-                  src="/images/mascot-pink.png"
-                  alt="Maskot Cewek"
-                  className={`w-full h-full object-contain filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)] transition-transform duration-300 ${
-                    gender === 'female' ? 'scale-125 -translate-y-0.5' : 'opacity-50 grayscale-[40%] scale-90'
-                  }`}
-                />
-              </div>
-              <div className="flex flex-col text-left">
-                <span className="text-xs sm:text-sm font-bold tracking-wide font-mono leading-none">
-                  Cewek
-                </span>
-                <span className="text-[9px] sm:text-[10px] font-mono opacity-80 uppercase tracking-widest mt-0.5">
-                  Wanita
-                </span>
-              </div>
-            </button>
-          </div>
-
-          {/* Arrow Right (Geser ke Karakter Cewek) */}
+          {/* Tombol Panah Kanan (Geser ke Wanita) */}
           <button
             type="button"
             onClick={() => setGender('female')}
-            aria-label="Pilih Karakter Cewek"
-            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all cursor-pointer ml-0.5 sm:ml-1"
+            aria-label="Pilih Karakter Wanita"
+            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full border flex items-center justify-center text-white transition-all hover:scale-110 active:scale-95 cursor-pointer ${
+              isFemale
+                ? 'bg-pink-600 border-pink-400 opacity-100'
+                : 'bg-black/60 border-white/20 hover:bg-black/80 opacity-75'
+            }`}
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
+        </div>
+
+        {/* 2 Dots Indicator (Pria / Wanita) */}
+        <div className="flex items-center gap-1.5 mt-1">
+          <button
+            type="button"
+            onClick={() => setGender('male')}
+            aria-label="Mode Pria"
+            className={`h-1 rounded-full transition-all cursor-pointer ${
+              !isFemale ? 'w-4 bg-blue-500' : 'w-1 bg-white/30 hover:bg-white/60'
+            }`}
+          />
+          <button
+            type="button"
+            onClick={() => setGender('female')}
+            aria-label="Mode Wanita"
+            className={`h-1 rounded-full transition-all cursor-pointer ${
+              isFemale ? 'w-4 bg-pink-500' : 'w-1 bg-white/30 hover:bg-white/60'
+            }`}
+          />
         </div>
       </div>
 
@@ -170,10 +153,10 @@ export default function LandingClient({ fontClass, initialGender = 'male', onOpe
         <button
           type="button"
           onClick={() => onOpenStudio(undefined, gender)}
-          className={`group inline-flex h-[48px] sm:h-[54px] items-center gap-2 rounded-full border backdrop-blur-2xl px-5 sm:px-6 text-xs sm:text-sm font-bold tracking-[0.08em] transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-2xl ${
+          className={`group inline-flex h-[46px] sm:h-[50px] items-center gap-2 rounded-full border backdrop-blur-2xl px-5 sm:px-6 text-xs sm:text-sm font-bold tracking-[0.08em] transition-all hover:scale-105 active:scale-95 cursor-pointer ${
             isFemale
-              ? 'bg-[#1c0b1a]/90 border-pink-400/40 text-pink-300 hover:border-pink-500 hover:bg-pink-600 hover:text-white shadow-pink-600/25'
-              : 'bg-[#0B1528]/90 border-blue-400/40 text-[#93C5FD] hover:border-blue-500 hover:bg-blue-600 hover:text-white shadow-blue-600/25'
+              ? 'bg-[#1c0b1a] border-pink-500/40 text-pink-300 hover:bg-pink-600 hover:text-white'
+              : 'bg-[#0B1528] border-blue-500/40 text-[#93C5FD] hover:bg-blue-600 hover:text-white'
           }`}
           style={{ fontFamily: 'var(--font-mono)' }}
         >
@@ -183,11 +166,11 @@ export default function LandingClient({ fontClass, initialGender = 'male', onOpe
       </div>
 
       {/* ============ Main Hero Section (Expansive Full Layout) ============ */}
-      <main className="relative z-10 mx-auto max-w-[1600px] w-full px-5 sm:px-8 lg:pl-10 lg:pr-12 pt-20 sm:pt-24 lg:pt-28 pb-10 flex-1 flex items-center">
+      <main className="relative z-10 mx-auto max-w-[1600px] w-full px-5 sm:px-8 lg:pl-10 lg:pr-12 pt-28 sm:pt-32 lg:pt-36 pb-10 flex-1 flex items-center">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center w-full">
           {/* Kolom Kiri: Value Proposition & 1 CTA Utama */}
           <div className="lg:col-span-7 space-y-5 lg:space-y-6 relative">
-            {/* Logo Brand COBA (Vertikal Atas ke Bawah: Logo -> COBA -> Slogan Merek) */}
+            {/* Logo Brand COBA */}
             <div className="flex flex-col items-start gap-2 pb-1">
               <img
                 src={isFemale ? '/images/logo-pink.png' : '/images/logo.png'}
@@ -216,12 +199,7 @@ export default function LandingClient({ fontClass, initialGender = 'male', onOpe
               Presisi Gaya &amp; Fitting 3D
               <br />
               <span
-                className="bg-clip-text text-transparent"
-                style={{
-                  backgroundImage: isFemale
-                    ? 'linear-gradient(90deg, #F472B6, #FB7185 50%, #FACC15)'
-                    : 'linear-gradient(90deg, #60A5FA, #38BDF8 50%, #FACC15)',
-                }}
+                className={isFemale ? 'text-pink-400' : 'text-blue-400'}
               >
                 Sesuai Tubuh Anda
               </span>
@@ -233,15 +211,15 @@ export default function LandingClient({ fontClass, initialGender = 'male', onOpe
               secara langsung di tubuh Anda lewat 3D Virtual Try-On realtime.
             </p>
 
-            {/* Tombol Utama Gabungan */}
+            {/* Tombol Utama Gabungan (Solid Color, No Gradient, No Glow) */}
             <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <button
                 type="button"
                 onClick={() => onOpenStudio(undefined, gender)}
-                className={`group inline-flex min-h-[52px] items-center justify-center gap-3 rounded-full px-8 text-base font-bold tracking-wide text-white transition-all duration-200 active:scale-[0.98] cursor-pointer shadow-md ${
+                className={`group inline-flex min-h-[52px] items-center justify-center gap-3 rounded-full px-8 text-base font-bold tracking-wide text-white transition-all duration-200 active:scale-[0.98] cursor-pointer ${
                   isFemale
-                    ? 'bg-gradient-to-r from-pink-600 via-rose-500 to-pink-500 hover:from-pink-500 hover:to-rose-400 shadow-pink-600/30'
-                    : 'bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400'
+                    ? 'bg-pink-600 hover:bg-pink-700'
+                    : 'bg-blue-600 hover:bg-blue-700'
                 }`}
               >
                 <span>Mulai Fitting Virtual (Coba Produk Ini di AR)</span>
@@ -262,10 +240,10 @@ export default function LandingClient({ fontClass, initialGender = 'male', onOpe
             <div className="relative w-full h-[440px] sm:h-[500px] lg:h-[540px] rounded-3xl overflow-hidden flex items-center justify-center">
               {/* Product Info Badge (Floating Minimalist - Centered at the TOP of the 3D model) */}
               <div
-                className={`absolute top-4 left-1/2 -translate-x-1/2 z-20 rounded-full border px-6 py-2 backdrop-blur-xl transition-all shadow-xl text-center max-w-[90%] whitespace-nowrap ${
+                className={`absolute top-4 left-1/2 -translate-x-1/2 z-20 rounded-full border px-6 py-2 backdrop-blur-xl transition-all text-center max-w-[90%] whitespace-nowrap ${
                   isFemale
-                    ? 'border-pink-500/30 bg-[#1c0b1a]/90 shadow-pink-950/40'
-                    : 'border-blue-500/30 bg-[#0B1528]/90 shadow-blue-950/40'
+                    ? 'border-pink-500/40 bg-[#1c0b1a]'
+                    : 'border-blue-500/40 bg-[#0B1528]'
                 }`}
               >
                 <span
