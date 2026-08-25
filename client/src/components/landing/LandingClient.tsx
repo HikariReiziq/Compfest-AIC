@@ -269,14 +269,46 @@ export default function LandingClient({ fontClass, initialGender = 'male', onOpe
         </div>
       </main>
 
+      {/* ============ Maskot COBA di Kanan Bawah (Bubble Chat & Maskot Naik Turun) ============ */}
+      <div
+        onClick={() => onOpenStudio(undefined, gender)}
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex flex-col items-center cursor-pointer group select-none animate-bounce"
+        style={{ animationDuration: '2.8s' }}
+        title="Mulai Fitting Virtual bersama Maskot COBA!"
+      >
+        {/* Bubble Chat dengan Ekor Penunjuk ke Maskot */}
+        <div
+          className={`relative mb-2 px-4 py-2 rounded-2xl border text-white text-xs font-mono transition-transform duration-300 group-hover:scale-105 ${
+            isFemale
+              ? 'border-pink-500/40 bg-[#1c0b1a]'
+              : 'border-blue-500/40 bg-[#0B1528]'
+          }`}
+        >
+          <span className={`font-bold ${isFemale ? 'text-pink-400' : 'text-[#38BDF8]'}`}>COBA:</span> Siap fitting?
+          {/* Ekor Balon Chat Segitiga */}
+          <div
+            className={`absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] ${
+              isFemale ? 'border-t-[#1c0b1a]' : 'border-t-[#0B1528]'
+            }`}
+          />
+          <div
+            className={`absolute -bottom-[9px] left-1/2 -translate-x-1/2 -z-10 w-0 h-0 border-l-[7px] border-l-transparent border-r-[7px] border-r-transparent border-t-[9px] ${
+              isFemale ? 'border-t-pink-500/40' : 'border-t-blue-500/40'
+            }`}
+          />
+        </div>
+
+        {/* Mascot Image */}
+        <img
+          src={isFemale ? '/images/mascot-pink.png' : '/images/mascot.png'}
+          alt="COBA Mascot"
+          className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]"
+        />
+      </div>
+
       {/* ============ Modern Footer Minimalist ============ */}
       <footer className="relative z-10 w-full border-t border-white/10 bg-[#060B14]/80 backdrop-blur-md py-6 px-6 sm:px-12 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-[#64748B]">
         <div className="flex items-center gap-2">
-          <img
-            src={isFemale ? '/images/mascot-pink.png' : '/images/mascot.png'}
-            alt="COBA Mascot"
-            className="w-5 h-5 object-contain"
-          />
           <span>COBA — Studio Fitting Virtual AI &amp; AR (Haute-Couture Edition)</span>
         </div>
         <div>
