@@ -1021,12 +1021,16 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               {(!cameraReady || !isVideoPlaying) && (
                 <div className="absolute inset-0 z-30 bg-[#071120] flex flex-col items-center justify-center space-y-2.5 p-3 text-center">
                   <img
-                    src="/images/mascot.png"
+                    src={isFemale ? "/images/mascot-pink.png" : "/images/mascot.png"}
                     alt="COBA Mascot"
                     className="w-14 h-14 object-contain drop-shadow-md animate-bounce"
                     style={{ animationDuration: "2s" }}
                   />
-                  <div className="flex items-center space-x-1 font-mono text-[10px] font-bold tracking-[0.2em] text-[#38BDF8] uppercase">
+                  <div
+                    className={`flex items-center space-x-1 font-mono text-[10px] font-bold tracking-[0.2em] uppercase ${
+                      isFemale ? "text-pink-400" : "text-[#38BDF8]"
+                    }`}
+                  >
                     {["L", "O", "A", "D", "I", "N", "G", ".", ".", "."].map((char, index) => (
                       <span
                         key={index}
@@ -1037,12 +1041,6 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
                       </span>
                     ))}
                   </div>
-                  <div className="w-28 h-1 rounded-full bg-white/10 overflow-hidden">
-                    <div className="animate-loading-slide h-full w-1/3 rounded-full bg-blue-500" />
-                  </div>
-                  <p className="text-[9px] font-mono text-slate-400">
-                    Menghubungkan Kamera Ultra HD...
-                  </p>
                 </div>
               )}
 

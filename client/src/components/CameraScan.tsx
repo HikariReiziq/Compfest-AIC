@@ -1303,7 +1303,11 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                   <div className="absolute inset-0 z-30 bg-[#071120] flex flex-col items-center justify-center space-y-3 p-4 text-center">
                     <div className="relative z-10 flex items-center justify-center">
                       <img
-                        src="/images/mascot.png"
+                        src={
+                          scannedProfile?.gender?.label_id === "female"
+                            ? "/images/mascot-pink.png"
+                            : "/images/mascot.png"
+                        }
                         alt="COBA Mascot"
                         className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-md animate-bounce"
                         style={{ animationDuration: '2s' }}
@@ -1311,7 +1315,13 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                     </div>
 
                     {/* Tulisan Loading Bergelombang */}
-                    <div className="flex items-center space-x-1 font-mono text-xs sm:text-sm font-bold tracking-[0.2em] text-[#38BDF8] uppercase">
+                    <div
+                      className={`flex items-center space-x-1 font-mono text-xs sm:text-sm font-bold tracking-[0.2em] uppercase ${
+                        scannedProfile?.gender?.label_id === "female"
+                          ? "text-pink-400"
+                          : "text-[#38BDF8]"
+                      }`}
+                    >
                       {['L', 'O', 'A', 'D', 'I', 'N', 'G', '.', '.', '.'].map((char, index) => (
                         <span
                           key={index}
@@ -1321,10 +1331,6 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                           {char}
                         </span>
                       ))}
-                    </div>
-
-                    <div className="w-36 sm:w-44 h-1 rounded-full bg-white/10 overflow-hidden">
-                      <div className="animate-loading-slide h-full w-1/3 rounded-full bg-blue-500" />
                     </div>
                   </div>
                 )}
@@ -1345,7 +1351,11 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                       <button
                         onClick={retryCamera}
                         type="button"
-                        className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md"
+                        className={`w-full px-3 py-2 rounded-xl text-xs font-semibold text-white flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md ${
+                          scannedProfile?.gender?.label_id === "female"
+                            ? "bg-pink-600 hover:bg-pink-500"
+                            : "bg-blue-600 hover:bg-blue-500"
+                        }`}
                       >
                         <RefreshCw className="w-3.5 h-3.5" />
                         <span>Coba Lagi</span>
@@ -1357,9 +1367,19 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                           setScannedProfile(defaultProfile);
                         }}
                         type="button"
-                        className="w-full px-3 py-2 rounded-xl text-xs font-medium text-[#93C5FD] bg-transparent hover:bg-white/5 border border-white/15 hover:border-blue-400/40 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                        className={`w-full px-3 py-2 rounded-xl text-xs font-medium bg-transparent hover:bg-white/5 border border-white/15 flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                          scannedProfile?.gender?.label_id === "female"
+                            ? "text-pink-300 hover:border-pink-400/40"
+                            : "text-[#93C5FD] hover:border-blue-400/40"
+                        }`}
                       >
-                        <UserCheck className="w-3.5 h-3.5 text-[#38BDF8]" />
+                        <UserCheck
+                          className={`w-3.5 h-3.5 ${
+                            scannedProfile?.gender?.label_id === "female"
+                              ? "text-pink-400"
+                              : "text-[#38BDF8]"
+                          }`}
+                        />
                         <span>Lanjut Simulasi</span>
                       </button>
                     </div>
@@ -1368,14 +1388,24 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                   <div className="flex flex-col items-center justify-center space-y-3">
                     <div className="relative z-10 flex items-center justify-center">
                       <img
-                        src="/images/mascot.png"
+                        src={
+                          scannedProfile?.gender?.label_id === "female"
+                            ? "/images/mascot-pink.png"
+                            : "/images/mascot.png"
+                        }
                         alt="COBA Mascot"
                         className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-md animate-bounce"
                         style={{ animationDuration: '2s' }}
                       />
                     </div>
 
-                    <div className="flex items-center space-x-1 font-mono text-xs sm:text-sm font-bold tracking-[0.2em] text-[#38BDF8] uppercase">
+                    <div
+                      className={`flex items-center space-x-1 font-mono text-xs sm:text-sm font-bold tracking-[0.2em] uppercase ${
+                        scannedProfile?.gender?.label_id === "female"
+                          ? "text-pink-400"
+                          : "text-[#38BDF8]"
+                      }`}
+                    >
                       {['L', 'O', 'A', 'D', 'I', 'N', 'G', '.', '.', '.'].map((char, index) => (
                         <span
                           key={index}
@@ -1387,20 +1417,20 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                       ))}
                     </div>
 
-                    <div className="w-36 sm:w-44 h-1 rounded-full bg-white/10 overflow-hidden">
-                      <div className="animate-loading-slide h-full w-1/3 rounded-full bg-blue-500" />
-                    </div>
-
                     <button
                       onClick={() => {
                         const defaultProfile = MOCK_PRESETS.indonesian_warm_sawo_matang.profile;
                         setScannedProfile(defaultProfile);
                       }}
                       type="button"
-                      className="mt-2 px-4 py-2 rounded-full text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md"
+                      className={`mt-2 px-4 py-2 rounded-full text-xs font-semibold text-white flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md ${
+                        scannedProfile?.gender?.label_id === "female"
+                          ? "bg-pink-600 hover:bg-pink-500 shadow-pink-600/30"
+                          : "bg-blue-600 hover:bg-blue-500"
+                      }`}
                     >
                       <UserCheck className="w-3.5 h-3.5" />
-                      <span>Gunakan Profil Simulasi</span>
+                      <span>Simulasikan Profil Otomatis</span>
                     </button>
                   </div>
                 )}

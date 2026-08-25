@@ -48,7 +48,7 @@ export const ProcessingLoadingScreen: React.FC<ProcessingLoadingScreenProps> = (
       {/* Maskot COBA dengan Efek Melayang Lembut */}
       <div className="relative z-10 flex items-center justify-center">
         <img
-          src="/images/mascot.png"
+          src={isFemale ? "/images/mascot-pink.png" : "/images/mascot.png"}
           alt="COBA Mascot"
           className="relative w-40 h-40 sm:w-48 sm:h-48 object-contain drop-shadow-lg animate-bounce"
           style={{ animationDuration: '2s' }}
@@ -70,23 +70,6 @@ export const ProcessingLoadingScreen: React.FC<ProcessingLoadingScreenProps> = (
             {char}
           </span>
         ))}
-      </div>
-
-      {/* Konteks proses agar pengguna tahu apa yang terjadi */}
-      <div className="relative z-10 flex flex-col items-center gap-4 px-6 text-center">
-        <p className="text-sm sm:text-base text-[#94A3B8] max-w-md leading-relaxed">
-          AI Stylist COBA sedang mencocokkan jawaban kuesioner Anda dengan analisis biometrik
-          untuk menyusun rekomendasi Top-4.
-        </p>
-        <div className="w-64 sm:w-80 h-1.5 rounded-full bg-white/10 overflow-hidden">
-          <div
-            className={`animate-loading-slide h-full w-1/3 rounded-full ${
-              isFemale
-                ? 'bg-gradient-to-r from-pink-600 via-rose-400 to-pink-600'
-                : 'bg-gradient-to-r from-blue-600 via-sky-400 to-blue-600'
-            }`}
-          />
-        </div>
       </div>
     </div>
   );

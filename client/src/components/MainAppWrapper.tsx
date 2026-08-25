@@ -57,7 +57,10 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState<boolean>(false);
 
   // Handler to jump directly from Landing into Studio with a 2.5s loading animation
-  const handleOpenStudio = (categoryPreset?: 'glasses' | 'hats' | 'shirts') => {
+  const handleOpenStudio = (
+    categoryPreset?: 'glasses' | 'hats' | 'shirts',
+    gender: 'male' | 'female' = 'male'
+  ) => {
     if (categoryPreset) {
       setSelectedSubcategory(categoryPreset);
       setSelectedDomain(categoryPreset === 'shirts' ? 'apparel' : 'accessories');
@@ -65,6 +68,22 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
     } else {
       setCurrentStep('CATEGORY');
     }
+
+    const initialProfile: UserPersonalProfile = {
+      ...MOCK_PRESETS.indonesian_warm_sawo_matang.profile,
+      gender: {
+        label: gender === 'female' ? "Wanita (Female)" : "Pria (Male)",
+        label_id: gender,
+        confidence: 1.0,
+        method: "manual_selection",
+        rule: "dipilih pengguna",
+      },
+      body_shape_classification: {
+        body_shape: gender === 'female' ? "Hourglass (Gitar Spanyol)" : "Trapezoid (Atletis)",
+        confidence: 1.0,
+      },
+    };
+    setUserProfile(initialProfile);
 
     setIsTransitioningToStudio(true);
 
@@ -108,48 +127,59 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
     setCurrentStep('QUIZ');
   };
 
-  // STEP 3: Quiz Submitted -> Move to Processing Telemetry Screen
+  // STEP 3: Quiz Complete -> Move to Telemetry Loading -> Fetch Recommendations
   const handleQuizSubmit = async (
     answers: Record<string, string>,
-    questionsMap: Record<string, any>
+    questionsMap?: Record<string, any>
   ) => {
     setCollectedAnswers(answers);
-    setCollectedQuestionsMap(questionsMap);
-    setCurrentStep('PROCESSING');
+    if (questionsMap) setCollectedQuestionsMap(questionsMap);
 
-    // Fetch recommendations in background while cinematic telemetry displays
+    setCurrentStep('PROCESSING');
     setIsLoadingRecommendations(true);
     setRecommendationError(null);
-    try {
-      const activeProfile = userProfile || {
-        face_shape: { shape: 'Oval', confidence: 0.95 },
-        undertone: { undertone: 'Warm', confidence: 0.9 },
-        gender: { label_id: 'female', confidence: 0.92 },
-      };
 
-      const res = await fetchTop4Recommendations(
+    try {
+      const recs = await fetchTop4Recommendations(
         selectedSubcategory,
-        userProfile || (activeProfile as any),
+        userProfile || ({} as any),
         answers
       );
 
-      const items = res?.items || (res as any)?.recommendations;
+      const items = (recs as any)?.items || (recs as any)?.recommendations || recs;
       if (items && items.length > 0) {
         setRecommendations(items);
         setCurrentRecIndex(0);
       }
     } catch (err: any) {
-      console.warn('Recommendation fetch failed:', err);
-      setRecommendationError(err?.message || 'Rekomendasi API tidak dapat dihubungi.');
+      console.warn('Failed fetching recommendations:', err);
+      setRecommendationError('Gagal memuat rekomendasi cerdas. Menggunakan rekomendasi default.');
     } finally {
       setIsLoadingRecommendations(false);
     }
   };
 
-  // STEP 3.5: Processing Finished -> Transition to Try-On Studio
+  // Processing Completed -> Show Final Recommendations
   const handleProcessingComplete = () => {
     setCurrentStep('TRYON');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Reset entire flow back to Category selection (or initial step)
+  const handleResetFlow = () => {
+    setCurrentStep('CATEGORY');
+    setRecommendations([]);
+    setCollectedAnswers({});
+    setCurrentRecIndex(0);
+    if (mediaStream) {
+      mediaStream.getTracks().forEach((t) => t.stop());
+      setMediaStream(null);
+    }
+  };
+
+  // Retake scan without clearing everything
+  const handleRetakeScan = () => {
+    setCurrentStep('SCAN');
   };
 
   // Switch Navigation
@@ -161,20 +191,6 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
   const handlePrevItem = () => {
     if (recommendations.length === 0) return;
     setCurrentRecIndex((prev) => (prev === 0 ? recommendations.length - 1 : prev - 1));
-  };
-
-  // Reset entire flow
-  const handleResetFlow = () => {
-    if (mediaStream) {
-      mediaStream.getTracks().forEach((t) => t.stop());
-      setMediaStream(null);
-    }
-    setUserProfile(null);
-    setCollectedAnswers({});
-    setCollectedQuestionsMap({});
-    setRecommendations([]);
-    setCurrentRecIndex(0);
-    setCurrentStep('CATEGORY');
   };
 
   // Active Recommended Item
@@ -199,7 +215,12 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
 
   // If transitioning from Landing to Studio, show Universal 3D loading screen (2-3s)
   if (isTransitioningToStudio) {
-    return <UniversalLoading3D subcategory={selectedSubcategory} />;
+    return (
+      <UniversalLoading3D
+        subcategory={selectedSubcategory}
+        gender={userProfile?.gender?.label_id as ('male' | 'female')}
+      />
+    );
   }
 
   // If in Landing Mode, render the Landing Hero Showcase
@@ -207,6 +228,7 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
     return (
       <LandingClient
         fontClass={fontClass}
+        initialGender={userProfile?.gender?.label_id as ('male' | 'female')}
         onOpenStudio={handleOpenStudio}
       />
     );
@@ -261,7 +283,10 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
       <div className="relative z-10 w-full px-6 sm:px-10 lg:px-14 pt-32 sm:pt-36 lg:pt-40 pb-12 flex-1 flex flex-col justify-start">
         {/* STEP 1: CATEGORY SELECTION */}
         {currentStep === 'CATEGORY' && (
-          <CategorySelector onSelectCategory={handleCategorySelected} />
+          <CategorySelector
+            gender={userProfile?.gender?.label_id as ('male' | 'female')}
+            onSelectCategory={handleCategorySelected}
+          />
         )}
 
         {/* STEP 2: PERSONAL PROFILING SCAN (FACE / BODY BIOMETRICS) */}
