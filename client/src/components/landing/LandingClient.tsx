@@ -68,72 +68,59 @@ export default function LandingClient({ fontClass, initialGender = 'male', onOpe
         />
       </div>
 
-      {/* ============ Tombol Floating Kanan Atas: Toggle Gender + BUKA STUDIO VIRTUAL ============ */}
-      <div className="fixed top-5 right-4 sm:top-6 sm:right-8 z-50 flex items-center gap-2.5 sm:gap-3">
-        {/* Toggle Mode Pria / Wanita (Tinggi Presisi Sama dengan Tombol Kanan) */}
+      {/* ============ Floating Center Top: Karakter Cowok & Cewek (Mode Pria / Wanita) ============ */}
+      <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 flex items-center">
         <div
-          className={`inline-flex items-center h-[46px] sm:h-[48px] rounded-full p-1 border gap-1 backdrop-blur-2xl shadow-2xl transition-all ${
+          className={`inline-flex items-center h-[46px] sm:h-[50px] rounded-full p-1 border gap-1 sm:gap-1.5 backdrop-blur-2xl shadow-2xl transition-all ${
             isFemale
-              ? 'bg-[#1c0b1a]/90 border-pink-500/30'
-              : 'bg-[#0B1528]/90 border-blue-500/30'
+              ? 'bg-[#1c0b1a]/90 border-pink-500/30 shadow-pink-950/40'
+              : 'bg-[#0B1528]/90 border-blue-500/30 shadow-blue-950/40'
           }`}
         >
+          {/* Karakter Cowok (Pria) */}
           <button
             type="button"
             onClick={() => setGender('male')}
-            className={`h-full px-3.5 sm:px-4 rounded-full text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`h-full px-3.5 sm:px-4 rounded-full text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-2 select-none ${
               !isFemale
-                ? 'bg-blue-600 border border-blue-400 text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-gradient-to-r from-blue-600 to-sky-500 border border-blue-400 text-white shadow-md shadow-blue-600/40'
+                : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'
             }`}
           >
-            {/* Simbol Mars (Pria ♂) */}
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="w-3.5 h-3.5 shrink-0"
-            >
-              <circle cx="10" cy="14" r="5" />
-              <line x1="19" y1="5" x2="13.6" y2="10.4" />
-              <polyline points="15 5 19 5 19 9" />
-            </svg>
-            <span>Pria</span>
+            <img
+              src="/images/mascot.png"
+              alt="Karakter Cowok"
+              className={`w-5 h-5 sm:w-6 sm:h-6 object-contain transition-transform ${!isFemale ? 'scale-110 drop-shadow' : 'opacity-60 grayscale-[30%]'}`}
+            />
+            <span className="tracking-wide">Cowok</span>
           </button>
+
+          {/* Karakter Cewek (Wanita) */}
           <button
             type="button"
             onClick={() => setGender('female')}
-            className={`h-full px-3.5 sm:px-4 rounded-full text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`h-full px-3.5 sm:px-4 rounded-full text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-2 select-none ${
               isFemale
-                ? 'bg-gradient-to-r from-pink-600 to-rose-500 border border-pink-400 text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-gradient-to-r from-pink-600 to-rose-500 border border-pink-400 text-white shadow-md shadow-pink-600/40'
+                : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'
             }`}
           >
-            {/* Simbol Venus (Wanita ♀) */}
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="w-3.5 h-3.5 shrink-0"
-            >
-              <circle cx="12" cy="9" r="5" />
-              <line x1="12" y1="14" x2="12" y2="21" />
-              <line x1="9" y1="18" x2="15" y2="18" />
-            </svg>
-            <span>Wanita</span>
+            <img
+              src="/images/mascot-pink.png"
+              alt="Karakter Cewek"
+              className={`w-5 h-5 sm:w-6 sm:h-6 object-contain transition-transform ${isFemale ? 'scale-110 drop-shadow' : 'opacity-60 grayscale-[30%]'}`}
+            />
+            <span className="tracking-wide">Cewek</span>
           </button>
         </div>
+      </div>
 
+      {/* ============ Tombol Floating Kanan Atas: BUKA STUDIO VIRTUAL ============ */}
+      <div className="fixed top-5 right-4 sm:top-6 sm:right-8 z-50 flex items-center">
         <button
           type="button"
           onClick={() => onOpenStudio(undefined, gender)}
-          className={`group inline-flex h-[46px] sm:h-[48px] items-center gap-2 rounded-full border backdrop-blur-2xl px-5 sm:px-6 text-xs sm:text-sm font-bold tracking-[0.08em] transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-2xl ${
+          className={`group inline-flex h-[46px] sm:h-[50px] items-center gap-2 rounded-full border backdrop-blur-2xl px-5 sm:px-6 text-xs sm:text-sm font-bold tracking-[0.08em] transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-2xl ${
             isFemale
               ? 'bg-[#1c0b1a]/85 border-pink-400/30 text-pink-300 hover:border-pink-500 hover:bg-pink-600 hover:text-white shadow-pink-600/20'
               : 'bg-[#0B1528]/85 border-blue-400/30 text-[#93C5FD] hover:border-blue-500 hover:bg-blue-600 hover:text-white'
@@ -146,7 +133,7 @@ export default function LandingClient({ fontClass, initialGender = 'male', onOpe
       </div>
 
       {/* ============ Main Hero Section (Expansive Full Layout) ============ */}
-      <main className="relative z-10 mx-auto max-w-[1600px] w-full px-5 sm:px-8 lg:pl-10 lg:pr-12 pt-16 sm:pt-20 lg:pt-24 pb-10 flex-1 flex items-center">
+      <main className="relative z-10 mx-auto max-w-[1600px] w-full px-5 sm:px-8 lg:pl-10 lg:pr-12 pt-20 sm:pt-24 lg:pt-28 pb-10 flex-1 flex items-center">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center w-full">
           {/* Kolom Kiri: Value Proposition & 1 CTA Utama */}
           <div className="lg:col-span-7 space-y-5 lg:space-y-6 relative">
@@ -225,23 +212,20 @@ export default function LandingClient({ fontClass, initialGender = 'male', onOpe
             <div className="relative w-full h-[440px] sm:h-[500px] lg:h-[540px] rounded-3xl overflow-hidden flex items-center justify-center">
               {/* Product Info Badge (Floating Minimalist - Centered at the TOP of the 3D model) */}
               <div
-                className={`absolute top-4 left-1/2 -translate-x-1/2 z-20 rounded-2xl border px-6 py-2.5 backdrop-blur-xl transition-all shadow-xl text-center max-w-[90%] whitespace-nowrap ${
+                className={`absolute top-4 left-1/2 -translate-x-1/2 z-20 rounded-full border px-6 py-2 backdrop-blur-xl transition-all shadow-xl text-center max-w-[90%] whitespace-nowrap ${
                   isFemale
                     ? 'border-pink-500/30 bg-[#1c0b1a]/90 shadow-pink-950/40'
                     : 'border-blue-500/30 bg-[#0B1528]/90 shadow-blue-950/40'
                 }`}
               >
-                <h3
-                  className={`text-[11px] sm:text-xs font-bold tracking-[0.14em] uppercase truncate ${
+                <span
+                  className={`text-[11px] sm:text-xs font-bold tracking-[0.14em] uppercase truncate block ${
                     isFemale ? 'text-pink-300' : 'text-[#93C5FD]'
                   }`}
                   style={{ fontFamily: 'var(--font-mono)' }}
                 >
                   {activeAsset.nama}
-                </h3>
-                <p className="text-[10px] text-slate-400 font-mono mt-0.5">
-                  Kategori: {activeAsset.kategori.toUpperCase()} • 3D GLB Realtime
-                </p>
+                </span>
               </div>
 
               {/* Navigation Arrows */}
