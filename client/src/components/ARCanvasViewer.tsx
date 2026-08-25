@@ -1236,10 +1236,9 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
             >
               <video
                 ref={videoRef}
-                className="w-full h-full object-contain -scale-x-100 transition-all duration-300"
+                className="w-full h-full object-cover transform -scale-x-100"
                 style={{
-                  filter: "contrast(1.08) brightness(1.1) saturate(1.15)",
-                  imageRendering: "crisp-edges",
+                  filter: "brightness(1.35) contrast(1.05)",
                 }}
                 autoPlay
                 playsInline
