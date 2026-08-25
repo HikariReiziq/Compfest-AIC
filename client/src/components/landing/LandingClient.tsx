@@ -69,7 +69,7 @@ export default function LandingClient({ fontClass, initialGender = 'male', onOpe
       </div>
 
       {/* ============ Tombol Floating Kanan Atas: Toggle Pria/Wanita + BUKA STUDIO VIRTUAL ============ */}
-      <div className="fixed top-5 right-4 sm:top-6 sm:right-8 z-50 flex items-center gap-2.5 sm:gap-3">
+      <div className="fixed top-5 right-4 sm:top-6 sm:right-8 z-50 flex items-center gap-2 sm:gap-3">
         {/* Toggle Mode Pria / Wanita (Tinggi Presisi Sama dengan Tombol Kanan, Tanpa Gambar, Solid Color) */}
         <div
           className={`inline-flex items-center h-[46px] sm:h-[48px] rounded-full p-1 border gap-1 backdrop-blur-2xl transition-all ${
@@ -130,19 +130,27 @@ export default function LandingClient({ fontClass, initialGender = 'male', onOpe
           </button>
         </div>
 
-        <button
-          type="button"
-          onClick={() => onOpenStudio(undefined, gender)}
-          className={`group inline-flex h-[46px] sm:h-[48px] items-center gap-2 rounded-full border backdrop-blur-2xl px-5 sm:px-6 text-xs sm:text-sm font-bold tracking-[0.08em] transition-all hover:scale-105 active:scale-95 cursor-pointer ${
+        {/* Tombol BUKA STUDIO VIRTUAL (Dengan Bezel & Tinggi Presisi 100% Identik) */}
+        <div
+          className={`inline-flex items-center h-[46px] sm:h-[48px] rounded-full p-1 border backdrop-blur-2xl transition-all ${
             isFemale
-              ? 'bg-[#1c0b1a] border-pink-500/40 text-pink-300 hover:bg-pink-600 hover:text-white'
-              : 'bg-[#0B1528] border-blue-500/40 text-[#93C5FD] hover:bg-blue-600 hover:text-white'
+              ? 'bg-[#1c0b1a] border-pink-500/40'
+              : 'bg-[#0B1528] border-blue-500/40'
           }`}
-          style={{ fontFamily: 'var(--font-mono)' }}
         >
-          <span>BUKA STUDIO VIRTUAL</span>
-          <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 text-[#FACC15]" />
-        </button>
+          <button
+            type="button"
+            onClick={() => onOpenStudio(undefined, gender)}
+            className={`group inline-flex h-full items-center gap-2 rounded-full px-4 sm:px-5 text-xs font-mono font-bold tracking-[0.08em] transition-all hover:scale-105 active:scale-95 cursor-pointer ${
+              isFemale
+                ? 'bg-pink-600 border border-pink-400 text-white hover:bg-pink-700'
+                : 'bg-blue-600 border border-blue-400 text-white hover:bg-blue-700'
+            }`}
+          >
+            <span>BUKA STUDIO VIRTUAL</span>
+            <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 text-[#FACC15]" />
+          </button>
+        </div>
       </div>
 
       {/* ============ Main Hero Section (Expansive Full Layout) ============ */}
