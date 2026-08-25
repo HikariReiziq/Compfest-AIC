@@ -907,12 +907,13 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
 
   return (
     <div className="w-full h-full flex flex-col space-y-3.5">
-      {/* Top Header: Mode Switcher, Frame Switcher, & AR Fine-Tuning Micro-Controls */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 w-full">
-        {/* Mode Switcher Pill (AR vs 360°) & Frame Selector Pill */}
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
+      {/* Top Header: 2-Baris Layout (Baris 1: Mode & Frame Switchers, Baris 2: AR Fine-Tuning Micro-Controls) */}
+      <div className="flex flex-col items-center gap-2.5 w-full">
+        {/* Baris 1: Mode Switcher Pill (AR vs 360°) & Frame Selector Pill */}
+        <div className="flex flex-wrap items-center justify-center gap-2.5 w-full">
+          {/* Pill 1: AR Live vs 360 Studio */}
           <div
-            className={`h-[46px] inline-flex items-center p-1 rounded-full backdrop-blur-xl border shrink-0 ${
+            className={`h-[44px] inline-flex items-center p-1 rounded-full backdrop-blur-xl border shadow-md transition-all ${
               isFemale ? 'bg-[#1c0b1a] border-pink-500/30' : 'bg-[#0B1528] border-blue-500/30'
             }`}
           >
@@ -950,17 +951,17 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
             </button>
           </div>
 
-          {/* Frame Selector Pill in AR Live Mode */}
+          {/* Pill 2: Frame Selector in AR Live Mode */}
           {viewMode === "ar" && (
             <div
-              className={`h-[46px] inline-flex items-center p-1 rounded-full backdrop-blur-xl border shrink-0 ${
+              className={`h-[44px] inline-flex items-center p-1 rounded-full backdrop-blur-xl border shadow-md transition-all ${
                 isFemale ? 'bg-[#1c0b1a] border-pink-500/30' : 'bg-[#0B1528] border-blue-500/30'
               }`}
             >
               <button
                 type="button"
                 onClick={() => setSelectedFrame("canon")}
-                className={`h-full px-3 rounded-full text-xs font-semibold font-mono flex items-center space-x-1 transition-all cursor-pointer select-none ${
+                className={`h-full px-3.5 rounded-full text-xs font-semibold font-mono flex items-center space-x-1.5 transition-all cursor-pointer select-none ${
                   selectedFrame === "canon"
                     ? isFemale
                       ? "bg-pink-600 text-white font-bold border border-pink-400"
@@ -977,7 +978,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               <button
                 type="button"
                 onClick={() => setSelectedFrame("flower")}
-                className={`h-full px-3 rounded-full text-xs font-semibold font-mono flex items-center space-x-1 transition-all cursor-pointer select-none ${
+                className={`h-full px-3.5 rounded-full text-xs font-semibold font-mono flex items-center space-x-1.5 transition-all cursor-pointer select-none ${
                   selectedFrame === "flower"
                     ? isFemale
                       ? "bg-pink-600 text-white font-bold border border-pink-400"
@@ -995,26 +996,26 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           )}
         </div>
 
+        {/* Baris 2: AR Fine-Tuning Micro-Controls (Posisi di bawah 2 card, tanpa scrollbar) */}
         {viewMode === "ar" ? (
-          /* AR Fine-Tuning Micro-Controls (Single Line Seamless Bar) */
           <div
-            className={`h-[46px] px-3 rounded-full border backdrop-blur-xl flex flex-nowrap items-center justify-between gap-2 text-xs overflow-x-auto no-scrollbar flex-1 w-full min-w-0 transition-all ${
+            className={`w-full max-w-[800px] mx-auto min-h-[46px] py-1.5 px-3.5 rounded-full border backdrop-blur-xl flex flex-wrap items-center justify-between gap-2.5 text-xs shadow-lg transition-all ${
               isFemale
-                ? "bg-[#1c0b1a] border-pink-500/30"
-                : "bg-[#0B1528] border-blue-500/30"
+                ? "bg-[#1c0b1a]/95 border-pink-500/30"
+                : "bg-[#0B1528]/95 border-blue-500/30"
             }`}
           >
             {/* Left: 2 Opsi Interaksi, Koordinat Live, & Reset */}
-            <div className="flex flex-nowrap items-center gap-1.5 shrink-0">
+            <div className="flex flex-wrap items-center gap-2">
               {/* 2 Opsi Interaksi Layar: Opsi 1 (Rotasi) vs Opsi 2 (Posisi) */}
               <div
-                className={`inline-flex rounded-full p-0.5 border gap-0.5 shadow-inner shrink-0 ${
+                className={`inline-flex rounded-full p-0.5 border gap-0.5 shadow-inner ${
                   isFemale ? "bg-[#140613] border-pink-500/20" : "bg-[#071120] border-white/10"
                 }`}
               >
                 <button
                   onClick={() => setDragMode("rotate")}
-                  className={`px-2.5 py-1 rounded-full text-xs font-mono font-bold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
+                  className={`px-3 py-1 rounded-full text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
                     dragMode === "rotate"
                       ? isFemale
                         ? "bg-pink-600 border border-pink-400 text-white"
@@ -1025,12 +1026,12 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
                   }`}
                   title="Opsi 1: Geser di layar ke segala arah untuk memutar model 3D (360° Horizontal, Vertikal & Diagonal)"
                 >
-                  <RotateCw className="w-3 h-3" />
+                  <RotateCw className="w-3.5 h-3.5" />
                   <span>Opsi 1: Rotasi</span>
                 </button>
                 <button
                   onClick={() => setDragMode("pan")}
-                  className={`px-2.5 py-1 rounded-full text-xs font-mono font-bold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
+                  className={`px-3 py-1 rounded-full text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
                     dragMode === "pan"
                       ? isFemale
                         ? "bg-pink-600 border border-pink-400 text-white"
@@ -1041,14 +1042,14 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
                   }`}
                   title="Opsi 2: Geser di layar ke segala arah untuk memindahkan posisi (Atas, Bawah, Kiri, Kanan)"
                 >
-                  <Move className="w-3 h-3" />
+                  <Move className="w-3.5 h-3.5" />
                   <span>Opsi 2: Posisi</span>
                 </button>
               </div>
 
               {/* Indikator Status Koordinat */}
               <div
-                className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-full border text-[10px] font-mono shrink-0 whitespace-nowrap ${
+                className={`flex items-center space-x-2 px-3 py-1 rounded-full border text-[11px] font-mono whitespace-nowrap ${
                   isFemale
                     ? "bg-[#140613] border-pink-500/20 text-pink-300/80"
                     : "bg-[#071120] border-white/5 text-slate-400"
@@ -1075,7 +1076,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
                   setScaleMultiplier(100);
                   scaleMultiplierRef.current = 100;
                 }}
-                className={`px-2.5 py-1 rounded-full border active:scale-95 transition-all flex items-center space-x-1 cursor-pointer shrink-0 ${
+                className={`px-3 py-1 rounded-full border active:scale-95 transition-all flex items-center space-x-1 cursor-pointer ${
                   isFemale
                     ? "bg-[#140613] hover:bg-pink-600 hover:text-white text-pink-300 border-pink-500/30"
                     : "bg-[#071120] hover:bg-blue-600 hover:text-white text-slate-400 border-white/10"
@@ -1083,13 +1084,13 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
                 title="Reset Posisi & Rotasi ke Default"
               >
                 <RotateCcw className="w-3 h-3" />
-                <span className="text-[10px] font-medium">Reset</span>
+                <span className="text-[11px] font-medium">Reset</span>
               </button>
             </div>
 
             {/* Right: Scale Slider with Fixed-Width Percentage Label */}
             <div
-              className={`flex flex-nowrap items-center space-x-2 text-xs px-2.5 py-1 rounded-full border shrink-0 whitespace-nowrap ${
+              className={`flex items-center space-x-2 text-xs px-3 py-1 rounded-full border whitespace-nowrap ${
                 isFemale ? "bg-[#140613] border-pink-500/20" : "bg-[#071120] border-white/5"
               }`}
             >
@@ -1113,19 +1114,19 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
                   scaleMultiplierRef.current = val;
                   setScaleMultiplier(val);
                 }}
-                className={`w-14 sm:w-20 h-1.5 rounded-lg appearance-none cursor-pointer shrink-0 ${
+                className={`w-16 sm:w-24 h-1.5 rounded-lg appearance-none cursor-pointer ${
                   isFemale ? "bg-[#2a0d27] accent-pink-500" : "bg-[#08101E] accent-blue-500"
                 }`}
               />
             </div>
           </div>
         ) : (
-          /* 360 Studio Mode: Clean matching pill bar with Studio Info and shortcut hint */
+          /* 360 Studio Mode */
           <div
-            className={`h-[46px] px-4 rounded-full border backdrop-blur-xl flex items-center justify-between gap-3 text-xs flex-1 w-full min-w-0 transition-all ${
+            className={`w-full max-w-[800px] mx-auto h-[46px] px-4 rounded-full border backdrop-blur-xl flex items-center justify-between gap-3 text-xs shadow-lg transition-all ${
               isFemale
-                ? "bg-[#1c0b1a] border-pink-500/30 text-pink-300"
-                : "bg-[#0B1528] border-blue-500/30 text-sky-300"
+                ? "bg-[#1c0b1a]/95 border-pink-500/30 text-pink-300"
+                : "bg-[#0B1528]/95 border-blue-500/30 text-sky-300"
             }`}
           >
             <div className="flex items-center space-x-2 shrink-0 font-mono text-xs font-semibold">
