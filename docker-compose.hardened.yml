@@ -1,0 +1,98 @@
+# Lapisan pengerasan keamanan — dipakai bersama docker-compose.yml.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.hardened.yml up -d
+#
+# Dirancang untuk satu tujuan: bila proses di dalam container berhasil
+# dieksploitasi, dampaknya berhenti di container itu dan tidak merambat ke
+# mesin host. Setiap setelan di bawah menutup satu jalur perambatan tertentu,
+# dan alasannya ditulis agar tidak ada yang dilonggarkan tanpa sadar.
+
+services:
+  server:
+    # Backend TIDAK dipublikasikan ke host. Satu-satunya pintu masuk adalah
+    # proxy di client, sehingga permukaan yang terbuka ke jaringan tinggal satu
+    # port, bukan dua. Ini juga yang membuat satu terowongan ngrok cukup.
+    ports: !reset []
+    networks:
+      - edge      # hanya agar client bisa menjangkau
+      - internal
+
+    # Blokir eskalasi hak: setuid/setgid pada berkas di dalam container tidak
+    # lagi bisa menaikkan privilese, termasuk lewat biner yang tidak sengaja
+    # terbawa image dasar.
+    security_opt:
+      - no-new-privileges:true
+
+    # Buang SELURUH capability Linux, lalu kembalikan hanya yang benar-benar
+    # dibutuhkan. Proses Python yang melayani HTTP pada port tinggi tidak
+    # membutuhkan satu pun capability istimewa.
+    cap_drop:
+      - ALL
+
+    # Sistem berkas root read-only. Penyerang tidak bisa menuliskan payload,
+    # mengubah kode, atau menanam persistensi. Direktori yang memang perlu
+    # ditulis diberikan sebagai tmpfs — hidup di memori dan lenyap saat
+    # container berhenti.
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=256m
+      - /run:rw,noexec,nosuid,size=16m
+
+    # Batas sumber daya. Tanpa ini satu permintaan VTON yang berat, atau
+    # serangan yang sengaja membanjiri, bisa menghabiskan RAM host sampai OOM
+    # killer mematikan proses lain di luar container.
+    mem_limit: 16g
+    memswap_limit: 24g
+    pids_limit: 256
+    cpus: 2.0
+
+    # Log dibatasi agar disk host tidak habis oleh container yang membanjiri
+    # keluaran, baik karena bug maupun karena disengaja.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  client:
+    # Hanya diikat ke loopback. Tanpa ini port terbuka ke seluruh LAN begitu
+    # laptop tersambung ke Wi-Fi publik. Akses dari luar sepenuhnya lewat
+    # terowongan yang sengaja dibuka, bukan lewat kebetulan jaringan.
+    ports: !override
+      - "127.0.0.1:3000:3000"
+    environment:
+      # Proxy internal: browser cukup memanggil path relatif /api/v1, sehingga
+      # aplikasi bekerja lewat host apa pun — localhost maupun domain ngrok.
+      - API_PROXY_TARGET=http://server:8000
+      - NEXT_PUBLIC_API_URL=/api/v1
+    networks:
+      - edge
+
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=128m
+      - /app/.next/cache:rw,nosuid,size=512m
+    mem_limit: 16g
+    memswap_limit: 24g
+    pids_limit: 256
+    cpus: 1.5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  # Jaringan tempat client menjangkau server.
+  edge:
+    driver: bridge
+  # Disiapkan tanpa akses keluar untuk layanan yang kelak tidak perlu internet.
+  # `internal: true` memutus rute ke luar sepenuhnya, sehingga proses yang
+  # dikompromikan tidak bisa menghubungi server kendali di internet.
+  internal:
+    driver: bridge
+    internal: true
