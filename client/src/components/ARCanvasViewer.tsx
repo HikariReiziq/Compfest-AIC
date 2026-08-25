@@ -906,14 +906,14 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
       <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 w-full">
         {/* Mode Switcher Pill (AR vs 360°) */}
         <div
-          className={`inline-flex items-center p-1 rounded-full backdrop-blur-xl border shrink-0 ${
+          className={`h-[46px] inline-flex items-center p-1 rounded-full backdrop-blur-xl border shrink-0 ${
             isFemale ? 'bg-[#1c0b1a] border-pink-500/30' : 'bg-[#0B1528] border-blue-500/30'
           }`}
         >
           {!isUploadMode && (
             <button
               onClick={() => setViewMode("ar")}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer select-none ${
+              className={`h-full px-4 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer select-none ${
                 viewMode === "ar"
                   ? isFemale
                     ? "bg-pink-600 hover:bg-pink-700 text-white font-bold border border-pink-400"
@@ -929,7 +929,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           )}
           <button
             onClick={() => setViewMode("studio")}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer select-none ${
+            className={`h-full px-4 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer select-none ${
               viewMode === "studio"
                 ? isFemale
                   ? "bg-pink-600 hover:bg-pink-700 text-white font-bold border border-pink-400"
@@ -944,129 +944,148 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           </button>
         </div>
 
-        {/* AR Fine-Tuning Micro-Controls (Single Line Seamless Bar) */}
-        <div
-          className={`py-1.5 px-3 rounded-2xl border backdrop-blur-xl flex flex-nowrap items-center justify-between gap-2 text-xs overflow-x-auto no-scrollbar flex-1 w-full min-w-0 transition-all ${
-            isFemale
-              ? "bg-[#1c0b1a] border-pink-500/30"
-              : "bg-[#0B1528] border-blue-500/30"
-          }`}
-        >
-          {/* Left: 2 Opsi Interaksi, Koordinat Live, & Reset */}
-          <div className="flex flex-nowrap items-center gap-1.5 shrink-0">
-            {/* 2 Opsi Interaksi Layar: Opsi 1 (Rotasi) vs Opsi 2 (Posisi) */}
-            <div
-              className={`inline-flex rounded-xl p-0.5 border gap-0.5 shadow-inner shrink-0 ${
-                isFemale ? "bg-[#140613] border-pink-500/20" : "bg-[#071120] border-white/10"
-              }`}
-            >
-              <button
-                onClick={() => setDragMode("rotate")}
-                className={`px-2 py-1 rounded-lg text-xs font-mono font-bold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
-                  dragMode === "rotate"
-                    ? isFemale
-                      ? "bg-pink-600 border border-pink-400 text-white"
-                      : "bg-blue-600 border border-blue-400 text-white"
-                    : isFemale
-                    ? "text-pink-300/70 hover:text-white hover:bg-pink-500/10"
-                    : "text-slate-400 hover:text-white"
-                }`}
-                title="Opsi 1: Geser di layar ke segala arah untuk memutar model 3D (360° Horizontal, Vertikal & Diagonal)"
-              >
-                <RotateCw className="w-3 h-3" />
-                <span>Opsi 1: Rotasi</span>
-              </button>
-              <button
-                onClick={() => setDragMode("pan")}
-                className={`px-2 py-1 rounded-lg text-xs font-mono font-bold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
-                  dragMode === "pan"
-                    ? isFemale
-                      ? "bg-pink-600 border border-pink-400 text-white"
-                      : "bg-sky-600 border border-sky-400 text-white"
-                    : isFemale
-                    ? "text-pink-300/70 hover:text-white hover:bg-pink-500/10"
-                    : "text-slate-400 hover:text-white"
-                }`}
-                title="Opsi 2: Geser di layar ke segala arah untuk memindahkan posisi (Atas, Bawah, Kiri, Kanan)"
-              >
-                <Move className="w-3 h-3" />
-                <span>Opsi 2: Posisi</span>
-              </button>
-            </div>
-
-            {/* Indikator Status Koordinat */}
-            <div
-              className={`flex items-center space-x-1.5 px-2 py-1 rounded-xl border text-[10px] font-mono shrink-0 whitespace-nowrap ${
-                isFemale
-                  ? "bg-[#140613] border-pink-500/20 text-pink-300/80"
-                  : "bg-[#071120] border-white/5 text-slate-400"
-              }`}
-            >
-              <span>X:<strong className="text-white ml-0.5">{offsetX.toFixed(1)}</strong></span>
-              <span>Y:<strong className="text-white ml-0.5">{offsetY.toFixed(1)}</strong></span>
-              <span>Putar:<strong className="text-white ml-0.5">{Math.round((rotOffsetY * 180) / Math.PI)}°</strong></span>
-            </div>
-
-            {/* Reset */}
-            <button
-              onClick={() => {
-                setOffsetX(0);
-                offsetXRef.current = 0;
-                setOffsetY(0);
-                offsetYRef.current = 0;
-                setOffsetZ(0);
-                offsetZRef.current = 0;
-                setRotOffsetY(0);
-                rotOffsetYRef.current = 0;
-                setRotOffsetX(0);
-                rotOffsetXRef.current = 0;
-                setScaleMultiplier(100);
-                scaleMultiplierRef.current = 100;
-              }}
-              className={`px-2.5 py-1 rounded-xl border active:scale-95 transition-all flex items-center space-x-1 cursor-pointer shrink-0 ${
-                isFemale
-                  ? "bg-[#140613] hover:bg-pink-600 hover:text-white text-pink-300 border-pink-500/30"
-                  : "bg-[#071120] hover:bg-blue-600 hover:text-white text-slate-400 border-white/10"
-              }`}
-              title="Reset Posisi & Rotasi ke Default"
-            >
-              <RotateCcw className="w-3 h-3" />
-              <span className="text-[10px] font-medium">Reset</span>
-            </button>
-          </div>
-
-          {/* Right: Scale Slider with Fixed-Width Percentage Label */}
+        {viewMode === "ar" ? (
+          /* AR Fine-Tuning Micro-Controls (Single Line Seamless Bar) */
           <div
-            className={`flex flex-nowrap items-center space-x-2 text-xs px-2.5 py-1 rounded-xl border shrink-0 whitespace-nowrap ${
-              isFemale ? "bg-[#140613] border-pink-500/20" : "bg-[#071120] border-white/5"
+            className={`h-[46px] px-3 rounded-full border backdrop-blur-xl flex flex-nowrap items-center justify-between gap-2 text-xs overflow-x-auto no-scrollbar flex-1 w-full min-w-0 transition-all ${
+              isFemale
+                ? "bg-[#1c0b1a] border-pink-500/30"
+                : "bg-[#0B1528] border-blue-500/30"
             }`}
           >
-            <span className="text-slate-400 font-mono text-[11px] flex items-center">
-              <span>Ukuran:</span>
-              <strong
-                className={`inline-block w-9 text-right ml-1 font-mono ${
-                  isFemale ? "text-pink-400 font-bold" : "text-[#38BDF8] font-bold"
+            {/* Left: 2 Opsi Interaksi, Koordinat Live, & Reset */}
+            <div className="flex flex-nowrap items-center gap-1.5 shrink-0">
+              {/* 2 Opsi Interaksi Layar: Opsi 1 (Rotasi) vs Opsi 2 (Posisi) */}
+              <div
+                className={`inline-flex rounded-full p-0.5 border gap-0.5 shadow-inner shrink-0 ${
+                  isFemale ? "bg-[#140613] border-pink-500/20" : "bg-[#071120] border-white/10"
                 }`}
               >
-                {scaleMultiplier}%
-              </strong>
-            </span>
-            <input
-              type="range"
-              min={70}
-              max={130}
-              value={scaleMultiplier}
-              onChange={(e) => {
-                const val = Number(e.target.value);
-                scaleMultiplierRef.current = val;
-                setScaleMultiplier(val);
-              }}
-              className={`w-14 sm:w-20 h-1.5 rounded-lg appearance-none cursor-pointer shrink-0 ${
-                isFemale ? "bg-[#2a0d27] accent-pink-500" : "bg-[#08101E] accent-blue-500"
+                <button
+                  onClick={() => setDragMode("rotate")}
+                  className={`px-2.5 py-1 rounded-full text-xs font-mono font-bold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
+                    dragMode === "rotate"
+                      ? isFemale
+                        ? "bg-pink-600 border border-pink-400 text-white"
+                        : "bg-blue-600 border border-blue-400 text-white"
+                      : isFemale
+                      ? "text-pink-300/70 hover:text-white hover:bg-pink-500/10"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                  title="Opsi 1: Geser di layar ke segala arah untuk memutar model 3D (360° Horizontal, Vertikal & Diagonal)"
+                >
+                  <RotateCw className="w-3 h-3" />
+                  <span>Opsi 1: Rotasi</span>
+                </button>
+                <button
+                  onClick={() => setDragMode("pan")}
+                  className={`px-2.5 py-1 rounded-full text-xs font-mono font-bold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
+                    dragMode === "pan"
+                      ? isFemale
+                        ? "bg-pink-600 border border-pink-400 text-white"
+                        : "bg-sky-600 border border-sky-400 text-white"
+                      : isFemale
+                      ? "text-pink-300/70 hover:text-white hover:bg-pink-500/10"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                  title="Opsi 2: Geser di layar ke segala arah untuk memindahkan posisi (Atas, Bawah, Kiri, Kanan)"
+                >
+                  <Move className="w-3 h-3" />
+                  <span>Opsi 2: Posisi</span>
+                </button>
+              </div>
+
+              {/* Indikator Status Koordinat */}
+              <div
+                className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-full border text-[10px] font-mono shrink-0 whitespace-nowrap ${
+                  isFemale
+                    ? "bg-[#140613] border-pink-500/20 text-pink-300/80"
+                    : "bg-[#071120] border-white/5 text-slate-400"
+                }`}
+              >
+                <span>X:<strong className="text-white ml-0.5">{offsetX.toFixed(1)}</strong></span>
+                <span>Y:<strong className="text-white ml-0.5">{offsetY.toFixed(1)}</strong></span>
+                <span>Putar:<strong className="text-white ml-0.5">{Math.round((rotOffsetY * 180) / Math.PI)}°</strong></span>
+              </div>
+
+              {/* Reset */}
+              <button
+                onClick={() => {
+                  setOffsetX(0);
+                  offsetXRef.current = 0;
+                  setOffsetY(0);
+                  offsetYRef.current = 0;
+                  setOffsetZ(0);
+                  offsetZRef.current = 0;
+                  setRotOffsetY(0);
+                  rotOffsetYRef.current = 0;
+                  setRotOffsetX(0);
+                  rotOffsetXRef.current = 0;
+                  setScaleMultiplier(100);
+                  scaleMultiplierRef.current = 100;
+                }}
+                className={`px-2.5 py-1 rounded-full border active:scale-95 transition-all flex items-center space-x-1 cursor-pointer shrink-0 ${
+                  isFemale
+                    ? "bg-[#140613] hover:bg-pink-600 hover:text-white text-pink-300 border-pink-500/30"
+                    : "bg-[#071120] hover:bg-blue-600 hover:text-white text-slate-400 border-white/10"
+                }`}
+                title="Reset Posisi & Rotasi ke Default"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span className="text-[10px] font-medium">Reset</span>
+              </button>
+            </div>
+
+            {/* Right: Scale Slider with Fixed-Width Percentage Label */}
+            <div
+              className={`flex flex-nowrap items-center space-x-2 text-xs px-2.5 py-1 rounded-full border shrink-0 whitespace-nowrap ${
+                isFemale ? "bg-[#140613] border-pink-500/20" : "bg-[#071120] border-white/5"
               }`}
-            />
+            >
+              <span className="text-slate-400 font-mono text-[11px] flex items-center">
+                <span>Ukuran:</span>
+                <strong
+                  className={`inline-block w-9 text-right ml-1 font-mono ${
+                    isFemale ? "text-pink-400 font-bold" : "text-[#38BDF8] font-bold"
+                  }`}
+                >
+                  {scaleMultiplier}%
+                </strong>
+              </span>
+              <input
+                type="range"
+                min={70}
+                max={130}
+                value={scaleMultiplier}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  scaleMultiplierRef.current = val;
+                  setScaleMultiplier(val);
+                }}
+                className={`w-14 sm:w-20 h-1.5 rounded-lg appearance-none cursor-pointer shrink-0 ${
+                  isFemale ? "bg-[#2a0d27] accent-pink-500" : "bg-[#08101E] accent-blue-500"
+                }`}
+              />
+            </div>
           </div>
-        </div>
+        ) : (
+          /* 360 Studio Mode: Clean matching pill bar with Studio Info and shortcut hint */
+          <div
+            className={`h-[46px] px-4 rounded-full border backdrop-blur-xl flex items-center justify-between gap-3 text-xs flex-1 w-full min-w-0 transition-all ${
+              isFemale
+                ? "bg-[#1c0b1a] border-pink-500/30 text-pink-300"
+                : "bg-[#0B1528] border-blue-500/30 text-sky-300"
+            }`}
+          >
+            <div className="flex items-center space-x-2 shrink-0 font-mono text-xs font-semibold">
+              <span className={`w-2 h-2 rounded-full ${isFemale ? 'bg-pink-400' : 'bg-emerald-400'} animate-pulse`} />
+              <span>INSPEKSI 3D INTERAKTIF</span>
+            </div>
+            <span className="text-[11px] font-mono text-slate-400 truncate hidden sm:inline">
+              Sentuh & geser untuk memutar 360° • Scroll mouse untuk zoom
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Main Viewport Container */}

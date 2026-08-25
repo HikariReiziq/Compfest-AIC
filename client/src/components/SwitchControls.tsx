@@ -58,7 +58,7 @@ export const SwitchControls: React.FC<SwitchControlsProps> = ({
     <div className="w-full space-y-3.5 text-white animate-fadeIn">
       {/* 1. Selector Tab Berbentuk Pill Selengkung Navbar */}
       <div
-        className={`flex items-center gap-1.5 p-1.5 rounded-full backdrop-blur-2xl shadow-xl border ${
+        className={`h-[46px] flex items-center gap-1.5 p-1 rounded-full backdrop-blur-2xl shadow-xl border ${
           isFemale ? 'bg-[#1c0b1a] border-pink-500/30' : 'bg-[#0B1528] border-blue-500/30'
         }`}
       >
@@ -71,7 +71,7 @@ export const SwitchControls: React.FC<SwitchControlsProps> = ({
               key={item.id}
               onClick={() => onSelectIndex(idx)}
               type="button"
-              className={`flex-1 px-3 py-2.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer select-none ${
+              className={`flex-1 h-full px-3 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer select-none ${
                 isSelected
                   ? isFemale
                     ? 'bg-pink-600 text-white font-bold border border-pink-400'
