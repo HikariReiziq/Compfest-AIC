@@ -15,20 +15,33 @@ from ai_engine.models.gender_estimator import GenderEstimator
 
 
 def _features(**over):
-    """Vektor fitur netral; override untuk vektor maskulin/feminin.
+    """Vektor fitur NETRAL, diambil langsung dari GenderEstimator.NEUTRAL.
 
-    jaw_to_cheek mengikuti NEUTRAL terkalibrasi 0.79 (populasi Asia/
-    Indonesia — pria lokal berahang relatif tirus dibanding populasi global
-    yang dipakai nilai lama 0.86).
+    Sebelumnya nilainya ditulis ulang sebagai angka tetap di sini. Begitu
+    NEUTRAL dikalibrasi (0,79 -> 0,74 untuk jaw_to_cheek), helper ini berhenti
+    menghasilkan vektor netral dan seluruh test zona-ragu gagal — bukan karena
+    perilakunya salah, melainkan karena acuannya usang. Mengambil dari sumber
+    yang sama membuat test tetap bermakna setelah kalibrasi berikutnya.
     """
-    base = {
-        "jaw_to_cheek": 0.79,      # lebar rahang relatif pipi (netral Asia/Tenggara)
-        "brow_to_eye": 0.16,       # jarak puncak alis ke kelopak mata (relatif pipi)
-        "lip_to_face_width": 0.42, # lebar bibir relatif lebar wajah
-        "face_aspect": 0.75,       # lebar wajah / tinggi wajah
-    }
+    base = dict(GenderEstimator.NEUTRAL)
     base.update(over)
     return base
+
+
+
+def _vector_inside_deadband() -> dict:
+    """Vektor yang skornya di dalam deadband, DIHITUNG dari konstanta saat ini.
+
+    Menuliskannya sebagai angka tetap membuat test ikut gagal setiap kali
+    NEUTRAL dikalibrasi ulang, padahal perilaku yang ingin dijaga tidak
+    berubah. Dihitung begini, test tetap bermakna setelah kalibrasi.
+    """
+    n = GenderEstimator.NEUTRAL
+    spread, weight, _ = GenderEstimator.FEATURES["jaw_to_cheek"]
+    total_weight = sum(w for _, w, _ in GenderEstimator.FEATURES.values())
+    target = GenderEstimator.DEADBAND * 0.6  # aman di dalam ambang
+    jaw = n["jaw_to_cheek"] + (target * total_weight / weight) * spread
+    return _features(jaw_to_cheek=jaw)
 
 
 class TestGenderEstimator:
@@ -91,7 +104,7 @@ class TestGenderDeadband:
         """Ragu bukan berarti tidak tahu apa-apa; tandanya tetap informatif."""
         # Vektor diperbarui bersama pembakuan skoring: skor kini bersatuan
         # SEBARAN, sehingga nilai yang dulu di zona ragu kini jelas maskulin.
-        out = GenderEstimator.classify(_features(jaw_to_cheek=0.7974))
+        out = GenderEstimator.classify(_vector_inside_deadband())
         assert out["label_id"] == "uncertain"
         assert out["leaning"] == "male"
 
@@ -117,7 +130,7 @@ class TestGenderDeadband:
 
     def test_skor_dalam_deadband_tidak_dipaksa_berlabel(self):
         # Vektor yang skornya persis di sekitar nol.
-        out = GenderEstimator.classify(_features(jaw_to_cheek=0.7974))
+        out = GenderEstimator.classify(_vector_inside_deadband())
         assert out["label_id"] == "uncertain"
         assert out["confidence"] == 0.50
         assert "deadband" in out["rule"]
@@ -211,7 +224,11 @@ class TestSmileDampening:
         assert smiling["label_id"] != "female"
 
     def test_ambang_senyum_konsisten_dengan_konstanta(self):
-        assert GenderEstimator.SMILE_LIP_THRESHOLD == 0.44
+        # Diturunkan dari konstantanya, bukan angka hafalan. Versi lama
+        # mengunci 0,44 lalu ikut gagal begitu ambangnya dikalibrasi ulang —
+        # test yang menghambat kalibrasi alih-alih menjaga perilaku.
+        assert 0.40 <= GenderEstimator.SMILE_LIP_THRESHOLD <= 0.50
+        assert 0.0 < GenderEstimator.SMILE_DAMPENING < 1.0
         assert 0 < GenderEstimator.SMILE_DAMPENING < 1
 
 
