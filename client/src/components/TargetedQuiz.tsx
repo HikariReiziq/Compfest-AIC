@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   HelpCircle,
-  ChevronLeft,
   Check,
   ArrowRight,
   Plus,
@@ -362,21 +361,6 @@ export const TargetedQuiz: React.FC<TargetedQuizProps> = ({
     <div className="w-full space-y-9 animate-fadeIn text-white">
       {/* Header */}
       <div className="text-center space-y-3">
-        <button
-          type="button"
-          onClick={onBack}
-          className={`inline-flex items-center gap-1.5 text-xs font-mono transition-colors mb-1 cursor-pointer ${
-            isFemale ? 'text-pink-300 hover:text-white' : 'text-[#93C5FD] hover:text-white'
-          }`}
-        >
-          <ChevronLeft className={`w-4 h-4 ${isFemale ? 'text-pink-400' : 'text-[#38BDF8]'}`} />
-          <span>
-            {subcategory === 'shirts'
-              ? 'Kembali ke Laporan Analisis Tubuh'
-              : 'Kembali ke Pemindaian Wajah'}
-          </span>
-        </button>
-
         <div className="flex items-center justify-center">
           <div
             className={`inline-flex items-center gap-3 px-6 py-2.5 rounded-full border text-sm sm:text-base font-mono font-bold shadow-xl tracking-wider ${

@@ -53,6 +53,9 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
   const [isQuizLoading, setIsQuizLoading] = useState<boolean>(false);
   const [currentRecIndex, setCurrentRecIndex] = useState<number>(0);
 
+  // Selected Gender state (from landing or default)
+  const [selectedGender, setSelectedGender] = useState<'male' | 'female'>('male');
+
   // Modal State
   const [isDetailModalOpen, setIsDetailModalOpen] = useState<boolean>(false);
 
@@ -61,6 +64,13 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
     categoryPreset?: 'glasses' | 'hats' | 'shirts',
     gender: 'male' | 'female' = 'male'
   ) => {
+    setSelectedGender(gender);
+    setUserProfile(null);
+    setCollectedAnswers({});
+    setCollectedQuestionsMap({});
+    setRecommendations([]);
+    setCurrentRecIndex(0);
+
     if (categoryPreset) {
       setSelectedSubcategory(categoryPreset);
       setSelectedDomain(categoryPreset === 'shirts' ? 'apparel' : 'accessories');
@@ -68,22 +78,6 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
     } else {
       setCurrentStep('CATEGORY');
     }
-
-    const initialProfile: UserPersonalProfile = {
-      ...MOCK_PRESETS.indonesian_warm_sawo_matang.profile,
-      gender: {
-        label: gender === 'female' ? "Wanita (Female)" : "Pria (Male)",
-        label_id: gender,
-        confidence: 1.0,
-        method: "manual_selection",
-        rule: "dipilih pengguna",
-      },
-      body_shape_classification: {
-        body_shape: gender === 'female' ? "Hourglass (Gitar Spanyol)" : "Trapezoid (Atletis)",
-        confidence: 1.0,
-      },
-    };
-    setUserProfile(initialProfile);
 
     setIsTransitioningToStudio(true);
 
@@ -101,6 +95,11 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
   ) => {
     setSelectedDomain(domain);
     setSelectedSubcategory(subcat);
+    setUserProfile(null);
+    setCollectedAnswers({});
+    setCollectedQuestionsMap({});
+    setRecommendations([]);
+    setCurrentRecIndex(0);
     setCurrentStep('SCAN');
   };
 
@@ -168,8 +167,10 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
   // Reset entire flow back to Category selection (or initial step)
   const handleResetFlow = () => {
     setCurrentStep('CATEGORY');
+    setUserProfile(null);
     setRecommendations([]);
     setCollectedAnswers({});
+    setCollectedQuestionsMap({});
     setCurrentRecIndex(0);
     if (mediaStream) {
       mediaStream.getTracks().forEach((t) => t.stop());
@@ -177,8 +178,9 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
     }
   };
 
-  // Retake scan without clearing everything
+  // Retake scan without keeping old profile
   const handleRetakeScan = () => {
+    setUserProfile(null);
     setCurrentStep('SCAN');
   };
 
@@ -208,9 +210,9 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
     : {
         face_shape: 'Oval',
         undertone: 'Warm',
-        gender: 'female',
+        gender: selectedGender || 'male',
         monk_tone: 'MST-06',
-        body_shape: 'Hourglass',
+        body_shape: selectedGender === 'female' ? 'Hourglass' : 'Trapezoid',
       };
 
   // If transitioning from Landing to Studio, show Universal 3D loading screen (2-3s)
@@ -218,7 +220,7 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
     return (
       <UniversalLoading3D
         subcategory={selectedSubcategory}
-        gender={userProfile?.gender?.label_id as ('male' | 'female')}
+        gender={(userProfile?.gender?.label_id || selectedGender) as ('male' | 'female')}
       />
     );
   }
@@ -228,7 +230,7 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
     return (
       <LandingClient
         fontClass={fontClass}
-        initialGender={userProfile?.gender?.label_id as ('male' | 'female')}
+        initialGender={(userProfile?.gender?.label_id || selectedGender) as ('male' | 'female')}
         onOpenStudio={handleOpenStudio}
       />
     );
@@ -236,7 +238,7 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
 
   // If in Studio Mode, render the 4-step Virtual Fitting Room with COBA logo & mascot aesthetics
   const currentGender: ('male' | 'female') =
-    ((userProfile?.gender as any)?.label_id || userProfile?.gender || 'male') as ('male' | 'female');
+    ((userProfile?.gender as any)?.label_id || userProfile?.gender || selectedGender || 'male') as ('male' | 'female');
   const isFemale = currentGender === 'female';
 
   return (
@@ -254,21 +256,26 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
             backgroundImage: 'url(/images/dahlia-flowers.jpg)',
           }}
         />
-        <div
-          className={`absolute inset-0 ${
-            isFemale
-              ? 'bg-gradient-to-b from-[#180816]/75 via-[#180816]/65 to-[#180816]/85'
-              : 'bg-gradient-to-b from-[#060B14]/65 via-[#060B14]/55 to-[#060B14]/75'
-          }`}
-        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/90 pointer-events-none" />
       </div>
 
-      {/* Navigation Header */}
-      {currentStep !== 'PROCESSING' && !(currentStep === 'QUIZ' && isQuizLoading) && (
+      {/* Floating Header Navbar — Only visible in Studio mode */}
+      {!isQuizLoading && (
         <HeaderNavbar
           currentStep={currentStep}
           gender={currentGender}
           onReset={handleResetFlow}
+          onStepClick={(step) => {
+            if (step === 'CATEGORY') handleResetFlow();
+            else if (step === 'SCAN') {
+              setUserProfile(null);
+              setCurrentStep('SCAN');
+            }
+            else if (step === 'QUIZ' && userProfile) setCurrentStep('QUIZ');
+            else if (step === 'TRYON' && recommendations.length > 0) setCurrentStep('TRYON');
+          }}
+          canNavigateToQuiz={Boolean(userProfile)}
+          canNavigateToTryon={recommendations.length > 0}
           onBackToLanding={() => {
             if (mediaStream) {
               mediaStream.getTracks().forEach((t) => t.stop());
@@ -276,14 +283,6 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
             }
             setViewMode('LANDING');
           }}
-          onStepClick={(step) => {
-            if (step === 'CATEGORY') handleResetFlow();
-            else if (step === 'SCAN') setCurrentStep('SCAN');
-            else if (step === 'QUIZ' && userProfile) setCurrentStep('QUIZ');
-            else if (step === 'TRYON' && recommendations.length > 0) setCurrentStep('TRYON');
-          }}
-          canNavigateToQuiz={Boolean(userProfile)}
-          canNavigateToTryon={recommendations.length > 0}
         />
       )}
 
@@ -305,7 +304,7 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
             onProfileChange={(newProf) => setUserProfile(newProf)}
             onScanComplete={handleScanComplete}
             onBack={() => setCurrentStep('CATEGORY')}
-            overrideProfile={userProfile || undefined}
+            overrideProfile={undefined}
           />
         )}
 

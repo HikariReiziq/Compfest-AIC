@@ -348,6 +348,20 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     };
   }, [isShirt]);
 
+  const targetTransformRef = useRef<{
+    pos: THREE.Vector3;
+    rot: THREE.Euler;
+    scale: THREE.Vector3;
+    active: boolean;
+    missedFrames: number;
+  }>({
+    pos: new THREE.Vector3(0, 0, 0),
+    rot: new THREE.Euler(0, 0, 0),
+    scale: new THREE.Vector3(1, 1, 1),
+    active: false,
+    missedFrames: 999,
+  });
+
   /* ------------------------------------------------------------------ */
   /*  3. Setup Three.js WebGL Scene & 60 FPS Render Loop                */
   /* ------------------------------------------------------------------ */
@@ -387,7 +401,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     dirLight.position.set(3, 4, 5);
     scene.add(dirLight);
 
-    // Key spotlight from the TOP-RIGHT (studio lampu sorot) for a bright, gallery-like look
+    // Key spotlight from the TOP-RIGHT for clean studio specular highlights
     const spotLight = new THREE.SpotLight(0xffffff, 4.0, 30, Math.PI / 5, 0.45, 1.1);
     spotLight.position.set(6, 7, 4);
     spotLight.target.position.set(0, 0, 0);
@@ -419,9 +433,9 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
       const poseLandmarker = poseLandmarkerRef.current;
 
       if (viewMode === "ar") {
-        let tracked = false;
         if (video && video.readyState >= 2 && video.currentTime !== lastVideoTime) {
           lastVideoTime = video.currentTime;
+          let detectedThisFrame = false;
           try {
             if (isShirt) {
               // 1. Try Upper-Body Pose Tracking
@@ -430,22 +444,18 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
                 if (poseRes && poseRes.landmarks && poseRes.landmarks.length > 0) {
                   const lm = poseRes.landmarks[0];
                   if (lm[11] && lm[12]) {
-                    setIsTrackingLive(true);
-                    modelGroup.visible = true;
-                    applyPoseLandmarksTo3DShirt(lm, modelGroup);
-                    tracked = true;
+                    applyPoseLandmarksTo3DShirt(lm);
+                    detectedThisFrame = true;
                   }
                 }
               }
 
               // 2. Fallback to Face Landmark Chin-Anchored Neck Tracking
-              if (!tracked && faceLandmarker) {
+              if (!detectedThisFrame && faceLandmarker) {
                 const faceRes = faceLandmarker.detectForVideo(video, performance.now());
                 if (faceRes && faceRes.faceLandmarks && faceRes.faceLandmarks.length > 0) {
-                  setIsTrackingLive(true);
-                  modelGroup.visible = true;
-                  applyFaceFallbackTo3DShirt(faceRes.faceLandmarks[0], modelGroup);
-                  tracked = true;
+                  applyFaceFallbackTo3DShirt(faceRes.faceLandmarks[0]);
+                  detectedThisFrame = true;
                 }
               }
             } else {
@@ -453,19 +463,37 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               if (faceLandmarker) {
                 const result = faceLandmarker.detectForVideo(video, performance.now());
                 if (result && result.faceLandmarks && result.faceLandmarks.length > 0) {
-                  setIsTrackingLive(true);
-                  modelGroup.visible = true;
-                  applyLandmarksTo3DModel(result.faceLandmarks[0], modelGroup);
-                  tracked = true;
+                  applyLandmarksTo3DModel(result.faceLandmarks[0]);
+                  detectedThisFrame = true;
                 }
               }
             }
           } catch {
             // Frame skip
           }
+
+          if (!detectedThisFrame) {
+            targetTransformRef.current.missedFrames += 1;
+          }
         }
 
-        if (!tracked) {
+        // 60 FPS Render & Smooth Butter Interpolation (Zero dropped-frame jumping)
+        if (targetTransformRef.current.active && targetTransformRef.current.missedFrames < 25) {
+          modelGroup.visible = true;
+
+          // Adaptive dual-speed damping: silky smooth on subtle head tremor, responsive on turns
+          const posDist = modelGroup.position.distanceTo(targetTransformRef.current.pos);
+          const lerpFactor = THREE.MathUtils.clamp(0.28 + posDist * 0.45, 0.22, 0.72);
+
+          modelGroup.position.lerp(targetTransformRef.current.pos, lerpFactor);
+          modelGroup.rotation.x = THREE.MathUtils.lerp(modelGroup.rotation.x, targetTransformRef.current.rot.x, lerpFactor);
+          modelGroup.rotation.y = THREE.MathUtils.lerp(modelGroup.rotation.y, targetTransformRef.current.rot.y, lerpFactor);
+          modelGroup.rotation.z = THREE.MathUtils.lerp(modelGroup.rotation.z, targetTransformRef.current.rot.z, lerpFactor);
+          modelGroup.scale.lerp(targetTransformRef.current.scale, lerpFactor);
+
+          setIsTrackingLive(true);
+        } else {
+          // Graceful fallback to center manual preview when user truly leaves camera view
           setIsTrackingLive(false);
           if (modelGroup) {
             modelGroup.visible = true;
@@ -650,7 +678,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
   /* ------------------------------------------------------------------ */
   /*  5. Face Landmark Alignment (Glasses & Hats)                       */
   /* ------------------------------------------------------------------ */
-  const applyLandmarksTo3DModel = (landmarks: any[], group: THREE.Group) => {
+  const applyLandmarksTo3DModel = (landmarks: any[]) => {
     if (!videoRef.current || !containerRef.current) return;
 
     const rightOuter = landmarks[33];
@@ -660,6 +688,9 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const nasion = landmarks[168] || landmarks[6];
     const foreheadTop = landmarks[10];
     const chin = landmarks[152];
+    const rightTemple = landmarks[127] || landmarks[234];
+    const leftTemple = landmarks[356] || landmarks[454];
+    const noseTip = landmarks[4];
 
     if (!leftOuter || !rightOuter || !nasion) return;
 
@@ -696,8 +727,9 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const midEyeX = (eyeLX + eyeRX) / 2;
     const midEyeY = (eyeLY + eyeRY) / 2;
 
-    const anchorX = isHat ? (foreheadTop ? foreheadTop.x : midEyeX) : (midEyeX * 0.35 + nasion.x * 0.65);
-    const anchorY = isHat ? (foreheadTop ? foreheadTop.y : midEyeY) : (midEyeY * 0.35 + nasion.y * 0.65);
+    // Glasses: Anchor sits firmly on the nasion saddle (sellion) aligned with the pupil line
+    const anchorX = isHat ? (foreheadTop ? foreheadTop.x : midEyeX) : (nasion.x * 0.70 + midEyeX * 0.30);
+    const anchorY = isHat ? (foreheadTop ? foreheadTop.y : midEyeY) : (nasion.y * 0.65 + midEyeY * 0.35);
 
     const screenX = offsetX + (1 - anchorX) * renderedWidth;
     const screenY = offsetYPixel + anchorY * renderedHeight;
@@ -709,11 +741,14 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const halfW = halfH * (cw / ch);
 
     const worldX = ndcX * halfW + offsetXRef.current * 0.012;
-    // Lower hat anchor so head & hair fully enter the hat cavity and brim rests around upper brow level
-    const worldY = isHat ? (ndcY * halfH - 0.16 + offsetYRef.current * 0.012) : (ndcY * halfH - 0.01 + offsetYRef.current * 0.012);
+    // Glasses rest perfectly at the nasal root; hats sit above the brow line
+    const worldY = isHat
+      ? (ndcY * halfH - 0.16 + offsetYRef.current * 0.012)
+      : (ndcY * halfH + 0.005 + offsetYRef.current * 0.012);
+
     const worldZ = isHat
       ? ((foreheadTop?.z || nasion.z || 0) * -1.8 - 0.03 + offsetZRef.current * 0.015)
-      : ((nasion.z || 0) * -1.8 + offsetZRef.current * 0.015);
+      : ((nasion.z || 0) * -1.8 + 0.012 + offsetZRef.current * 0.015);
 
     const screenLeftEyeX = offsetX + (1 - eyeLX) * renderedWidth;
     const screenLeftEyeY = offsetYPixel + eyeLY * renderedHeight;
@@ -724,52 +759,56 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const dy = screenRightEyeY - screenLeftEyeY;
     const pixelDist = Math.sqrt(dx * dx + dy * dy);
 
+    // 1. True 3D Roll: In-plane eye angle
     const rollAngle = Math.atan2(dy, dx);
     const safeRoll = THREE.MathUtils.clamp(rollAngle, -0.85, 0.85);
 
+    // 2. True 3D Yaw: Head turn left/right (Eye depth + Temple depth + Nose shift)
     const eyeZDelta = (leftOuter.z || 0) - (rightOuter.z || 0);
+    const templeZDelta = ((leftTemple?.z || leftOuter.z || 0) - (rightTemple?.z || rightOuter.z || 0));
     const screenBridgeX = offsetX + (1 - nasion.x) * renderedWidth;
     const screenMidEyeX = (screenLeftEyeX + screenRightEyeX) / 2;
     const noseScreenShift = (screenBridgeX - screenMidEyeX) / (pixelDist * 0.5 + 0.001);
 
-    const rawYaw = (eyeZDelta * 2.2) + (noseScreenShift * 0.8);
-    const safeYaw = THREE.MathUtils.clamp(rawYaw, -0.75, 0.75);
+    const rawYaw = (eyeZDelta * 1.8) + (noseScreenShift * 0.7) + (templeZDelta * 0.8);
+    const safeYaw = THREE.MathUtils.clamp(rawYaw, -0.85, 0.85);
 
+    // 3. True 3D Pitch: Head nod up/down (Follows facial vertical curvature naturally)
     let safePitch = 0;
     if (chin && foreheadTop) {
-      const vertDepth = ((foreheadTop.z || 0) - (chin.z || 0)) * 1.6;
+      const vertDepth = ((foreheadTop.z || 0) - (chin.z || 0));
       if (isHat) {
-        // Natural slight forward pitch (+0.04 rad ~ 2.5 deg) so the hat faces the camera straight on and crown is visible
-        safePitch = 0.04 + THREE.MathUtils.clamp(-vertDepth * 0.4, -0.2, 0.2);
+        safePitch = 0.04 + THREE.MathUtils.clamp(-vertDepth * 0.5, -0.25, 0.25);
       } else {
-        // Glasses: temples must extend straight BACKWARD (natural over-the-ear line).
-        // Lock pitch to near-zero so the frame never tilts and the temples stay level.
-        safePitch = THREE.MathUtils.clamp(vertDepth * 0.12, -0.04, 0.06);
+        const nosePitchDelta = noseTip ? ((nasion.z || 0) - (noseTip.z || 0)) : 0;
+        const calculatedPitch = (vertDepth * 0.75) + (nosePitchDelta * 0.45);
+        safePitch = THREE.MathUtils.clamp(calculatedPitch, -0.40, 0.40);
       }
     } else if (isHat) {
       safePitch = 0.04;
     }
 
     const worldInterPupil = (pixelDist / cw) * (2 * halfW);
-    // Hats require 2.85x IPD to fit the entire human skull & hair volume comfortably
-    const baseScale = isHat ? worldInterPupil * 2.85 : worldInterPupil * 2.35;
+    // Hats require 2.85x IPD; Glasses frame requires 2.28x IPD (matching standard eyewear fit)
+    const baseScale = isHat ? worldInterPupil * 2.85 : worldInterPupil * 2.28;
     const finalScale = baseScale * (scaleMultiplierRef.current / 100);
 
-    group.position.x = THREE.MathUtils.lerp(group.position.x, worldX, 0.45);
-    group.position.y = THREE.MathUtils.lerp(group.position.y, worldY, 0.45);
-    group.position.z = THREE.MathUtils.lerp(group.position.z, worldZ, 0.45);
-
-    group.rotation.z = THREE.MathUtils.lerp(group.rotation.z, safeRoll, 0.45);
-    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw + rotOffsetYRef.current, 0.45);
-    group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, safePitch + rotOffsetXRef.current, 0.45);
-
-    group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.45);
+    // Store in targetTransformRef for jitter-free 60 FPS damped animation
+    targetTransformRef.current.pos.set(worldX, worldY, worldZ);
+    targetTransformRef.current.rot.set(
+      safePitch + rotOffsetXRef.current,
+      safeYaw + rotOffsetYRef.current,
+      safeRoll
+    );
+    targetTransformRef.current.scale.set(finalScale, finalScale, finalScale);
+    targetTransformRef.current.active = true;
+    targetTransformRef.current.missedFrames = 0;
   };
 
   /* ------------------------------------------------------------------ */
   /*  6. Pose Landmark Alignment (Upper-Body Clothes / Shirts)          */
   /* ------------------------------------------------------------------ */
-  const applyPoseLandmarksTo3DShirt = (landmarks: any[], group: THREE.Group) => {
+  const applyPoseLandmarksTo3DShirt = (landmarks: any[]) => {
     if (!videoRef.current || !containerRef.current) return;
 
     // MediaPipe Pose Landmarks:
@@ -843,29 +882,30 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     if (leftHip && rightHip) {
       const midHipZ = ((leftHip.z || 0) + (rightHip.z || 0)) / 2;
       safePitch = THREE.MathUtils.clamp((midShoulderZ - midHipZ) * 1.5, -0.45, 0.45);
-    }    // World Space Scale (Shirt fits user shoulder span accurately)
+    }
+
+    // World Space Scale (Shirt fits user shoulder span accurately)
     const worldShoulderSpan = (shoulderSpanPx / cw) * (2 * halfW);
     const baseScale = worldShoulderSpan * 1.30;
     const finalScale = baseScale * (scaleMultiplierRef.current / 100);
-    // Shirt model is now fully centered (like glasses & hats): drop its center
-    // to mid-torso, half a shirt-height below the shoulder/neck anchor line.
+
     const worldY = ndcY * halfH - 0.55 * finalScale + offsetYRef.current * 0.012;
 
-    group.position.x = THREE.MathUtils.lerp(group.position.x, worldX, 0.45);
-    group.position.y = THREE.MathUtils.lerp(group.position.y, worldY, 0.45);
-    group.position.z = THREE.MathUtils.lerp(group.position.z, worldZ, 0.45);
-
-    group.rotation.z = THREE.MathUtils.lerp(group.rotation.z, safeRoll, 0.45);
-    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw + rotOffsetYRef.current, 0.45);
-    group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, safePitch + rotOffsetXRef.current, 0.45);
-
-    group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.45);
+    targetTransformRef.current.pos.set(worldX, worldY, worldZ);
+    targetTransformRef.current.rot.set(
+      safePitch + rotOffsetXRef.current,
+      safeYaw + rotOffsetYRef.current,
+      safeRoll
+    );
+    targetTransformRef.current.scale.set(finalScale, finalScale, finalScale);
+    targetTransformRef.current.active = true;
+    targetTransformRef.current.missedFrames = 0;
   };
 
   /* ------------------------------------------------------------------ */
   /*  7. Face Landmark Chin-Anchored Fallback for Shirts               */
   /* ------------------------------------------------------------------ */
-  const applyFaceFallbackTo3DShirt = (landmarks: any[], group: THREE.Group) => {
+  const applyFaceFallbackTo3DShirt = (landmarks: any[]) => {
     if (!videoRef.current || !containerRef.current) return;
 
     const chin = landmarks[152];
@@ -944,15 +984,15 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const baseScale = worldShoulderSpan * 1.30;
     const finalScale = baseScale * (scaleMultiplierRef.current / 100);
 
-    group.position.x = THREE.MathUtils.lerp(group.position.x, worldX, 0.45);
-    group.position.y = THREE.MathUtils.lerp(group.position.y, worldY, 0.45);
-    group.position.z = THREE.MathUtils.lerp(group.position.z, worldZ, 0.45);
-
-    group.rotation.z = THREE.MathUtils.lerp(group.rotation.z, safeRoll, 0.45);
-    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, safeYaw + rotOffsetYRef.current, 0.45);
-    group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, safePitch + rotOffsetXRef.current, 0.45);
-
-    group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.45);
+    targetTransformRef.current.pos.set(worldX, worldY, worldZ);
+    targetTransformRef.current.rot.set(
+      safePitch + rotOffsetXRef.current,
+      safeYaw + rotOffsetYRef.current,
+      safeRoll
+    );
+    targetTransformRef.current.scale.set(finalScale, finalScale, finalScale);
+    targetTransformRef.current.active = true;
+    targetTransformRef.current.missedFrames = 0;
   };
 
   /* ------------------------------------------------------------------ */
@@ -965,11 +1005,11 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     const worldY = (isShirt ? -0.15 : isHat ? 0.12 : 0) + offsetYRef.current * 0.012;
     const worldZ = offsetZRef.current * 0.015;
 
-    group.position.lerp(new THREE.Vector3(worldX, worldY, worldZ), 0.25);
-    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, rotOffsetYRef.current, 0.25);
-    group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, rotOffsetXRef.current, 0.25);
-    group.rotation.z = THREE.MathUtils.lerp(group.rotation.z, 0, 0.25);
-    group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.25);
+    group.position.lerp(new THREE.Vector3(worldX, worldY, worldZ), 0.15);
+    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, rotOffsetYRef.current, 0.15);
+    group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, rotOffsetXRef.current, 0.15);
+    group.rotation.z = THREE.MathUtils.lerp(group.rotation.z, 0, 0.15);
+    group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.15);
   };
 
   return (
