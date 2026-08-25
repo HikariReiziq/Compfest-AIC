@@ -117,6 +117,10 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
       },
     };
     setUserProfile(enrichedProfile);
+    const g = (enrichedProfile?.gender as any)?.label_id || enrichedProfile?.gender;
+    if (g === 'male' || g === 'female') {
+      setSelectedGender(g);
+    }
 
     if (stream instanceof MediaStream) {
       setMediaStream(stream);
@@ -225,6 +229,19 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
     );
   }
 
+  // If in Processing Loading Mode, show pure full-screen cinematic loading screen
+  if (currentStep === 'PROCESSING') {
+    return (
+      <ProcessingLoadingScreen
+        userProfile={userProfileDict}
+        answers={collectedAnswers}
+        questionsMap={collectedQuestionsMap}
+        subcategory={selectedSubcategory}
+        onComplete={handleProcessingComplete}
+      />
+    );
+  }
+
   // If in Landing Mode, render the Landing Hero Showcase
   if (viewMode === 'LANDING') {
     return (
@@ -301,7 +318,13 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
           <CameraScan
             subcategory={selectedSubcategory}
             gender={currentGender}
-            onProfileChange={(newProf) => setUserProfile(newProf)}
+            onProfileChange={(newProf) => {
+              setUserProfile(newProf);
+              const g = (newProf?.gender as any)?.label_id || newProf?.gender;
+              if (g === 'male' || g === 'female') {
+                setSelectedGender(g);
+              }
+            }}
             onScanComplete={handleScanComplete}
             onBack={() => setCurrentStep('CATEGORY')}
             overrideProfile={undefined}
@@ -318,17 +341,6 @@ export default function MainAppWrapper({ fontClass }: MainAppWrapperProps) {
             onBack={() => setCurrentStep('SCAN')}
             isLoading={isLoadingRecommendations}
             onLoadingChange={setIsQuizLoading}
-          />
-        )}
-
-        {/* STEP 3.5: CINEMATIC AI PROCESSING TELEMETRY SCREEN (WITH 3D SPINNER) */}
-        {currentStep === 'PROCESSING' && (
-          <ProcessingLoadingScreen
-            userProfile={userProfileDict}
-            answers={collectedAnswers}
-            questionsMap={collectedQuestionsMap}
-            subcategory={selectedSubcategory}
-            onComplete={handleProcessingComplete}
           />
         )}
 

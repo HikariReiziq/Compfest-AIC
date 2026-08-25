@@ -835,6 +835,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
 
         setScanProgress(100);
         setScannedProfile(profile);
+        onProfileChange?.(profile);
       } catch (e) {
         if (e instanceof UploadAnalysisError) {
           setUploadError(e.message);
@@ -994,6 +995,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
         setScanProgress(100);
         setIsScanning(false);
         setScannedProfile(bodyProfile);
+        onProfileChange?.(bodyProfile);
       }, 1000);
       return;
     }
@@ -1104,6 +1106,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
         (profile as any).body_measurements = defaultBodyMeasurements;
 
         setScannedProfile(profile);
+        onProfileChange?.(profile);
       }, 1000);
     } catch (e: any) {
       clearInterval(interval);
@@ -1118,7 +1121,11 @@ export const CameraScan: React.FC<CameraScanProps> = ({
   /* ---- Derived styling ---- */
   const guideStyle = GUIDE_COLORS[faceGuideState];
   const subcatLabel = subcategory === "hats" ? "Topi (Hats)" : subcategory === "shirts" ? "Pakaian (Shirts)" : "Kacamata (Glasses)";
-  const isFemaleTheme = scannedProfile?.gender?.label_id === "female" || overrideProfile?.gender?.label_id === "female" || gender === "female";
+  const isFemaleTheme = scannedProfile
+    ? (scannedProfile.gender?.label_id === "female" || scannedProfile.gender?.label === "Wanita (Female)")
+    : overrideProfile
+    ? (overrideProfile.gender?.label_id === "female" || overrideProfile.gender?.label === "Wanita (Female)")
+    : gender === "female";
   const [selectedFrame, setSelectedFrame] = useState<"canon" | "flower">(() => (isFemaleTheme ? "flower" : "canon"));
 
   useEffect(() => {
