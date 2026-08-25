@@ -68,92 +68,72 @@ export default function LandingClient({ fontClass, initialGender = 'male', onOpe
         />
       </div>
 
-      {/* ============ Floating Center Top: Karakter Bebas di Luar Card (Seperti Showcase 3D) ============ */}
-      <div className="fixed top-3 sm:top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center">
-        {/* Karakter Area dengan Navigasi Panah Kiri & Kanan */}
-        <div className="relative flex items-center justify-center gap-2.5 sm:gap-4 select-none">
-          {/* Tombol Panah Kiri (Geser ke Pria) */}
+      {/* ============ Tombol Floating Kanan Atas: Toggle Pria/Wanita + BUKA STUDIO VIRTUAL ============ */}
+      <div className="fixed top-5 right-4 sm:top-6 sm:right-8 z-50 flex items-center gap-2.5 sm:gap-3">
+        {/* Toggle Mode Pria / Wanita (Tinggi Presisi Sama dengan Tombol Kanan, Tanpa Gambar, Solid Color) */}
+        <div
+          className={`inline-flex items-center h-[46px] sm:h-[48px] rounded-full p-1 border gap-1 backdrop-blur-2xl transition-all ${
+            isFemale
+              ? 'bg-[#1c0b1a] border-pink-500/40'
+              : 'bg-[#0B1528] border-blue-500/40'
+          }`}
+        >
           <button
             type="button"
             onClick={() => setGender('male')}
-            aria-label="Pilih Karakter Pria"
-            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full border flex items-center justify-center text-white transition-all hover:scale-110 active:scale-95 cursor-pointer ${
+            className={`h-full px-3.5 sm:px-4 rounded-full text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
               !isFemale
-                ? 'bg-blue-600 border-blue-400 opacity-100'
-                : 'bg-black/60 border-white/20 hover:bg-black/80 opacity-75'
+                ? 'bg-blue-600 border border-blue-400 text-white'
+                : 'text-slate-400 hover:text-white'
             }`}
           >
-            <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
-
-          {/* Maskot Karakter Berdiri Bebas di Luar Card (Besar & Jelas) */}
-          <button
-            type="button"
-            onClick={() => setGender(isFemale ? 'male' : 'female')}
-            className="group relative cursor-pointer flex flex-col items-center justify-center transition-transform hover:scale-105 active:scale-95"
-            title="Klik untuk ganti karakter Pria / Wanita"
-          >
-            <div className="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center">
-              <img
-                src={isFemale ? '/images/mascot-pink.png' : '/images/mascot.png'}
-                alt={isFemale ? 'Maskot Wanita' : 'Maskot Pria'}
-                className="w-full h-full object-contain filter drop-shadow-[0_6px_12px_rgba(0,0,0,0.6)] transition-all duration-300"
-              />
-            </div>
-            {/* Label Minimalis Pria / Wanita */}
-            <div
-              className={`mt-0.5 px-3.5 py-0.5 rounded-full border text-[11px] font-mono font-bold uppercase tracking-widest transition-all ${
-                isFemale
-                  ? 'bg-[#1c0b1a] border-pink-500/40 text-pink-300'
-                  : 'bg-[#0B1528] border-blue-500/40 text-[#93C5FD]'
-              }`}
+            {/* Simbol Mars (Pria ♂) */}
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="w-3.5 h-3.5 shrink-0"
             >
-              {isFemale ? 'Wanita' : 'Pria'}
-            </div>
+              <circle cx="10" cy="14" r="5" />
+              <line x1="19" y1="5" x2="13.6" y2="10.4" />
+              <polyline points="15 5 19 5 19 9" />
+            </svg>
+            <span>Pria</span>
           </button>
-
-          {/* Tombol Panah Kanan (Geser ke Wanita) */}
           <button
             type="button"
             onClick={() => setGender('female')}
-            aria-label="Pilih Karakter Wanita"
-            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full border flex items-center justify-center text-white transition-all hover:scale-110 active:scale-95 cursor-pointer ${
+            className={`h-full px-3.5 sm:px-4 rounded-full text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
               isFemale
-                ? 'bg-pink-600 border-pink-400 opacity-100'
-                : 'bg-black/60 border-white/20 hover:bg-black/80 opacity-75'
+                ? 'bg-pink-600 border border-pink-400 text-white'
+                : 'text-slate-400 hover:text-white'
             }`}
           >
-            <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+            {/* Simbol Venus (Wanita ♀) */}
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="w-3.5 h-3.5 shrink-0"
+            >
+              <circle cx="12" cy="9" r="5" />
+              <line x1="12" y1="14" x2="12" y2="21" />
+              <line x1="9" y1="18" x2="15" y2="18" />
+            </svg>
+            <span>Wanita</span>
           </button>
         </div>
 
-        {/* 2 Dots Indicator (Pria / Wanita) */}
-        <div className="flex items-center gap-1.5 mt-1">
-          <button
-            type="button"
-            onClick={() => setGender('male')}
-            aria-label="Mode Pria"
-            className={`h-1 rounded-full transition-all cursor-pointer ${
-              !isFemale ? 'w-4 bg-blue-500' : 'w-1 bg-white/30 hover:bg-white/60'
-            }`}
-          />
-          <button
-            type="button"
-            onClick={() => setGender('female')}
-            aria-label="Mode Wanita"
-            className={`h-1 rounded-full transition-all cursor-pointer ${
-              isFemale ? 'w-4 bg-pink-500' : 'w-1 bg-white/30 hover:bg-white/60'
-            }`}
-          />
-        </div>
-      </div>
-
-      {/* ============ Tombol Floating Kanan Atas: BUKA STUDIO VIRTUAL ============ */}
-      <div className="fixed top-4 sm:top-5 right-4 sm:right-8 z-50 flex items-center">
         <button
           type="button"
           onClick={() => onOpenStudio(undefined, gender)}
-          className={`group inline-flex h-[46px] sm:h-[50px] items-center gap-2 rounded-full border backdrop-blur-2xl px-5 sm:px-6 text-xs sm:text-sm font-bold tracking-[0.08em] transition-all hover:scale-105 active:scale-95 cursor-pointer ${
+          className={`group inline-flex h-[46px] sm:h-[48px] items-center gap-2 rounded-full border backdrop-blur-2xl px-5 sm:px-6 text-xs sm:text-sm font-bold tracking-[0.08em] transition-all hover:scale-105 active:scale-95 cursor-pointer ${
             isFemale
               ? 'bg-[#1c0b1a] border-pink-500/40 text-pink-300 hover:bg-pink-600 hover:text-white'
               : 'bg-[#0B1528] border-blue-500/40 text-[#93C5FD] hover:bg-blue-600 hover:text-white'
@@ -166,7 +146,7 @@ export default function LandingClient({ fontClass, initialGender = 'male', onOpe
       </div>
 
       {/* ============ Main Hero Section (Expansive Full Layout) ============ */}
-      <main className="relative z-10 mx-auto max-w-[1600px] w-full px-5 sm:px-8 lg:pl-10 lg:pr-12 pt-28 sm:pt-32 lg:pt-36 pb-10 flex-1 flex items-center">
+      <main className="relative z-10 mx-auto max-w-[1600px] w-full px-5 sm:px-8 lg:pl-10 lg:pr-12 pt-16 sm:pt-20 lg:pt-24 pb-10 flex-1 flex items-center">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center w-full">
           {/* Kolom Kiri: Value Proposition & 1 CTA Utama */}
           <div className="lg:col-span-7 space-y-5 lg:space-y-6 relative">
