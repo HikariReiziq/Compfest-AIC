@@ -46,19 +46,18 @@ from typing import Any, Dict, Optional
 class GenderEstimator:
     """Klasifikasi gender Pria/Wanita dari fitur turunan landmark MediaPipe."""
 
-    # Lebar zona ragu di sekitar nol.
+    # Lebar zona ragu di sekitar nol, dalam SATUAN SEBARAN (bukan lagi satuan
+    # lama (x-netral)/netral — skala skor berubah saat skoring dibakukan).
     #
-    # Nilai awalnya 0.05, dipilih untuk menyerap ayunan +/-0.035 akibat arah
-    # hadap kepala. Angka itu menjadi kelewat lebar begitu `_undo_pose`
-    # menghilangkan penyebab ayunannya: yang tersisa bukan lagi pengaruh pose
-    # itu sendiri, melainkan galat PENGUKURAN sudutnya. Dengan ketelitian sudut
-    # sekitar 3 derajat, galat sisa itu 0.009 pada yaw 5 derajat, 0.018 pada 10
-    # derajat, dan 0.027 di batas gate 15 derajat.
+    # Diturunkan dari galat sisa yang tetap ada SETELAH koreksi pose: dengan
+    # ketelitian sudut sekitar 3 derajat, skor masih berayun 0,062 pada pose
+    # ekstrem yang masih diloloskan quality gate. Ambang 0,075 menutupnya
+    # dengan margin 20 persen.
     #
-    # 0.025 menutup rentang pemakaian wajar tanpa menolak wajah yang sinyalnya
-    # sebenarnya jelas. Deadband yang terlalu lebar bukan sikap hati-hati; ia
-    # menyembunyikan hasil deteksi yang sah.
-    DEADBAND = 0.025
+    # Deadband yang terlalu lebar bukan sikap hati-hati; ia menolak wajah yang
+    # sinyalnya sebenarnya jelas. Yang terlalu sempit membuat label berubah-ubah
+    # untuk orang yang sama.
+    DEADBAND = 0.075
 
     # Threshold netral — rata-rata antropometrik populasi dewasa.
     #
@@ -69,12 +68,51 @@ class GenderEstimator:
     # feminin — sumber utama salah deteksi "Wanita" untuk pengguna pria.
     # Netral digeser ke 0.79 agar titik tengahnya representatif untuk populasi
     # pengguna target (kalibrasi langkah integrasi 2026-08-24).
+    # Threshold netral — rata-rata antropometrik populasi dewasa.
+    # Dipertahankan sebagai sumber tunggal nilai tengah; skoring memakai
+    # FEATURES di bawah yang menambahkan sebaran, bobot, dan arah.
     NEUTRAL = {
         "jaw_to_cheek": 0.74,
         "brow_to_eye": 0.165,
         "lip_to_face_width": 0.45,
         "face_aspect": 0.75,
     }
+
+    # (sebaran, bobot, arah) per rasio.
+    #
+    # KENAPA SEBARAN, BUKAN PEMBAGIAN OLEH NILAI NETRAL
+    #
+    # Versi sebelumnya menghitung tiap suku sebagai (x - netral)/netral. Bentuk
+    # itu membuat bobot efektif sebuah rasio ditentukan oleh BESAR PENYEBUTNYA,
+    # bukan oleh seberapa informatif rasio tersebut. Akibatnya brow_to_eye
+    # (netral 0,16) berayun 4,9 kali lebih lebar daripada jaw_to_cheek
+    # (netral 0,79) untuk perubahan fisik yang setara — dan brow_to_eye justru
+    # rasio yang paling gampang berubah oleh ekspresi. Wajah maskulin yang sama
+    # terbaca male saat alis turun dan female saat alis terangkat.
+    #
+    # Dengan membagi terhadap SEBARAN wajar tiap rasio, semua suku menjadi
+    # satuan yang sebanding (semacam skor-z), sehingga bobot bisa ditetapkan
+    # secara sadar lewat kolom bobot.
+    #
+    # Bobot mencerminkan seberapa ANDAL rasio itu, bukan hanya seberapa
+    # dimorfik: lebar rahang relatif pipi stabil terhadap ekspresi, sedangkan
+    # jarak alis-kelopak berubah tiap kali alis bergerak, jadi ia diturunkan.
+    #
+    # Nilai sebaran di bawah adalah PERKIRAAN dari rentang wajar wajah dewasa,
+    # belum dikalibrasi terhadap dataset. Seluruhnya sengaja dikumpulkan di satu
+    # tabel agar kalibrasi nanti cukup mengubah tempat ini.
+    FEATURES = {
+        # rasio:              (sebaran, bobot, arah)   arah +1 = besar -> maskulin
+        "jaw_to_cheek":       (0.055, 1.00, +1),
+        "face_aspect":        (0.065, 0.75, +1),
+        "lip_to_face_width":  (0.045, 0.55, -1),
+        "brow_to_eye":        (0.030, 0.40, -1),
+    }
+
+    # Batas tiap suku dalam satuan sebaran. Satu landmark yang meleset jauh
+    # tidak boleh menentukan jawaban sendirian; di luar dua sebaran, tambahan
+    # ekstremitas tidak lagi menambah keyakinan.
+    TERM_CLAMP = 2.0
 
     # Smile Dampening Factor.
     SMILE_LIP_THRESHOLD = 0.46
@@ -93,6 +131,43 @@ class GenderEstimator:
     # Karena pose sudah diukur klien dan dikirim di payload `quality`, dua
     # rasio terakhir bisa dikembalikan ke nilai tegak-lurusnya, bukan sekadar
     # diabaikan. Ini memperbaiki sumber ayunannya, bukan menutupinya.
+    # Model terlatih (opsional). Bila berkasnya ada, ia menggantikan skoring
+    # berbasis aturan; bila tidak, rule engine tetap dipakai.
+    #
+    # Rule engine BUKAN penambal sementara: ia deterministik, tidak butuh
+    # berkas apa pun, dan tetap menjadi jawaban saat model belum dilatih atau
+    # gagal dimuat. Yang ditawarkan model adalah ambang hasil ukur, bukan
+    # perkiraan literatur.
+    _model = None
+    _model_checked = False
+
+    @staticmethod
+    def _load_model():
+        """Muat model sekali. Kegagalan dicatat lalu diabaikan, bukan dilempar."""
+        if GenderEstimator._model_checked:
+            return GenderEstimator._model
+        GenderEstimator._model_checked = True
+
+        import os
+
+        path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "models", "weights", "gender_lr.joblib",
+        )
+        if not os.path.exists(path):
+            return None
+        try:
+            import joblib
+
+            bundle = joblib.load(path)
+            if not isinstance(bundle, dict) or "pipeline" not in bundle:
+                return None
+            GenderEstimator._model = bundle
+        except Exception:
+            # Model rusak atau sklearn tidak ada: jatuh ke rule engine.
+            GenderEstimator._model = None
+        return GenderEstimator._model
+
     @staticmethod
     def _undo_pose(features: Dict[str, float], pose: Optional[Dict[str, Any]]) -> Dict[str, float]:
         if not pose:
@@ -158,23 +233,71 @@ class GenderEstimator:
         lip = corrected["lip_to_face_width"]
         aspect = corrected["face_aspect"]
 
+        feats = {
+            "jaw_to_cheek": jaw,
+            "brow_to_eye": brow,
+            "lip_to_face_width": lip,
+            "face_aspect": aspect,
+        }
+
+        # Model terlatih lebih dulu bila ada: ambangnya hasil ukur, bukan
+        # perkiraan literatur. Peluangnya dipetakan ke skor yang satuannya
+        # sebanding dengan rule engine, sehingga DEADBAND, leaning, dan
+        # confidence tidak perlu diperlakukan berbeda.
+        bundle = GenderEstimator._load_model()
+        if bundle is not None:
+            try:
+                vector = [[feats[k] for k in bundle["features"]]]
+                prob_male = float(bundle["pipeline"].predict_proba(vector)[0][1])
+                # (p - 0.5) * 2 memberi rentang -1..1, searah skor aturan.
+                score = (prob_male - 0.5) * 2.0
+                return GenderEstimator._verdict(
+                    score,
+                    method="landmark_model",
+                    detail=f"p(pria)={prob_male:.3f}",
+                )
+            except Exception:
+                # Bentuk model tidak cocok: lanjut ke rule engine daripada gagal.
+                pass
+
         n = GenderEstimator.NEUTRAL
-        # Suku lip dengan smile dampening: senyum lebar (rasio > 0.44)
-        # merenggang sudut bibir dan membuat suku ini berubah negatif palsu.
-        lip_term = (n["lip_to_face_width"] - lip) / n["lip_to_face_width"]
-        if lip > GenderEstimator.SMILE_LIP_THRESHOLD and lip_term < 0:
-            lip_term *= GenderEstimator.SMILE_DAMPENING
-        # Skor aditif ter-normalisasi: > 0 maskulin, < 0 feminin.
-        score = (
-            (jaw - n["jaw_to_cheek"]) / n["jaw_to_cheek"]
-            + (n["brow_to_eye"] - brow) / n["brow_to_eye"]
-            + lip_term
-            + (aspect - n["face_aspect"]) / n["face_aspect"]
-        )
-        confidence = round(min(0.78, 0.55 + 0.23 * min(1.0, abs(score))), 2)
+        # Suku lip dengan smile dampening: senyum lebar merenggang sudut bibir
+        # dan membuat suku ini berubah negatif palsu.
+        smile_damped = lip > GenderEstimator.SMILE_LIP_THRESHOLD
+
+        score = 0.0
+        weight_total = 0.0
+        for key, (spread, weight, direction) in GenderEstimator.FEATURES.items():
+            z = (feats[key] - n[key]) / spread
+            if z > GenderEstimator.TERM_CLAMP:
+                z = GenderEstimator.TERM_CLAMP
+            elif z < -GenderEstimator.TERM_CLAMP:
+                z = -GenderEstimator.TERM_CLAMP
+            term = z * direction
+            if key == "lip_to_face_width" and smile_damped and term < 0:
+                term *= GenderEstimator.SMILE_DAMPENING
+            score += term * weight
+            weight_total += weight
+
+        # Dibagi total bobot agar skor tetap dalam satuan sebaran, sehingga
+        # DEADBAND dan confidence punya makna yang sama walau bobot disetel.
+        score = score / weight_total if weight_total else 0.0
+
         detail = (
             f"jaw/cheek {jaw:.2f}, brow {brow:.2f}, lip {lip:.2f}, aspect {aspect:.2f}"
         )
+        return GenderEstimator._verdict(score, method="landmark_ratio", detail=detail)
+
+    @staticmethod
+    def _verdict(score: float, *, method: str, detail: str) -> Dict[str, Any]:
+        """Ubah skor menjadi putusan akhir.
+
+        Dipakai bersama oleh rule engine dan model terlatih agar keduanya
+        memberi kontrak yang sama: deadband yang sama, arah kecondongan yang
+        sama, dan pemetaan confidence yang sama. Menduplikasi logika ini akan
+        membuat kedua jalur perlahan menyimpang tanpa ada yang menyadarinya.
+        """
+        confidence = round(min(0.78, 0.55 + 0.23 * min(1.0, abs(score))), 2)
 
         if abs(score) < GenderEstimator.DEADBAND:
             return {
@@ -183,10 +306,10 @@ class GenderEstimator:
                 # Zona ragu selalu 0.50: bukan sekadar kurang yakin, melainkan
                 # tidak ada dasar untuk memilih salah satu.
                 "confidence": 0.50,
-                "method": "landmark_ratio",
-                # Kecondongan tetap dilaporkan. Tidak yakin bukan berarti
-                # tidak tahu apa-apa: menahan arah kecondongan hanya membuang
-                # informasi yang sah dan membuat kartu di UI tampak kosong.
+                "method": method,
+                # Kecondongan tetap dilaporkan. Tidak yakin bukan berarti tidak
+                # tahu apa-apa: menahan arahnya hanya membuang informasi sah dan
+                # membuat kartu di UI tampak kosong.
                 "leaning": "male" if score >= 0 else "female",
                 "rule": (
                     f"skor {score:+.3f} di dalam deadband "
@@ -200,13 +323,13 @@ class GenderEstimator:
                 "label": "Pria (Male)",
                 "label_id": "male",
                 "confidence": confidence,
-                "method": "landmark_ratio",
+                "method": method,
                 "rule": f"skor maskulin {score:+.2f} ({detail})",
             }
         return {
             "label": "Wanita (Female)",
             "label_id": "female",
             "confidence": confidence,
-            "method": "landmark_ratio",
+            "method": method,
             "rule": f"skor feminin {score:+.2f} ({detail})",
         }

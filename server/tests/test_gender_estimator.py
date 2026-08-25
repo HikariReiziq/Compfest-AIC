@@ -89,7 +89,9 @@ class TestGenderDeadband:
 
     def test_zona_ragu_tetap_melaporkan_kecondongan(self):
         """Ragu bukan berarti tidak tahu apa-apa; tandanya tetap informatif."""
-        out = GenderEstimator.classify(_features(jaw_to_cheek=0.80, face_aspect=0.755))
+        # Vektor diperbarui bersama pembakuan skoring: skor kini bersatuan
+        # SEBARAN, sehingga nilai yang dulu di zona ragu kini jelas maskulin.
+        out = GenderEstimator.classify(_features(jaw_to_cheek=0.7974))
         assert out["label_id"] == "uncertain"
         assert out["leaning"] == "male"
 
@@ -108,13 +110,14 @@ class TestGenderDeadband:
         batas gate 15 derajat), bukan lagi ayunan pose 0.035. Deadband yang
         terlalu lebar menolak wajah yang sinyalnya sebenarnya jelas.
         """
-        assert GenderEstimator.DEADBAND <= 0.03
+        # Ambangnya kini bersatuan sebaran. Galat sisa setelah koreksi pose
+        # terukur 0,062 pada pose ekstrem yang masih lolos quality gate, jadi
+        # deadband harus menutupinya tanpa jauh melampauinya.
+        assert 0.06 <= GenderEstimator.DEADBAND <= 0.12
 
     def test_skor_dalam_deadband_tidak_dipaksa_berlabel(self):
         # Vektor yang skornya persis di sekitar nol.
-        out = GenderEstimator.classify(
-            _features(jaw_to_cheek=0.80, face_aspect=0.755)
-        )
+        out = GenderEstimator.classify(_features(jaw_to_cheek=0.7974))
         assert out["label_id"] == "uncertain"
         assert out["confidence"] == 0.50
         assert "deadband" in out["rule"]
@@ -229,3 +232,123 @@ class TestKalibrasiAsia:
             _features(jaw_to_cheek=0.74, brow_to_eye=0.22, lip_to_face_width=0.49, face_aspect=0.71)
         )
         assert out["label_id"] == "female"
+
+
+class TestGenderRobustness:
+    """Regresi untuk dominasi satu rasio atas rasio lain.
+
+    Versi lama menghitung tiap suku sebagai (x - netral)/netral, sehingga bobot
+    efektif sebuah rasio ditentukan besar penyebutnya. brow_to_eye (netral 0,16)
+    berayun 4,9 kali lebih lebar daripada jaw_to_cheek (netral 0,79) — dan
+    brow_to_eye justru yang paling berubah oleh ekspresi.
+    """
+
+    MASCULINE = dict(
+        jaw_to_cheek=0.90, brow_to_eye=0.16, lip_to_face_width=0.40, face_aspect=0.80
+    )
+
+    def test_ekspresi_alis_tidak_membalik_label(self):
+        """Wajah maskulin yang sama harus tetap male dari alis turun sampai terkejut.
+
+        Sebelum pembakuan skor, vektor ini terbaca male pada brow 0,16 lalu
+        female pada brow 0,24 — hanya karena alis terangkat.
+        """
+        labels = set()
+        for brow in (0.10, 0.13, 0.16, 0.20, 0.24, 0.28):
+            f = dict(self.MASCULINE)
+            f["brow_to_eye"] = brow
+            labels.add(GenderEstimator.classify(f)["label_id"])
+        assert labels == {"male"}, f"label ikut berubah oleh ekspresi alis: {labels}"
+
+    def test_satu_rasio_liar_tidak_mendominasi(self):
+        """Satu landmark yang meleset jauh tidak boleh menentukan jawaban.
+
+        TERM_CLAMP membatasi tiap suku, sehingga nilai yang mustahil secara
+        anatomis tidak menyeret skor sejauh yang diinginkannya.
+        """
+        f = dict(self.MASCULINE)
+        f["brow_to_eye"] = 0.9  # mustahil; meniru landmark alis yang gagal
+        assert GenderEstimator.classify(f)["label_id"] == "male"
+
+    def test_kontribusi_antar_rasio_sebanding(self):
+        """Tidak ada rasio yang boleh berayun berkali-kali lipat dari yang lain.
+
+        Diuji pada rentang wajar wajah dewasa; kesenjangan besar di sini berarti
+        bobot efektifnya kembali ditentukan aritmetika, bukan pilihan sadar.
+        """
+        rentang = {
+            "jaw_to_cheek": (0.75, 0.97),
+            "brow_to_eye": (0.08, 0.30),
+            "lip_to_face_width": (0.34, 0.52),
+            "face_aspect": (0.62, 0.88),
+        }
+        ayunan = {}
+        for key, (lo, hi) in rentang.items():
+            spread, weight, _ = GenderEstimator.FEATURES[key]
+            clamp = GenderEstimator.TERM_CLAMP
+            z_lo = max(-clamp, min(clamp, (lo - GenderEstimator.NEUTRAL[key]) / spread))
+            z_hi = max(-clamp, min(clamp, (hi - GenderEstimator.NEUTRAL[key]) / spread))
+            ayunan[key] = abs(z_hi - z_lo) * weight
+
+        rasio = max(ayunan.values()) / min(ayunan.values())
+        assert rasio <= 2.5, f"kesenjangan ayunan {rasio:.1f}x terlalu lebar: {ayunan}"
+
+    def test_bobot_brow_di_bawah_jaw(self):
+        """Rahang stabil terhadap ekspresi, alis tidak — bobotnya harus mencerminkan itu."""
+        _, w_jaw, _ = GenderEstimator.FEATURES["jaw_to_cheek"]
+        _, w_brow, _ = GenderEstimator.FEATURES["brow_to_eye"]
+        assert w_brow < w_jaw
+
+
+class TestTrainedModelPath:
+    """Kontrak antara model terlatih dan rule engine.
+
+    Model bersifat opsional. Yang wajib dijaga: ketiadaannya tidak boleh
+    menggagalkan apa pun, dan kehadirannya tidak boleh mengubah bentuk jawaban.
+    """
+
+    def test_tanpa_model_tetap_menjawab(self):
+        """Repo bersih tidak menyertakan bobot; rule engine harus tetap jalan."""
+        GenderEstimator._model = None
+        GenderEstimator._model_checked = False
+        out = GenderEstimator.classify(
+            _features(jaw_to_cheek=0.90, brow_to_eye=0.13, lip_to_face_width=0.39, face_aspect=0.81)
+        )
+        assert out["label_id"] in {"male", "female", "uncertain"}
+        assert out["method"] == "landmark_ratio"
+
+    def test_model_cacat_jatuh_ke_rule_engine(self):
+        """Model yang meledak saat dipakai tidak boleh menggagalkan permintaan.
+
+        Diuji dengan menyuntikkan bundle yang predict_proba-nya melempar galat,
+        meniru model yang bentuk fiturnya tidak lagi cocok setelah skema
+        berubah — kegagalan yang paling mungkin terjadi di lapangan.
+        """
+
+        class PipelineRusak:
+            def predict_proba(self, _x):
+                raise ValueError("bentuk fitur tidak cocok")
+
+        GenderEstimator._model = {
+            "pipeline": PipelineRusak(),
+            "features": ["jaw_to_cheek", "brow_to_eye", "lip_to_face_width", "face_aspect"],
+        }
+        GenderEstimator._model_checked = True
+        try:
+            out = GenderEstimator.classify(_features(jaw_to_cheek=0.90))
+            assert out["label_id"] in {"male", "female", "uncertain"}
+            assert out["method"] == "landmark_ratio"
+        finally:
+            GenderEstimator._model = None
+            GenderEstimator._model_checked = False
+
+    def test_verdict_dipakai_bersama(self):
+        """Kedua jalur wajib memakai deadband dan bentuk keluaran yang sama."""
+        v = GenderEstimator._verdict(0.0, method="landmark_model", detail="uji")
+        assert v["label_id"] == "uncertain"
+        assert v["method"] == "landmark_model"
+        assert v["leaning"] in {"male", "female"}
+
+        kuat = GenderEstimator._verdict(0.9, method="landmark_model", detail="uji")
+        assert kuat["label_id"] == "male"
+        assert kuat["confidence"] > 0.5
