@@ -346,12 +346,11 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
       const faceLandmarker = faceLandmarkerRef.current;
       const poseLandmarker = poseLandmarkerRef.current;
 
-      if (viewMode === "ar" && video && video.readyState >= 2) {
-        if (video.currentTime !== lastVideoTime) {
+      if (viewMode === "ar") {
+        let tracked = false;
+        if (video && video.readyState >= 2 && video.currentTime !== lastVideoTime) {
           lastVideoTime = video.currentTime;
           try {
-            let tracked = false;
-
             if (isShirt) {
               // 1. Try Upper-Body Pose Tracking
               if (poseLandmarker) {
@@ -377,11 +376,6 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
                   tracked = true;
                 }
               }
-
-              if (!tracked) {
-                setIsTrackingLive(false);
-                modelGroup.visible = true;
-              }
             } else {
               // Glasses & Hats Tracking
               if (faceLandmarker) {
@@ -393,14 +387,17 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
                   tracked = true;
                 }
               }
-
-              if (!tracked) {
-                setIsTrackingLive(false);
-                modelGroup.visible = true;
-              }
             }
           } catch {
             // Frame skip
+          }
+        }
+
+        if (!tracked) {
+          setIsTrackingLive(false);
+          if (modelGroup) {
+            modelGroup.visible = true;
+            applyManualFallbackPreview(modelGroup);
           }
         }
       } else if (viewMode === "studio") {
@@ -886,6 +883,23 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
     group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.45);
   };
 
+  /* ------------------------------------------------------------------ */
+  /*  8. Manual Center Preview Fallback when No Person in Camera Frame  */
+  /* ------------------------------------------------------------------ */
+  const applyManualFallbackPreview = (group: THREE.Group) => {
+    const defaultBaseScale = isShirt ? 0.95 : isHat ? 1.25 : 1.2;
+    const finalScale = defaultBaseScale * (scaleMultiplierRef.current / 100);
+    const worldX = offsetXRef.current * 0.012;
+    const worldY = (isShirt ? -0.15 : isHat ? 0.12 : 0) + offsetYRef.current * 0.012;
+    const worldZ = offsetZRef.current * 0.015;
+
+    group.position.lerp(new THREE.Vector3(worldX, worldY, worldZ), 0.25);
+    group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, rotOffsetYRef.current, 0.25);
+    group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, rotOffsetXRef.current, 0.25);
+    group.rotation.z = THREE.MathUtils.lerp(group.rotation.z, 0, 0.25);
+    group.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.25);
+  };
+
   return (
     <div className="w-full h-full flex flex-col space-y-3.5">
       {/* Top Header: Mode Switcher & AR Fine-Tuning Micro-Controls (Posisi di atas agar sejajar dengan kartu sebelah kanan) */}
@@ -1090,7 +1104,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
                   startRotX: rotOffsetXRef.current,
                   startRotY: rotOffsetYRef.current,
                 };
-                (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+                (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
               }}
               onPointerMove={(e) => {
                 const ds = dragStateRef.current;
@@ -1117,9 +1131,25 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
                   setOffsetY(newY);
                 }
               }}
-              onPointerUp={() => { dragStateRef.current = null; }}
-              onPointerLeave={() => { dragStateRef.current = null; }}
-              onPointerCancel={() => { dragStateRef.current = null; }}
+              onPointerUp={(e) => {
+                dragStateRef.current = null;
+                try {
+                  (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
+                } catch {}
+              }}
+              onPointerLeave={() => {
+                dragStateRef.current = null;
+              }}
+              onPointerCancel={() => {
+                dragStateRef.current = null;
+              }}
+              onWheel={(e) => {
+                e.preventDefault();
+                const delta = e.deltaY < 0 ? 5 : -5;
+                const nextScale = Math.max(70, Math.min(130, scaleMultiplierRef.current + delta));
+                scaleMultiplierRef.current = nextScale;
+                setScaleMultiplier(nextScale);
+              }}
             >
               <video
                 ref={videoRef}
