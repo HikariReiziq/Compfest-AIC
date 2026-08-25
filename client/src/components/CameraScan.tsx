@@ -18,6 +18,7 @@ import {
   ArrowLeft,
   User,
   Sparkles,
+  Flower2,
 } from "lucide-react";
 import { UserPersonalProfile, MOCK_PRESETS } from "../lib/mockData";
 import { analyzeLandmarks } from "../lib/api";
@@ -1231,7 +1232,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
               }`}
               title="Bingkai 2: Watercolor Flower Frame"
             >
-              <Sparkles className="w-3.5 h-3.5" />
+              <Flower2 className="w-3.5 h-3.5" />
               <span>Flower Frame</span>
             </button>
           </div>

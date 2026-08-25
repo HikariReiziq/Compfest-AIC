@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import {
   Sparkles,
+  Flower2,
   Move3d,
   Box,
   RotateCcw,
@@ -989,7 +990,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
                 }`}
                 title="Bingkai 2: Watercolor Flower Frame"
               >
-                <Sparkles className="w-3.5 h-3.5" />
+                <Flower2 className="w-3.5 h-3.5" />
                 <span>Flower</span>
               </button>
             </div>
