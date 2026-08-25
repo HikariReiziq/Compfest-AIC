@@ -1249,7 +1249,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                 ? "relative w-full max-w-[620px] mx-auto drop-shadow-2xl flex items-center justify-center"
                 : "relative w-full max-w-[800px] mx-auto drop-shadow-2xl flex items-center justify-center"
             }
-            style={mode === "upload" ? undefined : selectedFrame === "flower" ? { aspectRatio: "1 / 1" } : { aspectRatio: "548 / 455" }}
+            style={mode === "upload" ? undefined : selectedFrame === "flower" ? { aspectRatio: "1 / 1" } : { aspectRatio: "810 / 608" }}
           >
             {mode === "upload" ? null : (
               /* Bingkai Kamera (Canon DSLR HD atau Watercolor Flower Frame) */
@@ -1352,7 +1352,7 @@ export const CameraScan: React.FC<CameraScanProps> = ({
               </div>
             ) : (
               <>
-              {/* Layar Kamera — proporsi pas di dalam bezel/lingkaran frame */}
+              {/* Layar Kamera — proporsi pas di dalam LCD Canon (kotak) atau Lingkaran Flower Frame (bulat) */}
               <div
                 className={
                   selectedFrame === "flower"
@@ -1361,8 +1361,8 @@ export const CameraScan: React.FC<CameraScanProps> = ({
                 }
                 style={
                   selectedFrame === "flower"
-                    ? { left: "18.5%", top: "16.2%", width: "68%", height: "68%" }
-                    : { left: "16.42%", top: "42.20%", width: "45.07%", height: "36.26%" }
+                    ? { left: "19.5%", top: "17.2%", width: "66%", height: "66%" }
+                    : { left: "14.69%", top: "43.09%", width: "47.53%", height: "42.27%" }
                 }
               >
               <div className="relative w-full h-full bg-black flex items-center justify-center">

@@ -1148,7 +1148,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
               ? "relative w-full max-w-[620px] mx-auto drop-shadow-2xl flex items-center justify-center select-none animate-fadeIn"
               : "relative w-full max-w-[800px] mx-auto drop-shadow-2xl flex items-center justify-center select-none animate-fadeIn"
           }
-          style={selectedFrame === "flower" ? { aspectRatio: "1 / 1" } : { aspectRatio: "548 / 455" }}
+          style={selectedFrame === "flower" ? { aspectRatio: "1 / 1" } : { aspectRatio: "810 / 608" }}
         >
           {/* Bingkai Kamera (Canon DSLR HD atau Watercolor Flower Frame) */}
           <img
@@ -1159,7 +1159,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
             className="absolute inset-0 w-full h-full object-contain pointer-events-none z-20 select-none drop-shadow-[0_25px_45px_rgba(0,0,0,0.85)]"
           />
 
-          {/* Layar Kamera — proporsi pas di dalam LCD Canon atau Lingkaran Flower Frame */}
+          {/* Layar Kamera — proporsi pas di dalam LCD Canon (kotak) atau Lingkaran Flower Frame (bulat) */}
           <div
             className={
               selectedFrame === "flower"
@@ -1168,8 +1168,8 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
             }
             style={
               selectedFrame === "flower"
-                ? { left: "18.5%", top: "16.2%", width: "68%", height: "68%" }
-                : { left: "16.42%", top: "42.20%", width: "45.07%", height: "36.26%" }
+                ? { left: "19.5%", top: "17.2%", width: "66%", height: "66%" }
+                : { left: "14.69%", top: "43.09%", width: "47.53%", height: "42.27%" }
             }
           >
             {/* 3D WebGL Canvas Layer Overlay */}
@@ -1255,47 +1255,33 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
                 onEnded={() => setIsVideoPlaying(false)}
               />
 
-              {(!cameraReady || !isVideoPlaying) && (
-                <div className="absolute inset-0 z-30 bg-[#071120] flex flex-col items-center justify-center space-y-2.5 p-3 text-center">
-                  <img
-                    src={isFemale ? "/images/mascot-pink.png" : "/images/mascot.png"}
-                    alt="COBA Mascot"
-                    className="w-14 h-14 object-contain drop-shadow-md animate-bounce"
-                    style={{ animationDuration: "2s" }}
-                  />
-                  <div
-                    className={`flex items-center space-x-1 font-mono text-[10px] font-bold tracking-[0.2em] uppercase ${
-                      isFemale ? "text-pink-400" : "text-[#38BDF8]"
-                    }`}
-                  >
-                    {["L", "O", "A", "D", "I", "N", "G", ".", ".", "."].map((char, index) => (
-                      <span
-                        key={index}
-                        className="animate-text-wave inline-block text-white"
-                        style={{ animationDelay: `${index * 120}ms` }}
-                      >
-                        {char}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+              {/* Status Tracking badge live overlay di atas video */}
+              <div className="absolute top-2.5 left-2.5 z-30 pointer-events-none flex items-center space-x-1.5 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/10 text-[10px] font-mono text-white/80">
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    isTrackingLive ? "bg-emerald-400 animate-pulse" : "bg-amber-400"
+                  }`}
+                />
+                <span>{isTrackingLive ? "AI TRACKING ON" : "AI TRACKING..."}</span>
+              </div>
 
-              {isTrackingLive ? (
-                <div className="absolute top-2 left-2 inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[8px] font-mono z-30 shadow-md">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                  <span>
-                    {isShirt
-                      ? "AR 3D BODY • 4K 60FPS"
-                      : isHat
-                        ? "AR 3D HEAD • 4K 60FPS"
-                        : "AR 3D FACE • 4K 60FPS"}
-                  </span>
+              {cameraError ? (
+                <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center p-4 text-center z-30">
+                  <p className="text-red-400 font-medium text-xs mb-1 font-mono">
+                    Gagal Mengakses Kamera
+                  </p>
+                  <p className="text-slate-400 text-[10px] max-w-xs">{cameraError}</p>
                 </div>
-              ) : isVideoPlaying ? (
-                <div className="absolute top-2 left-2 inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[8px] font-mono z-30 shadow-md">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                  <span>KALIBRASI 4K AR...</span>
+              ) : !cameraReady ? (
+                <div className="absolute inset-0 bg-[#071120] flex flex-col items-center justify-center space-y-2 z-30">
+                  <div
+                    className={`w-6 h-6 border-2 border-t-transparent rounded-full animate-spin ${
+                      isFemale ? 'border-pink-500' : 'border-blue-500'
+                    }`}
+                  />
+                  <p className="text-slate-400 text-xs font-mono">
+                    Menghubungkan Kamera AR...
+                  </p>
                 </div>
               ) : null}
             </div>
@@ -1305,7 +1291,7 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
         /* MODE 2: 360° STUDIO VIEWPORT — LEGA, BEBAS FRAME KAMERA & INTERAKTIF */
         <div
           className="relative w-full max-w-[800px] mx-auto rounded-3xl border border-white/10 bg-gradient-to-b from-slate-900 via-[#0a0f1d] to-black overflow-hidden shadow-2xl flex items-center justify-center select-none animate-fadeIn cursor-grab active:cursor-grabbing touch-none"
-          style={{ aspectRatio: "548 / 455" }}
+          style={{ aspectRatio: "810 / 608" }}
           onPointerDown={(e) => {
             isDraggingStudioRef.current = true;
             dragStateRef.current = {
@@ -1364,7 +1350,6 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
           {/* 3D WebGL Canvas Layer Overlay */}
           <div ref={containerRef} className="absolute inset-0 w-full h-full z-10 pointer-events-none" />
 
-          {/* Top-Left: 360 Studio Badge */}
           <div
             className={`absolute top-4 left-4 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-mono z-30 shadow-lg backdrop-blur-md pointer-events-none border ${
               isFemale
