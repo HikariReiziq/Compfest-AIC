@@ -5,7 +5,6 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import {
   Sparkles,
-  Flower2,
   Move3d,
   Box,
   RotateCcw,
@@ -18,6 +17,25 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { RecommendationItem } from "../lib/mockData";
+
+/** Ikon Siluet Bunga Sakura Jepang (5 Kelopak Lekuk Khas) */
+const SakuraIcon: React.FC<{ className?: string }> = ({ className = "w-3.5 h-3.5" }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    stroke="none"
+    className={className}
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+  >
+    <path d="M12 12 C10.8 9.5 8.8 6.5 10.5 3.2 C11.3 3.4 11.7 4.3 12 4.8 C12.3 4.3 12.7 3.4 13.5 3.2 C15.2 6.5 13.2 9.5 12 12 Z" />
+    <path d="M12 12 C14.1 10.5 17.5 9.8 19.8 12.4 C19.3 13.0 18.3 13.1 17.7 13.1 C18.1 13.6 18.7 14.3 18.4 15.1 C15.4 16.0 13.0 13.6 12 12 Z" />
+    <path d="M12 12 C13.3 14.1 14.8 17.3 13.2 20.2 C12.4 19.9 12.2 18.9 12.0 18.3 C11.6 18.8 11.2 19.6 10.4 19.6 C9.4 16.7 11.3 13.8 12 12 Z" />
+    <path d="M12 12 C10.2 13.5 7.8 15.5 5.5 13.8 C5.8 13.0 6.6 12.6 7.2 12.4 C6.7 12.0 6.0 11.4 6.2 10.6 C9.0 9.2 11.1 11.2 12 12 Z" />
+    <path d="M12 12 C10.4 10.0 8.6 7.0 5.8 8.0 C6.0 8.8 6.8 9.4 7.2 9.9 C6.8 10.4 6.3 11.1 6.8 11.9 C9.5 13.8 11.3 11.5 12 12 Z" />
+    <circle cx="12" cy="12" r="1.4" />
+  </svg>
+);
 
 /** Semua GLB dinormalisasi berbasis lebar (X) ke 1.0 unit scene agar ukuran konsisten. */
 
@@ -1103,10 +1121,10 @@ export const ARCanvasViewer: React.FC<ARCanvasViewerProps> = ({
                     ? "text-pink-300/70 hover:text-white"
                     : "text-slate-400 hover:text-white"
                 }`}
-                title="Bingkai 2: Watercolor Flower Frame"
+                title="Bingkai 2: Sakura Blossom Frame"
               >
-                <Flower2 className="w-3.5 h-3.5" />
-                <span>Flower</span>
+                <SakuraIcon className="w-3.5 h-3.5" />
+                <span>Sakura</span>
               </button>
             </div>
           )}
